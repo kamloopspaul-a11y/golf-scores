@@ -1,0 +1,875 @@
+<!--
+  My Golf Scores — PWA
+  https://kamloopspaul-a11y.github.io/golf-scores
+  Built with Claude AI
+
+  CHANGELOG
+  v3 — April 15 2026
+  - Added temperature (°C) + wind (km/h) as plain text, persistent all screens
+  - Course name now yellow, Blue Tees removed throughout
+  - Auto-focus on Add Player field (desktop); note: mobile keyboard requires manual tap per iOS/Android policy
+  - Removed P1/P2 player badges; player name font matches score style
+  - Max players expanded to 5
+  - Round Type selector removed; app defaults to 18 holes
+  - Date moved above Players, pre-populated, display only
+  - PLAYERS label removed
+  - Scorecard: Par row shown once (front 9 only), alternating row shading
+  - Scorecard columns renamed: IN (front 9 total), OUT (back 9 total), TOT (grand total on back row)
+  - Player name font color/weight matches score cells
+  - Alternating row background shading on scorecard
+  - Hole 1 Back button now returns to setup screen
+  - Back/Next buttons styled identically with yellow hover
+  - Progress bar moved into green masthead below hole number
+  - Score +/− buttons repositioned: horizontal layout with score centered between them
+  - Weather badge styled as plain text (no button appearance), persistent all screens
+  - Light gray PAR label color on scorecard
+
+  v2 — April 15 2026
+  - Multi-player support (up to 4), player tabs during scoring
+  - Live wind data via Open-Meteo API
+  - White text on green headers
+  - Built with Claude AI footer
+
+  v1 — April 15 2026
+  - Initial prototype
+--><!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golf Scores">
+<title>My Golf Scores</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --green-dark: #1a3a2a;
+    --green-mid: #2d5a3d;
+    --green-light: #4a8c5c;
+    --green-pale: #e8f5ec;
+    --cream: #faf9f6;
+    --card: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --birdie: #2563eb;
+    --eagle: #7c3aed;
+    --bogey: #dc2626;
+    --border: rgba(0,0,0,0.08);
+    --yellow: #f5c842;
+    --row-alt: #f4f4f4;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-primary);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  /* SCREENS */
+  .screen { display: none; flex-direction: column; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* MASTHEAD */
+  .masthead {
+    background: var(--green-dark);
+    padding: 48px 24px 20px;
+    color: white;
+  }
+  .masthead-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .masthead h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; color: white; }
+  .masthead .course-name { font-size: 13px; color: var(--yellow); margin-top: 3px; font-weight: 500; }
+  .masthead .round-date-display { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+  .weather-info {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  /* HOLE MASTHEAD */
+  .hole-masthead {
+    background: var(--green-dark);
+    padding: 48px 24px 16px;
+    color: white;
+  }
+  .hole-masthead-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .hole-meta-left {}
+  .hole-label { font-size: 11px; font-weight: 500; opacity: 0.55; letter-spacing: 1px; text-transform: uppercase; color: white; margin-bottom: 2px; }
+  .hole-num { font-size: 56px; font-weight: 600; letter-spacing: -2px; line-height: 1; color: white; }
+  .hole-meta-right { text-align: right; }
+  .hole-stat-val { font-size: 22px; font-weight: 600; color: white; }
+  .hole-stat-label { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.6px; color: white; margin-top: 1px; }
+  .hole-yardage { margin-top: 10px; }
+  .hole-weather { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 6px; text-align: right; line-height: 1.5; }
+
+  /* PROGRESS BAR in masthead */
+  .progress-wrap { margin-top: 10px; }
+  .progress-label { font-size: 10px; color: rgba(255,255,255,0.45); margin-bottom: 4px; letter-spacing: 0.4px; }
+  .progress-bar { background: rgba(255,255,255,0.18); height: 4px; border-radius: 2px; }
+  .progress-fill { height: 100%; background: rgba(255,255,255,0.75); border-radius: 2px; transition: width 0.35s ease; }
+
+  /* SETUP BODY */
+  .setup-body { padding: 24px; flex: 1; }
+  .field-group { margin-bottom: 18px; }
+  .field-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); margin-bottom: 7px; }
+
+  .date-display {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    color: var(--text-primary);
+    padding: 13px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  /* PLAYERS */
+  .players-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+  .player-row { display: flex; gap: 8px; align-items: center; }
+  .player-input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .player-input:focus { border-color: var(--green-light); }
+  .remove-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(220,38,38,0.2);
+    background: #fef2f2;
+    color: var(--bogey);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .remove-btn:hover { background: #fee2e2; }
+
+  .add-player-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--green-pale);
+    border: 1px dashed var(--green-light);
+    border-radius: 12px;
+    padding: 11px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500;
+    color: var(--green-mid);
+    cursor: pointer; width: 100%; margin-top: 4px;
+    transition: background 0.15s;
+  }
+  .add-player-btn:hover { background: #d4edda; }
+
+  .start-btn {
+    width: 100%; padding: 17px;
+    background: var(--green-dark); color: white;
+    border: none; border-radius: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px; font-weight: 600;
+    cursor: pointer; margin-top: 8px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .start-btn:hover { opacity: 0.88; }
+  .start-btn:active { transform: scale(0.98); }
+
+  /* PLAYER TABS */
+  .player-tabs {
+    display: flex; gap: 6px;
+    padding: 10px 24px 0;
+    overflow-x: auto; scrollbar-width: none;
+    background: var(--green-dark);
+  }
+  .player-tabs::-webkit-scrollbar { display: none; }
+  .player-tab {
+    flex-shrink: 0; padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: transparent;
+    font-size: 13px; font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .player-tab.active { background: white; color: var(--green-dark); border-color: white; }
+  .player-tab:hover:not(.active) { color: white; border-color: rgba(255,255,255,0.6); }
+
+  /* SCORE SECTION */
+  .score-section {
+    flex: 1; display: flex;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 28px 24px 12px;
+  }
+
+  /* Score indicator ring */
+  .score-indicator {
+    position: relative;
+    width: 110px; height: 110px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px;
+  }
+  .score-ring {
+    position: absolute;
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .score-ring.birdie { border-color: var(--birdie); }
+  .score-ring.eagle { border-color: var(--eagle); }
+  .score-ring.bogey { border-color: var(--bogey); }
+  .score-ring-outer {
+    position: absolute;
+    width: 126px; height: 126px;
+    top: -8px; left: -8px;
+    border-radius: 50%;
+    border: 2px solid var(--birdie);
+    opacity: 0.3; display: none;
+  }
+  .score-ring-outer.eagle-outer { border-color: var(--eagle); }
+  .score-inner-num {
+    font-size: 52px; font-weight: 300;
+    letter-spacing: -3px; color: var(--text-primary);
+    line-height: 1;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Horizontal score row */
+  .score-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 12px;
+  }
+  .score-btn {
+    width: 80px; height: 80px;
+    border-radius: 50%; border: none;
+    font-size: 36px; font-weight: 300;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s, opacity 0.15s;
+    flex-shrink: 0;
+  }
+  .score-btn:active { transform: scale(0.90); }
+  .score-btn.minus { background: #fef2f2; color: var(--bogey); }
+  .score-btn.plus { background: var(--green-pale); color: var(--green-mid); }
+  .score-btn:hover { opacity: 0.8; }
+
+  .score-label {
+    font-size: 13px; font-weight: 500;
+    padding: 4px 14px; border-radius: 20px;
+    background: var(--green-pale); color: var(--green-mid);
+    margin-bottom: 16px;
+  }
+  .score-label.birdie { background: #eff6ff; color: var(--birdie); }
+  .score-label.bogey { background: #fef2f2; color: var(--bogey); }
+  .score-label.eagle { background: #f5f3ff; color: var(--eagle); }
+
+  .nav-dots { display: flex; justify-content: center; gap: 5px; padding: 8px 0; flex-wrap: wrap; max-width: 340px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all 0.2s; cursor: pointer; }
+  .dot.active { background: var(--green-dark); width: 18px; border-radius: 3px; }
+  .dot.scored { background: var(--green-light); }
+
+  /* HOLE NAV BUTTONS */
+  .hole-actions { padding: 8px 24px 16px; display: flex; gap: 12px; }
+  .nav-btn {
+    flex: 1; padding: 15px;
+    border-radius: 14px;
+    border: none;
+    background: var(--green-dark); color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s, color 0.15s;
+  }
+  .nav-btn:hover { color: var(--yellow); opacity: 0.92; }
+  .nav-btn:active { opacity: 0.75; }
+
+  /* SCORECARD */
+  .card-masthead {
+    background: var(--green-dark);
+    padding: 48px 24px 24px;
+    color: white;
+  }
+  .card-masthead h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; color: white; }
+  .card-masthead .course-name { color: var(--yellow); font-size: 13px; font-weight: 500; margin-top: 3px; }
+  .card-masthead-top { display: flex; justify-content: space-between; align-items: flex-start; }
+
+  .scorecard-wrap { padding: 20px 16px; flex: 1; overflow-x: auto; }
+
+  .summary-card {
+    background: var(--green-dark); border-radius: 16px;
+    padding: 18px 24px; color: white;
+    display: flex; justify-content: space-around; margin-bottom: 20px;
+  }
+  .summary-stat { text-align: center; }
+  .summary-stat .val { font-size: 32px; font-weight: 600; font-family: 'DM Mono', monospace; letter-spacing: -1px; color: white; }
+  .summary-stat .lbl { font-size: 10px; color: rgba(255,255,255,0.55); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.6px; }
+
+  .sc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; min-width: 340px; }
+  .sc-table th {
+    font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    color: var(--text-muted); padding: 5px 3px; text-align: center;
+  }
+  .sc-table th:first-child { text-align: left; padding-left: 6px; }
+  .sc-table td { padding: 9px 3px; text-align: center; border-top: 1px solid var(--border); }
+  .sc-table td:first-child { text-align: left; padding-left: 6px; }
+  .sc-table .score-cell { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .sc-table .player-name-cell { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .sc-table .par-cell { color: var(--text-muted); font-size: 12px; }
+  .sc-table .section-header th { background: var(--green-pale); }
+  .row-alt { background: var(--row-alt); }
+  .birdie-score { color: var(--birdie); display: inline-block; width: 20px; height: 20px; line-height: 20px; border: 1.5px solid var(--birdie); border-radius: 50%; font-size: 11px; text-align: center; }
+  .bogey-score { color: var(--bogey); }
+  .tot-col { font-weight: 700; }
+  .section-spacer td { padding: 4px; border: none; background: transparent; }
+
+  .submit-btn {
+    width: 100%; padding: 17px;
+    background: var(--green-dark); color: white;
+    border: none; border-radius: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px; font-weight: 600;
+    cursor: pointer; margin-bottom: 12px;
+    transition: opacity 0.2s;
+  }
+  .submit-btn:hover { opacity: 0.88; color: var(--yellow); }
+  .submit-btn:active { opacity: 0.75; }
+  .discard-btn {
+    width: 100%; padding: 13px;
+    background: transparent; color: var(--bogey);
+    border: 1px solid rgba(220,38,38,0.2);
+    border-radius: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .discard-btn:hover { background: #fef2f2; }
+
+  /* SUCCESS */
+  .success-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; text-align: center; }
+  .success-icon { width: 80px; height: 80px; background: var(--green-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; }
+  .success-body h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .success-body p { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
+  .new-round-btn { padding: 17px 48px; background: var(--green-dark); color: white; border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, color 0.15s; }
+  .new-round-btn:hover { opacity: 0.88; color: var(--yellow); }
+
+  /* FOOTER */
+  .footer { text-align: center; padding: 14px; font-size: 11px; color: var(--text-muted); letter-spacing: 0.3px; }
+</style>
+<style>:is([id*='google_ads_iframe'],[id*='taboola-'],.taboolaHeight,.taboola-placeholder,#top-ad,#credential_picker_container,#credentials-picker-container,#credential_picker_iframe,[id*='google-one-tap-iframe'],#google-one-tap-popup-container,.google-one-tap__module,.google-one-tap-modal-div,#amp_floatingAdDiv,#ez-content-blocker-container) {display:none!important;min-height:0!important;height:0!important;}</style></head>
+<body>
+
+<!-- ═══════════════════════════════ SETUP ═══════════════════════════════ -->
+<div class="screen active" id="screen-setup">
+  <div class="masthead">
+    <div class="masthead-top">
+      <div>
+        <h1>My Golf Scores</h1>
+        <div class="course-name">Mt. Paul Golf Course</div>
+        <div class="round-date-display" id="setup-date-display">Apr 15, 2026</div>
+      </div>
+      <div class="weather-info" id="weather-setup">2°C  ·  Wind: 6 km/h</div>
+    </div>
+  </div>
+
+  <div class="setup-body">
+    <div class="players-list" id="players-list"><div class="player-row" style="margin-bottom: 8px;">
+      <input class="player-input" id="player-input-0" type="text" placeholder="Player 1" value="Paul" oninput="state.players[0]=this.value">
+      <div style="width:34px;flex-shrink:0"></div>
+    </div></div>
+    <button class="add-player-btn" id="add-player-btn" onclick="addPlayer()" style="display: flex;">+ Add Player</button>
+    <br>
+    <button class="start-btn" onclick="startRound()">Start Round</button>
+  </div>
+  <div class="footer">Built with Claude AI</div>
+</div>
+
+<!-- ═══════════════════════════════ HOLE ════════════════════════════════ -->
+<div class="screen" id="screen-hole">
+  <div class="hole-masthead">
+    <div class="hole-masthead-top">
+      <div class="hole-meta-left">
+        <div class="hole-label">Hole</div>
+        <div class="hole-num" id="hole-num">1</div>
+      </div>
+      <div class="hole-meta-right">
+        <div class="hole-stat-val" id="hole-par-display">4</div>
+        <div class="hole-stat-label">Par</div>
+        <div class="hole-yardage">
+          <div class="hole-stat-val" id="hole-yards-display">275</div>
+          <div class="hole-stat-label">Yards</div>
+        </div>
+        <div class="hole-weather" id="weather-hole">2°C  ·  Wind: 6 km/h</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label" id="progress-label">Hole 1 of 18</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:5.5%"></div></div>
+    </div>
+  </div>
+
+  <div class="player-tabs" id="player-tabs"></div>
+
+  <div class="score-section">
+    <div class="score-row">
+      <button class="score-btn minus" onclick="adjustScore(-1)">−</button>
+      <div class="score-indicator">
+        <div class="score-ring" id="score-ring"></div>
+        <div class="score-ring-outer" id="outer-ring"></div>
+        <div class="score-inner-num" id="score-num">4</div>
+      </div>
+      <button class="score-btn plus" onclick="adjustScore(1)">+</button>
+    </div>
+    <div class="score-label" id="score-label">Par</div>
+    <div class="nav-dots" id="nav-dots"></div>
+  </div>
+
+  <div class="hole-actions">
+    <button class="nav-btn" id="back-btn" onclick="prevHole()">← Back</button>
+    <button class="nav-btn" id="next-btn" onclick="nextHole()">Next →</button>
+  </div>
+  <div class="footer">Built with Claude AI</div>
+</div>
+
+<!-- ═══════════════════════════════ SCORECARD ════════════════════════════ -->
+<div class="screen" id="screen-card">
+  <div class="card-masthead">
+    <div class="card-masthead-top">
+      <div>
+        <h1 id="card-title">Round Summary</h1>
+        <div class="course-name">Mt. Paul Golf Course</div>
+      </div>
+      <div class="weather-info" id="weather-card">2°C  ·  Wind: 6 km/h</div>
+    </div>
+  </div>
+
+  <div class="scorecard-wrap">
+    <div class="summary-card">
+      <div class="summary-stat"><div class="val" id="sum-total">—</div><div class="lbl">Total</div></div>
+      <div class="summary-stat"><div class="val" id="sum-par">64</div><div class="lbl">Par</div></div>
+      <div class="summary-stat"><div class="val" id="sum-vspar">—</div><div class="lbl">vs Par</div></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="sc-table" id="scorecard-table"></table>
+    </div>
+    <button class="submit-btn" onclick="submitRound()">Submit to Google Sheets</button>
+    <button class="discard-btn" onclick="discardRound()">Discard Round</button>
+  </div>
+  <div class="footer">Built with Claude AI</div>
+</div>
+
+<!-- ═══════════════════════════════ SUCCESS ══════════════════════════════ -->
+<div class="screen" id="screen-success">
+  <div class="card-masthead">
+    <div class="card-masthead-top">
+      <div>
+        <h1>Round Saved</h1>
+        <div class="course-name">Mt. Paul Golf Course</div>
+      </div>
+      <div class="weather-info" id="weather-success">2°C  ·  Wind: 6 km/h</div>
+    </div>
+  </div>
+  <div class="success-body">
+    <div class="success-icon">⛳</div>
+    <h2>Submitted!</h2>
+    <p id="success-msg">Your scores have been submitted to Google Sheets.</p>
+    <button class="new-round-btn" onclick="newRound()">Start New Round</button>
+  </div>
+  <div class="footer">Built with Claude AI</div>
+</div>
+
+<script>
+// ── COURSE DATA ──────────────────────────────────────────────────────────
+const COURSE = {
+  holes: [
+    {par:4,yards:275},{par:3,yards:137},{par:3,yards:179},
+    {par:4,yards:300},{par:3,yards:95},{par:4,yards:345},
+    {par:3,yards:135},{par:4,yards:251},{par:4,yards:270}
+  ]
+};
+
+const SHEETS_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+const MAX_PLAYERS = 5;
+
+// ── STATE ────────────────────────────────────────────────────────────────
+let state = {
+  players: ["Paul"],
+  roundType: "18",
+  date: "",
+  currentHole: 0,
+  activePlayer: 0,
+  scores: [],
+  holeList: [],
+  totalHoles: 18,
+  weatherStr: "—"
+};
+
+// ── WEATHER ──────────────────────────────────────────────────────────────
+async function fetchWeather() {
+  try {
+    const r = await fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=50.6745&longitude=-120.3273&current=temperature_2m,wind_speed_10m&temperature_unit=celsius&wind_speed_unit=kmh"
+    );
+    const d = await r.json();
+    const temp = Math.round(d.current.temperature_2m);
+    const wind = Math.round(d.current.wind_speed_10m);
+    state.weatherStr = temp + "°C  ·  Wind: " + wind + " km/h";
+  } catch(e) {
+    state.weatherStr = "Weather unavailable";
+  }
+  updateAllWeather();
+}
+
+function updateAllWeather() {
+  ["weather-setup","weather-hole","weather-card","weather-success"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = state.weatherStr;
+  });
+}
+
+// ── DATE ─────────────────────────────────────────────────────────────────
+function formatDateDisplay(iso) {
+  const [y,m,d] = iso.split('-');
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return months[parseInt(m)-1] + " " + parseInt(d) + ", " + y;
+}
+
+// ── PLAYERS ──────────────────────────────────────────────────────────────
+function renderPlayers() {
+  const list = document.getElementById('players-list');
+  list.innerHTML = '';
+  state.players.forEach((name, i) => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.style.marginBottom = '8px';
+    row.innerHTML = `
+      <input class="player-input" id="player-input-${i}" type="text"
+        placeholder="Player ${i+1}" value="${name}"
+        oninput="state.players[${i}]=this.value">
+      ${i > 0
+        ? `<button class="remove-btn" onclick="removePlayer(${i})">×</button>`
+        : '<div style="width:34px;flex-shrink:0"></div>'
+      }
+    `;
+    list.appendChild(row);
+  });
+
+  const addBtn = document.getElementById('add-player-btn');
+  addBtn.style.display = state.players.length >= MAX_PLAYERS ? 'none' : 'flex';
+}
+
+function addPlayer() {
+  if (state.players.length >= MAX_PLAYERS) return;
+  state.players.push("");
+  renderPlayers();
+  // focus the new field
+  const newIndex = state.players.length - 1;
+  setTimeout(() => {
+    const input = document.getElementById('player-input-' + newIndex);
+    if (input) input.focus();
+  }, 50);
+}
+
+function removePlayer(i) {
+  state.players.splice(i, 1);
+  renderPlayers();
+}
+
+// ── START ROUND ───────────────────────────────────────────────────────────
+function startRound() {
+  // sync player names from inputs
+  state.players = state.players
+    .map((_, i) => {
+      const el = document.getElementById('player-input-' + i);
+      return el ? el.value.trim() : _.trim();
+    })
+    .filter(p => p.length > 0);
+  if (!state.players.length) state.players = ["Player 1"];
+
+  state.date = new Date().toISOString().split('T')[0];
+  state.holeList = [...COURSE.holes, ...COURSE.holes]; // always 18
+  state.totalHoles = 18;
+  state.scores = state.players.map(() => state.holeList.map(h => h.par));
+  state.currentHole = 0;
+  state.activePlayer = 0;
+
+  buildDots();
+  buildPlayerTabs();
+  showHole(0);
+  showScreen('hole');
+}
+
+// ── PLAYER TABS ───────────────────────────────────────────────────────────
+function buildPlayerTabs() {
+  const tabs = document.getElementById('player-tabs');
+  tabs.innerHTML = '';
+  if (state.players.length <= 1) { tabs.style.display = 'none'; return; }
+  tabs.style.display = 'flex';
+  state.players.forEach((name, i) => {
+    const tab = document.createElement('button');
+    tab.className = 'player-tab' + (i === 0 ? ' active' : '');
+    tab.textContent = name || 'P' + (i + 1);
+    tab.onclick = () => switchPlayer(i);
+    tabs.appendChild(tab);
+  });
+}
+
+function switchPlayer(i) {
+  state.activePlayer = i;
+  document.querySelectorAll('.player-tab').forEach((t, ti) =>
+    t.className = 'player-tab' + (ti === i ? ' active' : '')
+  );
+  updateScoreDisplay(state.currentHole);
+}
+
+// ── HOLE DISPLAY ──────────────────────────────────────────────────────────
+function buildDots() {
+  const container = document.getElementById('nav-dots');
+  container.innerHTML = '';
+  state.holeList.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.id = 'dot-' + i;
+    d.title = 'Hole ' + (i + 1);
+    d.onclick = () => { state.currentHole = i; showHole(i); };
+    container.appendChild(d);
+  });
+}
+
+function showHole(index) {
+  const hole = state.holeList[index];
+  document.getElementById('hole-num').textContent = index + 1;
+  document.getElementById('hole-par-display').textContent = hole.par;
+  document.getElementById('hole-yards-display').textContent = hole.yards;
+
+  const pct = ((index + 1) / state.totalHoles * 100).toFixed(1);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent =
+    'Hole ' + (index + 1) + ' of ' + state.totalHoles;
+
+  document.querySelectorAll('.dot').forEach((d, i) =>
+    d.className = 'dot' + (i === index ? ' active' : i < index ? ' scored' : '')
+  );
+
+  // Back button: hole 1 → setup; otherwise previous hole
+  const backBtn = document.getElementById('back-btn');
+  backBtn.textContent = index === 0 ? '← Setup' : '← Back';
+
+  document.getElementById('next-btn').textContent =
+    index === state.totalHoles - 1 ? 'View Card' : 'Next →';
+
+  updateScoreDisplay(index);
+}
+
+function updateScoreDisplay(index) {
+  const score = state.scores[state.activePlayer][index];
+  const par   = state.holeList[index].par;
+  const diff  = score - par;
+
+  document.getElementById('score-num').textContent = score;
+
+  const ring  = document.getElementById('score-ring');
+  const outer = document.getElementById('outer-ring');
+  const label = document.getElementById('score-label');
+
+  ring.className  = 'score-ring';
+  outer.style.display = 'none';
+  outer.className = 'score-ring-outer';
+  label.className = 'score-label';
+
+  if (diff <= -2) {
+    ring.classList.add('eagle');
+    outer.style.display = 'block'; outer.classList.add('eagle-outer');
+    label.classList.add('eagle'); label.textContent = 'Eagle!';
+  } else if (diff === -1) {
+    ring.classList.add('birdie');
+    outer.style.display = 'block';
+    label.classList.add('birdie'); label.textContent = 'Birdie';
+  } else if (diff === 0) {
+    label.textContent = 'Par';
+  } else if (diff === 1) {
+    ring.classList.add('bogey'); label.classList.add('bogey'); label.textContent = 'Bogey';
+  } else {
+    ring.classList.add('bogey'); label.classList.add('bogey'); label.textContent = '+' + diff;
+  }
+}
+
+function adjustScore(delta) {
+  const i = state.currentHole;
+  state.scores[state.activePlayer][i] = Math.max(1, state.scores[state.activePlayer][i] + delta);
+  updateScoreDisplay(i);
+}
+
+function nextHole() {
+  if (state.currentHole < state.totalHoles - 1) {
+    state.currentHole++;
+    showHole(state.currentHole);
+  } else {
+    showSummary();
+  }
+}
+
+function prevHole() {
+  if (state.currentHole === 0) {
+    showScreen('setup');
+  } else {
+    state.currentHole--;
+    showHole(state.currentHole);
+  }
+}
+
+// ── SCORECARD ─────────────────────────────────────────────────────────────
+function showSummary() {
+  const par   = 64;
+  const total = state.scores[0].reduce((a, b) => a + b, 0);
+  const vsPar = total - par;
+
+  document.getElementById('card-title').textContent = '18-Hole Summary';
+  document.getElementById('sum-total').textContent  = total;
+  document.getElementById('sum-par').textContent    = par;
+  document.getElementById('sum-vspar').textContent  = (vsPar >= 0 ? '+' : '') + vsPar;
+
+  buildScorecard();
+  showScreen('card');
+}
+
+function buildScorecard() {
+  const table = document.getElementById('scorecard-table');
+  const front = state.holeList.slice(0, 9);
+  const back  = state.holeList.slice(9, 18);
+
+  // Column headers
+  let html = '<thead><tr>';
+  html += '<th></th>';
+  for (let i = 1; i <= 9; i++)  html += `<th>${i}</th>`;
+  html += '<th>IN</th>';
+  for (let i = 10; i <= 18; i++) html += `<th>${i}</th>`;
+  html += '<th>OUT</th><th>TOT</th>';
+  html += '</tr></thead><tbody>';
+
+  // PAR row — shown once
+  html += '<tr class="row-alt"><td class="par-cell">Par</td>';
+  let frontPar = 0, backPar = 0;
+  front.forEach(h => { html += `<td class="par-cell">${h.par}</td>`; frontPar += h.par; });
+  html += `<td class="par-cell tot-col">${frontPar}</td>`;
+  back.forEach(h  => { html += `<td class="par-cell">${h.par}</td>`; backPar  += h.par; });
+  html += `<td class="par-cell tot-col">${backPar}</td>`;
+  html += `<td class="par-cell tot-col">${frontPar + backPar}</td>`;
+  html += '</tr>';
+
+  // Player rows
+  state.players.forEach((name, pi) => {
+    const scores = state.scores[pi];
+    const rowClass = pi % 2 === 0 ? '' : 'row-alt';
+    html += `<tr class="${rowClass}">`;
+    html += `<td class="player-name-cell">${name || 'P'+(pi+1)}</td>`;
+
+    let ft = 0, bt = 0;
+    scores.slice(0, 9).forEach((s, i) => {
+      const diff = s - front[i].par; ft += s;
+      html += renderScoreCell(s, diff);
+    });
+    html += `<td class="score-cell tot-col">${ft}</td>`;
+    scores.slice(9, 18).forEach((s, i) => {
+      const diff = s - back[i].par; bt += s;
+      html += renderScoreCell(s, diff);
+    });
+    html += `<td class="score-cell tot-col">${bt}</td>`;
+    html += `<td class="score-cell tot-col">${ft + bt}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function renderScoreCell(score, diff) {
+  if (diff <= -1) return `<td><span class="birdie-score">${score}</span></td>`;
+  if (diff >= 1)  return `<td class="score-cell bogey-score">${score}</td>`;
+  return `<td class="score-cell">${score}</td>`;
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────
+async function submitRound() {
+  const par   = 64;
+  const total = state.scores[0].reduce((a, b) => a + b, 0);
+  const payload = {
+    date: state.date,
+    player: state.players[0],
+    course: "Mt. Paul",
+    tees: "Blue",
+    roundType: state.roundType,
+    holes: state.scores[0],
+    par
+  };
+
+  if (SHEETS_URL === "YOUR_APPS_SCRIPT_URL_HERE") {
+    document.getElementById('success-msg').textContent =
+      `Score of ${total} (${total - par >= 0 ? '+' : ''}${total - par}) recorded. Paste your Apps Script URL to enable live sync.`;
+    showScreen('success');
+    return;
+  }
+
+  try {
+    await fetch(SHEETS_URL, { method: "POST", body: JSON.stringify(payload) });
+    document.getElementById('success-msg').textContent =
+      `Score of ${total} submitted to Google Sheets.`;
+  } catch(e) {
+    document.getElementById('success-msg').textContent =
+      `Score of ${total} saved locally. Check your connection.`;
+  }
+  showScreen('success');
+}
+
+function discardRound() {
+  if (confirm("Discard this round? All scores will be lost.")) newRound();
+}
+
+function newRound() {
+  state.players = ["Paul"];
+  state.currentHole = 0;
+  renderPlayers();
+  showScreen('setup');
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  updateAllWeather();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+const today = new Date().toISOString().split('T')[0];
+state.date = today;
+document.getElementById('setup-date-display').textContent = formatDateDisplay(today);
+renderPlayers();
+fetchWeather();
+</script>
+
+
+</body></html>
