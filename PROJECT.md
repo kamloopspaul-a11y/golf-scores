@@ -1,6 +1,14 @@
 # My Golf Scores — Project Overview
 <!-- commit test: April 17, 2026 -->
 
+---
+
+## 🚨🚨🚨 STOP — READ `START-HERE.md` FIRST 🚨🚨🚨
+
+**Before anything else in a new session, open `START-HERE.md` in this folder.**
+It is rewritten at the end of every working session and contains the current in-flight work. It supersedes the spec below for any active task. **Do not begin work until you have read it.**
+
+---
 
 > **Purpose:** Canonical spec for the My Golf Scores app. Upload at the start of any new Claude session to restore context. Historical decisions live in the `index.html` changelog. Future ideas live in `IDEAS.md`.
 
@@ -145,8 +153,9 @@
 
 ## Session Start Checklist (for Claude)
 
-1. Read `PROJECT.md`
-2. Read uploaded `index.html`
-3. Confirm version number matches
-4. Ask what we're working on today
-5. Only read `IDEAS.md` if Paul wants to discuss future work
+1. **Read `START-HERE.md` FIRST** — active session handoff, rewritten each session
+2. Read `PROJECT.md` (this file)
+3. Read uploaded `index.html`
+4. Confirm version number matches
+5. Ask what we're working on today
+6. Only read `IDEAS.md` if Paul wants to discuss future work
