@@ -117,7 +117,7 @@
     margin: 0 auto;
     overflow-x: hidden;
   }
-  .screen { display: none; flex-direction: column; min-height: 100vh; }
+  .screen { display: none; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
   .screen.active { display: flex; }
   /* ── MASTHEADS ─────────────────────────────────────── */
   .masthead, .hole-masthead, .card-masthead {
@@ -125,6 +125,7 @@
     padding: 44px 20px 20px;
     color: white;
     height: 210px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -171,8 +172,14 @@
   .hole-stat-val   { font-size: 22px; font-weight: 600; color: white; }
   .hole-stat-label { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.6px; color: white; margin-top: 1px; }
   .hole-yardage    { margin-top: 8px; }
+  /* ── CONTENT AREA (shared sizing across all screens) ── */
+  .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
+    flex: 0 0 340px;
+    min-height: 0;
+    overflow-y: auto;
+  }
   /* ── SETUP ─────────────────────────────────────────── */
-  .setup-body { padding: 16px 24px; flex: 1; }
+  .setup-body { padding: 16px 24px; }
   .players-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 5px; }
   .player-row   { display: flex; gap: 8px; align-items: center; }
   .player-input {
@@ -235,7 +242,7 @@
   .start-btn { width: 100%; padding: 17px; margin-top: 16px; }
   /* ── SCORE SECTION ─────────────────────────────────── */
   .score-section {
-    flex: 1; display: flex; flex-direction: column;
+    display: flex; flex-direction: column;
     align-items: center; padding: 16px 24px 8px;
   }
   /* Player name chips inside score area */
@@ -311,11 +318,11 @@
   .dot.active { background: var(--green); width: 18px; border-radius: 3px; }
   .dot.scored { background: var(--green); opacity: 0.45; }
   /* NAV BUTTONS — fixed position, all screens */
-  .hole-actions { padding: 8px 24px 16px; display: flex; gap: 12px; }
+  .hole-actions { padding: 8px 24px 16px; display: flex; gap: 12px; flex-shrink: 0; }
   .nav-btn { flex: 1; padding: 15px; }
   .start-btn { padding: 15px; margin-top: 0; }
   /* ── SCORECARD ─────────────────────────────────────── */
-  .scorecard-wrap { padding: 16px 12px; flex: 1; overflow-x: hidden; }
+  .scorecard-wrap { padding: 16px 12px; overflow-x: hidden; }
   .sc-section { margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .sc-section { margin-bottom: 12px; overflow-x: auto; }
   .sc-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; table-layout: fixed; }
@@ -373,18 +380,36 @@
   }
   .discard-btn:hover { background: #fef2f2; }
   /* Mid-round 9-hole card */
-  .midround-wrap { padding: 16px 12px; flex: 1; }
+  .midround-wrap { padding: 16px 12px; }
   .midround-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
   /* ── SUCCESS ───────────────────────────────────────── */
   .success-body {
-    flex: 1; display: flex; flex-direction: column;
+    display: flex; flex-direction: column;
     align-items: center; justify-content: center; padding: 48px 24px; text-align: center;
   }
   .success-icon { width: 80px; height: 80px; background: var(--green-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; }
   .success-body h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
   .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
   .new-round-btn   { padding: 17px 48px; }
-  .footer { background: var(--green); height: 291px; }
+  .footer { background: var(--green); min-height: 291px; flex: 1 0 auto; }
+
+  /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
+  @media (max-height: 750px) {
+    .masthead, .hole-masthead, .card-masthead {
+      height: 170px;
+      padding: 32px 20px 14px;
+    }
+    .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
+      flex-basis: 260px;
+    }
+    .footer { min-height: 220px; }
+    .score-btn { width: 64px; height: 64px; font-size: 32px; }
+    .score-indicator { width: 92px; height: 92px; }
+    .score-jewel { width: 74px; height: 74px; }
+    .score-inner-num { font-size: 36px; }
+    .hole-num { font-size: 46px; }
+    .success-body { padding: 24px; }
+  }
 </style>
 <script>
   if('serviceWorker' in navigator){
