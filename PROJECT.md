@@ -1,4 +1,6 @@
 # My Golf Scores — Project Overview
+<!-- commit test: April 17, 2026 -->
+
 
 > **Purpose:** Canonical spec for the My Golf Scores app. Upload at the start of any new Claude session to restore context. Historical decisions live in the `index.html` changelog. Future ideas live in `IDEAS.md`.
 
