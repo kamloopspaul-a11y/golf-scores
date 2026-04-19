@@ -122,7 +122,7 @@
   /* ── MASTHEADS ─────────────────────────────────────── */
   .masthead, .hole-masthead, .card-masthead {
     background: var(--green);
-    padding: calc(44px + env(safe-area-inset-top)) 20px 20px;
+    padding: calc(44px + env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 20px max(20px, env(safe-area-inset-left));
     color: white;
     height: calc(210px + env(safe-area-inset-top));
     flex-shrink: 0;
@@ -391,7 +391,21 @@
   .success-body h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
   .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
   .new-round-btn   { padding: 17px 48px; }
-  .footer { background: var(--green); min-height: calc(291px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex: 1 0 auto; }
+  .footer {
+    background: var(--green);
+    min-height: calc(291px + env(safe-area-inset-bottom));
+    padding: 20px max(20px, env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    flex: 1 0 auto;
+    color: white;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 6px;
+    font-size: 13px;
+  }
+  .fg-left  { color: var(--yellow); font-weight: 500; }
+  .fg-right { text-align: right; color: rgba(255,255,255,0.85); }
 
   /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
   @media (max-height: 750px) {
@@ -438,7 +452,14 @@
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
   </div>
-  <div class="footer"></div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
+      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
+      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
+      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+    </div>
+  </div>
 </div>
 <!-- ══════════════ HOLE ══════════════ -->
 <div class="screen" id="screen-hole">
@@ -485,7 +506,14 @@
     <button class="btn-3d nav-btn" id="back-btn" onclick="prevHole()">Back</button>
     <button class="btn-3d nav-btn" id="next-btn" onclick="nextHole()">Next</button>
   </div>
-  <div class="footer"></div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
+      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
+      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
+      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+    </div>
+  </div>
 </div>
 <!-- ══════════════ MID-ROUND 9-HOLE CARD ══════════════ -->
 <div class="screen" id="screen-midround">
@@ -505,7 +533,14 @@
     <button class="btn-3d nav-btn" onclick="goBackFromMidround()">Back</button>
     <button class="btn-3d nav-btn" onclick="continueToBack9()">Next</button>
   </div>
-  <div class="footer"></div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
+      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
+      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
+      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+    </div>
+  </div>
 </div>
 <!-- ══════════════ FINAL SCORECARD ══════════════ -->
 <div class="screen" id="screen-card">
@@ -526,7 +561,14 @@
     <button class="btn-3d nav-btn" onclick="goBackToRound()">Back</button>
     <button class="btn-3d nav-btn" onclick="submitRound()">Post Score</button>
   </div>
-  <div class="footer"></div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
+      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
+      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
+      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+    </div>
+  </div>
 </div>
 <!-- ══════════════ SUCCESS ══════════════ -->
 <div class="screen" id="screen-success">
@@ -547,7 +589,14 @@
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="newRound()">Start New Round</button>
   </div>
-  <div class="footer"></div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
+      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
+      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
+      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+    </div>
+  </div>
 </div>
 <audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
 <script>
