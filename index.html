@@ -396,8 +396,8 @@
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
-    min-height: calc(200px + env(safe-area-inset-bottom));
-    padding: 20px 20px calc(150px + env(safe-area-inset-bottom));
+    min-height: calc(180px + env(safe-area-inset-bottom));
+    padding: 20px 20px calc(130px + env(safe-area-inset-bottom));
     flex: 1 0 auto;
     color: white;
     display: flex;
@@ -410,8 +410,22 @@
     row-gap: 6px;
     font-size: 13px;
   }
-  .fg-left  { color: var(--yellow); font-weight: 500; }
-  .fg-right { text-align: right; color: rgba(255,255,255,0.85); }
+  .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
+  .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
+  /* iOS-style slider (unscripted placeholder) */
+  .switch { position: relative; display: inline-block; width: 53px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider-bg {
+    position: absolute; cursor: pointer; inset: 0;
+    background: rgba(255,255,255,0.25); border-radius: 26px; transition: 0.2s;
+  }
+  .switch .slider-bg::before {
+    position: absolute; content: ""; height: 22px; width: 22px;
+    left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .slider-bg { background: var(--yellow); }
+  .switch input:checked + .slider-bg::before { transform: translateX(27px); }
 
   /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
   @media (max-height: 750px) {
@@ -460,10 +474,14 @@
   </div>
   <div class="footer">
     <div class="footer-grid">
-      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
-      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
-      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
-      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">U&amp;D</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">3+ Putts</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
 </div>
@@ -514,10 +532,14 @@
   </div>
   <div class="footer">
     <div class="footer-grid">
-      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
-      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
-      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
-      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">U&amp;D</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">3+ Putts</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
 </div>
@@ -541,10 +563,14 @@
   </div>
   <div class="footer">
     <div class="footer-grid">
-      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
-      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
-      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
-      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">U&amp;D</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">3+ Putts</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
 </div>
@@ -569,10 +595,14 @@
   </div>
   <div class="footer">
     <div class="footer-grid">
-      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
-      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
-      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
-      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">U&amp;D</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">3+ Putts</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
 </div>
@@ -597,10 +627,14 @@
   </div>
   <div class="footer">
     <div class="footer-grid">
-      <div class="fg-left">FIR</div><div class="fg-right">Fairway in Reg</div>
-      <div class="fg-left">GIR</div><div class="fg-right">Green in Reg</div>
-      <div class="fg-left">U&amp;D</div><div class="fg-right">Up &amp; Down</div>
-      <div class="fg-left">3+ Putts</div><div class="fg-right">Three-putt</div>
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">U&amp;D</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">3+ Putts</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
 </div>
