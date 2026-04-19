@@ -81,7 +81,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Golf Scores">
@@ -122,9 +122,9 @@
   /* ── MASTHEADS ─────────────────────────────────────── */
   .masthead, .hole-masthead, .card-masthead {
     background: var(--green);
-    padding: 44px 20px 20px;
+    padding: calc(44px + env(safe-area-inset-top)) 20px 20px;
     color: white;
-    height: 210px;
+    height: calc(210px + env(safe-area-inset-top));
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -391,18 +391,18 @@
   .success-body h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
   .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
   .new-round-btn   { padding: 17px 48px; }
-  .footer { background: var(--green); min-height: 291px; flex: 1 0 auto; }
+  .footer { background: var(--green); min-height: calc(291px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); flex: 1 0 auto; }
 
   /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
   @media (max-height: 750px) {
     .masthead, .hole-masthead, .card-masthead {
-      height: 170px;
-      padding: 32px 20px 14px;
+      height: calc(170px + env(safe-area-inset-top));
+      padding: calc(32px + env(safe-area-inset-top)) 20px 14px;
     }
     .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
       flex-basis: 260px;
     }
-    .footer { min-height: 220px; }
+    .footer { min-height: calc(220px + env(safe-area-inset-bottom)); }
     .score-btn { width: 64px; height: 64px; font-size: 32px; }
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
