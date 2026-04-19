@@ -110,10 +110,10 @@
   html, body { height: 100%; overflow-x: hidden; overscroll-behavior: none; }
   body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--cream);
+    background: var(--green);
     color: var(--text-primary);
     min-height: 100vh;
-    max-width: 430px;
+    width: 100%;
     margin: 0 auto;
     overflow-x: hidden;
   }
@@ -121,10 +121,10 @@
   .screen.active { display: flex; }
   /* ── MASTHEADS ─────────────────────────────────────── */
   .masthead, .hole-masthead, .card-masthead {
-    background: var(--green);
-    padding: calc(44px + env(safe-area-inset-top)) 20px 20px;
+    background: transparent;
+    padding: calc(44px + env(safe-area-inset-top)) 20px 28px;
     color: white;
-    height: calc(210px + env(safe-area-inset-top));
+    height: calc(240px + env(safe-area-inset-top));
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -177,7 +177,10 @@
     flex: 0 0 340px;
     min-height: 0;
     overflow-y: auto;
+    background: #fff;
+    margin-top: 12px;
   }
+  .hole-actions { background: #fff; }
   /* ── SETUP ─────────────────────────────────────────── */
   .setup-body { padding: 16px 24px; }
   .players-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 5px; }
@@ -392,11 +395,14 @@
   .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
   .new-round-btn   { padding: 17px 48px; }
   .footer {
-    background: var(--green);
-    min-height: calc(291px + env(safe-area-inset-bottom));
-    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+    background: transparent;
+    min-height: calc(200px + env(safe-area-inset-bottom));
+    padding: 20px 20px calc(150px + env(safe-area-inset-bottom));
     flex: 1 0 auto;
     color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
   }
   .footer-grid {
     display: grid;
