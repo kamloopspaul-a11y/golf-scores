@@ -16,7 +16,7 @@ It is rewritten at the end of every working session and contains the current in-
 
 ## Current Build Status
 
-**Version:** v9.2 — April 17, 2026
+**Version:** v9.7 — April 18, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Platform:** PWA, hosted on GitHub Pages
@@ -80,7 +80,8 @@ It is rewritten at the end of every working session and contains the current in-
 | **Nav Dots** | 18 dots — sole progress indicator |
 | **Nav Buttons** | Back + Next (fixed position bottom, all screens) |
 | **Player Chips** | Player name tabs above Counter (hidden for solo play) |
-| **Footer** | "Built with Claude AI" — all screens |
+| **Footer** | Transparent — body green bleeds through. Holds 2-col stats grid (FIR/GIR/U&D/3+Putts) with iOS-style slider toggles in right column. |
+| **Stage** | White block covering content area + Nav Buttons. Body bg is green; masthead and footer are transparent so green frames the white stage on top and bottom. |
 
 ---
 
@@ -111,12 +112,48 @@ It is rewritten at the end of every working session and contains the current in-
 
 ## Open / Pending Items
 
+- [ ] Resolve Footer resizing (too-tall) issue — Player Stats block
+- [ ] Wire toggle switches (FIR, GIR, U&D, 3-Putts) — capture data or gracefully ignore if unused
+- [ ] Plan database structure for per-player stats
 - [ ] Add Apps Script URL to `SHEETS_URL` constant for live posting
 - [ ] Create app icons (`icon-192.png`, `icon-512.png`)
 - [ ] Test Service Worker offline behaviour
 - [ ] Remove Discard Round button before final release
 - [ ] Hole 5 yardage update when new tee box is complete
 - [ ] Set up GitHub Desktop for easier deployment
+
+---
+
+## Distribution & Onboarding
+
+**Problem:** Google Sheets onboarding is too heavy for non-technical golfers — Google account, Apps Script deploy, OAuth warning screen, URL copy/paste.
+
+**Storage options considered:**
+- **localStorage** — zero setup, single device only
+- **Pre-deployed Apps Script URL** (shared) — fewer user steps; OAuth warning remains
+- **Airtable / Notion** — simple join code
+- **Supabase / Firebase** — smoothest UX, more backend work
+
+**Current plan:** Small rollout to golf friends first. Paul assists setup personally. Pre-deployed Sheets URL + plain-English instructions is the pragmatic path for a known audience. Gather feedback before broader release. For public distribution, revisit localStorage-only or a lightweight backend.
+
+**Note:** One friend uses **Numbers** (free online service) for posting stats — possible integration or alternative worth exploring.
+
+---
+
+## Phase 2 — Analytics Dashboard (not started)
+
+- Display per-player stats (FIR, GIR, U&D, 3-Putts, scoring trends)
+- Insights + improvement suggestions
+- Depends on: toggle data capture + database structure decisions above
+
+---
+
+## Business / Marketability (deferred thread)
+
+- **Golf pro subscription model** — branding + lead generation for a pro is a real value prop; annual subscription angle worth exploring
+- AI can handle marketing copy, emails, landing pages, social, support
+- Validation step: get a few real golfers using it and see if they stick
+- No deadline — scope evolution is fine, not a problem
 
 ---
 
