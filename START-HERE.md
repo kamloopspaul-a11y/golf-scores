@@ -2,32 +2,70 @@
 
 > **Rewritten at the end of every working session.** Captures what's in flight so the next session doesn't start cold.
 
-**Last updated:** April 23, 2026 (end of session 4)
+**Last updated:** April 24, 2026 (end of session 5 — "Sheets integration is live")
 
 ---
 
-## ✅ Jitter fix — shipped
+## TL;DR
 
-Committed and published via GitHub Desktop this session. Paul confirmed the jitter is fixed. Two-line CSS change: `body { min-height: 100dvh }` + `.screen { height: 100dvh }` (previously `100vh` — the unit mismatch was the culprit).
+Google Sheets integration shipped end-to-end. App posts real rounds to a live Apps Script webhook. Slider switches are wired. "3+ Putts" toggle replaced with a Putts counter (default 2) that drives a new Score column (strokes − putts). Spinner added to the Post Score flow. Folder renamed `golf-scores` → `Golf`.
 
-## Schema locked — Google Sheets integration (next session's target)
+## What shipped this session (v9.8 → v9.10-ish)
 
-Decisions from April 23 conversation:
+### Google Sheets webhook (the big one)
+- **`apps-script.gs`** in the Golf folder — the bound Apps Script. Creates `Scorecard`, `Stats`, and `Settings` tabs on first run (`setup()`), self-heals Scorecard + Stats if missing on POST, accepts rounds from the PWA and appends rows.
+- Live deployment URL wired into `index.html` line 652.
+- Web app: Execute as Me / Access Anyone.
 
-**Two tabs per user sheet:**
-- `Scorecard` — one row per round. Columns: `Round ID | Date | Player | Course | H1...H18 | Front | Back | Total | Notes`.
-- `Stats` — one row per hole per round. Columns: `Round ID | Date | Player | Hole | FIR | GIR | U&D | 3+ Putts`. Values stored as `1 / 0` (not Y/N) for formula-friendliness. Null row if stats not tracked for that round.
+### Schema (locked further)
+- **Player column dropped** — each user has their own Sheet, so it was redundant.
+- **`Year` column added** to Scorecard (derived from Date) — implements the "Year column, not Year tab" decision.
+- **`Tees` column added** to Scorecard — the app sends `tees: "Blue"` (still hard-coded for now).
+- **`3+ Putts` flag replaced with `Putts` count + derived `Score`** on the Stats tab. Putts counter on the hole screen, default 2, clamped 0-9. Score = strokes − putts, computed server-side in Apps Script.
+- Scorecard final columns: `Round ID | Date | Year | Course | Tees | H1…H18 | Front | Back | Total | Notes`
+- Stats final columns: `Round ID | Date | Hole | FIR | GIR | U&D | Putts | Score`
+- Settings: `Key | Value`, seeded with `Home Course | Kamloops G&CC` (should be `Mt. Paul` — see open issues).
 
-**Design calls:**
-- All 18 per-hole scores stored on Scorecard tab (not just totals) — preserves future analytics.
-- Date format `YYYY-MM-DD` in the sheet; display-friendly formatting (e.g. "Apr 23, 2026") applied in the UI layer via lookup/formatter. No duplicate human-readable date column.
-- **One tab per year is rejected.** Use a `Year` column (derived from Date) instead — single query surface, easier for future dashboard.
-- Stat labels can be lengthened later without schema migration — just header text.
-- Home Course stored once in a `Settings` tab (or similar), not repeated per round.
+### Slider switches wired (task #1 closed)
+- FIR / GIR / U&D stay as toggles. Off = null (not tracked), on = 1.
+- Putts is a counter now (not a toggle).
+- `state.stats` is an 18-slot array of `{fir, gir, ud, putts}`. All switches reset to default on each new hole; revisiting a hole shows that hole's previous values.
+- Sliders on non-hole screens (setup, midround, card, success) are still unwired visual placeholders. Left alone for now.
 
-**Webhook principle:** Apps Script is trivially redeployable (paste → deploy → same URL). Keep the webhook thin; lock the schema now, iterate the handler freely.
+### UX polish
+- **Post Score spinner.** Tapping Post Score jumps to the success screen immediately showing a spinning indicator + "Posting…", which swaps to "Posted!" when the webhook write resolves. Failure shows "Saved locally". No layout shift.
 
-## Out of scope for next session (don't design for these yet)
+### Historical data
+- **`2024-migration.csv`** generated at `~/Documents/Studio/` (one level above the repo — intentionally out of version control). 62 rounds, dates normalized to YYYY-MM-DD (including fix for two source typos), Tees all set to Blue, Round IDs `2024-001` through `2024-062`. All 62 Front/Back/Total sums verified against source.
+- **Not yet imported** — Paul did test rounds but the CSV is still sitting on disk. Quick win next session.
+
+### Repo housekeeping
+- Local folder renamed `golf-scores` → `Golf`. GitHub repo on remote is still named `golf-scores` (live URL unchanged: https://kamloopspaul-a11y.github.io/golf-scores).
+- START-HERE.md git cleanup paths updated to the new `Golf` folder.
+
+---
+
+## Locked architecture (do not revisit unless explicitly asked)
+
+- **Sheets schema** — Scorecard / Stats / Settings tabs with the columns listed above. Date format `YYYY-MM-DD`. Year column derived from Date. Single-player-per-sheet.
+- **Stats values** — 1/null for flags (FIR, GIR, U&D). Actual number for Putts. Score = strokes − putts computed server-side.
+- **White-stage architecture** — body green, transparent chrome, white content stage. Footer grid 2-col.
+- **Webhook principle** — Apps Script redeploys keep the same `/exec` URL. Ship fast, iterate the handler freely.
+
+## Open issues to verify
+
+1. **Stats tab header** — the header change this session (`3+ Putts` → `Putts` + `Score`) only takes effect when Stats is empty. If test data from earlier today is still there, Paul needs to **delete the Stats tab** and post a fresh round so it gets recreated with the new 8-column header.
+2. **Service worker cache** — same drill as before if the PWA looks stale: delete from home screen, re-add from Safari.
+3. **GitHub Desktop re-link** — after the folder rename, GitHub Desktop may need the repo re-added pointing at `~/Documents/Studio/Golf`. Paul reported successful push, so probably sorted.
+
+## Next session — focused tasks (pick ONE)
+
+1. **Stats summary on the Posted! screen** (Paul's last idea, deferred). Fixed-height summary inside `.success-body` (already `flex: 0 0 300px`, won't shift layout). Show front/back/total, FIR/GIR/U&D hit counts, average Score. Clear on New Round. ~30 min.
+2. **Tee selector, one-time setup.** Mt. Paul has Blue + Red. Decided: not per-round, stored in Settings tab. Needs a small UI (radio or dropdown — revisit), restructure `COURSE.holes` to `{par, blue, red}`, read selected tees in the yardage display + payload. Future courses may bring white/gold/black.
+3. **Import 2024 historical data.** CSV is at `~/Documents/Studio/2024-migration.csv` — 62 rounds, ready for File → Import → Append.
+4. **Hide the footer stat controls on non-hole screens.** The setup/home screen still shows FIR/GIR/U&D toggles plus the old `3+ Putts` rocker (never updated to the new counter). They serve no purpose outside the hole screen and are inconsistent with the hole-screen counter. Cleanest fix: hide the whole `.footer-grid` on setup, midround, card, and success — they're not interactive anywhere but hole. Small CSS-only change.
+
+## Out of scope (don't design for these yet)
 
 - AI-assisted dashboard / natural-language queries
 - Freemium → Pro unlock
@@ -37,98 +75,29 @@ Decisions from April 23 conversation:
 
 Ship the free MVP first, get 5 users, then decide what earns a nag.
 
-## Next session — focused tasks (pick ONE)
-
-Paul's preference going forward: **task-specific sessions, one subject at a time.**
-
-Candidates, in recommended order:
-1. Wire the 4 slider switches to state (writes 1/0 per hole per stat into `state.stats`)
-2. Draft the Apps Script webhook + template Sheet structure (Scorecard + Stats + Settings tabs, with the schema above)
-3. Template-copy distribution flow for new users (OAuth → copy template → store Sheet ID locally)
-
----
-
-## What shipped previous session (v9.4 → v9.7)
-
-### v9.4 — iOS safe-area
-- Added `viewport-fit=cover` to viewport meta
-- Masthead padding/height include `env(safe-area-inset-top)`
-- Footer padding/min-height include `env(safe-area-inset-bottom)`
-
-### v9.5 — Green body + white stage architecture (Paul's idea, big simplification)
-- **Body background: green.** Extends edge-to-edge automatically. Notch, home indicator, rubber-band scroll all just show green. No more `env()` calc gymnastics on backgrounds.
-- **Masthead and footer: transparent.** Body green bleeds through.
-- **White "stage"** = content containers (`.setup-body`, `.score-section`, etc.) + `.hole-actions`. One continuous white block from chips/counter through nav buttons.
-- Body `max-width: 470px` removed → `width: 100%` so green fills full viewport.
-- Stage `margin-top: 12px` reveals YARDS text in hole header (which was being clipped by the stage edge).
-
-### v9.6 — Slider switches + 20px shrink
-- iOS-style toggle switches added to right column of footer grid (FIR / GIR / U&D / 3+ Putts)
-- All toggles **unscripted** — they animate visually but don't yet write state anywhere
-- Switches: 53px wide × 26px tall, yellow `#f5c842` when on, white knob
-- Footer min-height 200→180, padding-bottom 150→130 (shaves ~20px)
-
-### v9.7 — Trim 40px off bottom
-- Content flex-basis 340→300 to bring "3+ Putts" row back into view on iPhone 15 Pro Max
-
----
-
-## Locked architecture (do not revisit unless explicitly asked)
-
-```
-.screen { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
-
-body { background: var(--green); width: 100%; }
-
-.masthead { background: transparent; height: calc(240px + env(safe-area-inset-top)); flex-shrink: 0; }
-
-.setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-  flex: 0 0 300px;
-  background: #fff;
-  margin-top: 12px;
-}
-.hole-actions { background: #fff; flex-shrink: 0; }
-
-.footer {
-  background: transparent;
-  min-height: calc(180px + env(safe-area-inset-bottom));
-  padding: 20px 20px calc(130px + env(safe-area-inset-bottom));
-  flex: 1 0 auto;
-  display: flex; flex-direction: column; justify-content: flex-end;
-}
-```
-
-Footer grid is 2-column (`1fr 1fr`) — yellow label left, slider right.
-
----
-
-## Open issues to verify
-
-1. **Service worker cache might be hiding v9.7 on Paul's iPhone.** When he tested today, it looked unchanged from v9.6 — almost certainly because iOS PWA cached the old SW. Fix path: delete PWA from home screen, re-add from Safari. If that doesn't work, bump cache version in `sw.js`.
-2. **Slight vertical scroll/movement still possible** on certain iPhone heights — content basis 300 was the trim, but if it persists after fresh cache, may need another small reduction.
-3. **iOS keyboard accessory bar** on Player Entry — the ^ ∨ Done bar plus AutoFill suggestions. Imposed by Safari, can't suppress without custom keyboard. Paul accepted this for now. Could try `autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"` later to at least kill the AutoFill row.
-
 ## Backlog (lower-priority, keep on file)
 
+- Settings tab `Home Course` value should be updated to `Mt. Paul` (currently seeded as `Kamloops G&CC`)
+- Hole 5 Red tee yardage (currently 94) will update when the new tee box is done in May
+- Red tee yardages captured: `237, 120, 148, 265, 94, 320, 115, 230, 250` (front 9; back 9 = front 9 repeated, total 3,558)
 - Test SW offline behaviour
 - Create app icons (`icon-192.png`, `icon-512.png`)
-- Hole 5 yardage update when new tee box is complete
 - Privacy policy page (needed before OAuth distribution)
 - Beta test with Dave
+- Wire the placeholder sliders on non-hole screens (or remove them)
+- iOS keyboard accessory bar on Player Entry — accepted for now
 
 ## Reference
 
-- Full redesign scope: `REDESIGN-PLAN.md`
 - Canonical spec: `PROJECT.md`
+- Redesign scope: `REDESIGN-PLAN.md`
 - Live URL: https://kamloopspaul-a11y.github.io/golf-scores
+- Webhook `/exec` URL is embedded in `index.html` line 652; redeploy doesn't change it.
 
 ## Notes for Claude
 
-- **The white-stage architecture is locked.** Body green, transparent chrome, white stage. Don't propose alternatives unless explicitly asked.
-- **The Sheets schema (above) is locked.** Don't re-open per-hole column questions, date format, year-column vs year-tab, or 1/0 vs Y/N.
-- Slider switches are placeholder-only; wiring them is the next real task.
-- Paul works KISS, short answers, fast iteration. No re-litigation of decisions.
-- **Task-specific sessions.** Paul prefers one subject per session going forward. Don't sprawl.
-- Lead with a **TL;DR** on any answer longer than a few sentences.
-- Visual consistency matters — fixed layouts, no shifting elements.
+- Sheets integration is LIVE — don't re-litigate schema, date format, year-column, 1/0/null, or single-player-per-sheet.
+- Paul works KISS, short answers, fast iteration. Task-specific sessions. Lead with a **TL;DR** on anything over a few sentences.
+- Visual consistency matters — no layout shifts.
 - Sandbox commits leave orphan `.git` lock files on Paul's Mac. Fix: quit GitHub Desktop first, then `rm -f ~/Documents/Studio/Golf/.git/*.lock ~/Documents/Studio/Golf/.git/objects/*.lock ~/Documents/Studio/Golf/.git/refs/heads/*.lock`, then reopen GitHub Desktop.
+- After folder rename: if GitHub Desktop can't find the repo, File → Add Local Repository → `~/Documents/Studio/Golf`.

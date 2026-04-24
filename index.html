@@ -174,7 +174,7 @@
   .hole-yardage    { margin-top: 8px; }
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-    flex: 0 0 300px;
+    flex: 0 0 268px;
     min-height: 0;
     overflow-y: auto;
     background: #fff;
@@ -388,15 +388,26 @@
   /* ── SUCCESS ───────────────────────────────────────── */
   .success-body {
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 48px 24px; text-align: center;
+    align-items: center; justify-content: flex-start; padding: 24px 20px; text-align: center;
   }
   .success-icon { width: 80px; height: 80px; background: var(--green-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; }
-  .success-body h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .success-body h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 14px; }
   .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
+  /* Round summary on Posted! screen */
+  .success-summary { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .ss-row { display: grid; gap: 8px; }
+  .ss-row.ss-score { grid-template-columns: repeat(3, 1fr); }
+  .ss-row.ss-stats { grid-template-columns: repeat(4, 1fr); }
+  .ss-cell {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 8px 4px; background: var(--green-pale); border-radius: 10px;
+  }
+  .ss-val { font-size: 20px; font-weight: 600; color: var(--green); letter-spacing: -0.5px; line-height: 1.1; }
+  .ss-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); margin-top: 3px; }
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
-    min-height: calc(180px + env(safe-area-inset-bottom));
+    min-height: calc(212px + env(safe-area-inset-bottom));
     padding: 20px 20px calc(130px + env(safe-area-inset-bottom));
     flex: 1 0 auto;
     color: white;
@@ -412,6 +423,11 @@
   }
   .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
+  /* Stat controls belong only on the hole screen */
+  #screen-setup    .footer-grid,
+  #screen-midround .footer-grid,
+  #screen-card     .footer-grid,
+  #screen-success  .footer-grid { display: none; }
   /* iOS-style slider (unscripted placeholder) */
   .switch { position: relative; display: inline-block; width: 53px; height: 26px; }
   .switch input { opacity: 0; width: 0; height: 0; }
@@ -461,9 +477,9 @@
       padding: calc(32px + env(safe-area-inset-top)) 20px 14px;
     }
     .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-      flex-basis: 260px;
+      flex-basis: 228px;
     }
-    .footer { min-height: calc(220px + env(safe-area-inset-bottom)); }
+    .footer { min-height: calc(252px + env(safe-area-inset-bottom)); }
     .score-btn { width: 64px; height: 64px; font-size: 32px; }
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
@@ -563,7 +579,9 @@
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
       <div class="fg-left">GIR</div>
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-gir" onchange="statChanged('gir')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">U&amp;D</div>
+      <div class="fg-left">PLTY</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-plty" onchange="statChanged('plty')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">U/D</div>
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-ud" onchange="statChanged('ud')"><span class="slider-bg"></span></label></div>
       <div class="fg-left">Putts</div>
       <div class="fg-right"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
@@ -648,6 +666,19 @@
     <div id="success-spinner" class="spinner"></div>
     <h2 id="success-title">Posting…</h2>
     <!-- <p id="success-msg">Your scores have been submitted to Google Sheets.</p> -->
+    <div id="success-summary" class="success-summary">
+      <div class="ss-row ss-score">
+        <div class="ss-cell"><span class="ss-val" id="ss-front">–</span><span class="ss-lbl">Front</span></div>
+        <div class="ss-cell"><span class="ss-val" id="ss-back">–</span><span class="ss-lbl">Back</span></div>
+        <div class="ss-cell"><span class="ss-val" id="ss-total">–</span><span class="ss-lbl">Total</span></div>
+      </div>
+      <div class="ss-row ss-stats">
+        <div class="ss-cell"><span class="ss-val" id="ss-fir">–</span><span class="ss-lbl">FIR</span></div>
+        <div class="ss-cell"><span class="ss-val" id="ss-gir">–</span><span class="ss-lbl">GIR</span></div>
+        <div class="ss-cell"><span class="ss-val" id="ss-ud">–</span><span class="ss-lbl">U/D</span></div>
+        <div class="ss-cell"><span class="ss-val" id="ss-score">–</span><span class="ss-lbl">Avg Score</span></div>
+      </div>
+    </div>
   </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="newRound()">Start New Round</button>
@@ -676,7 +707,7 @@ const COURSE = {
     {par:3,yards:135},{par:4,yards:251},{par:4,yards:270}
   ]
 };
-const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbwmAyWHGhESk1Z_J4MsBFe_WTzqj3yoaajIAEkk0nJmL9ImncFJZMtoMlTLlk8V4ZhGOw/exec";
+const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbzYOZI0wy2H5CQNf8TLInatEwZKDAX4SA5ij0Z5RcX4Bv81MscF_aRlSDW08KwbS1Ud5w/exec";
 const MAX_PLAYERS = 4;
 let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
@@ -781,7 +812,7 @@ function startRound() {
   state.holeList=[...COURSE.holes,...COURSE.holes];
   state.totalHoles=18;
   state.scores=state.players.map(()=>state.holeList.map(h=>h.par));
-  state.stats=Array.from({length:18},()=>({fir:null,gir:null,ud:null,putts:2}));
+  state.stats=Array.from({length:18},()=>({fir:null,gir:null,plty:null,ud:null,putts:2}));
   state.currentHole=0; state.activePlayer=0;
   state.roundStartTime = Date.now();
   localStorage.setItem('roundStartTime', state.roundStartTime);
@@ -832,7 +863,7 @@ function showHole(index){
 // ── STATS ─────────────────────────────────────────────
 function syncStatSliders(index){
   const st=state.stats[index]||{};
-  ['fir','gir','ud'].forEach(k=>{
+  ['fir','gir','plty','ud'].forEach(k=>{
     const el=document.getElementById('slider-'+k);
     if(el) el.checked = st[k]===1;
   });
@@ -985,10 +1016,42 @@ function renderScoreCell(score,par){
 function goBackToRound(){
   state.currentHole=state.totalHoles-1; showHole(state.currentHole); showScreen('hole');
 }
+// ── SUCCESS SUMMARY ──────────────────────────────────
+function renderSuccessSummary(){
+  const holes = (state.scores[0]||[]);
+  const front = holes.slice(0,9).reduce((a,b)=>a+(b||0),0);
+  const back  = holes.slice(9,18).reduce((a,b)=>a+(b||0),0);
+  const total = front + back;
+  let fir=0, gir=0, ud=0, puttsTotal=0, puttsHoles=0;
+  (state.stats||[]).forEach(s=>{
+    if(!s) return;
+    if(s.fir===1) fir++;
+    if(s.gir===1) gir++;
+    if(s.ud===1)  ud++;
+    if(typeof s.putts === "number"){ puttsTotal += s.putts; puttsHoles++; }
+  });
+  const holesPlayed = holes.filter(v=>typeof v==="number" && v>0).length;
+  const avgScore = holesPlayed > 0 ? ((total - puttsTotal)/holesPlayed) : 0;
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set("ss-front", front);
+  set("ss-back",  back);
+  set("ss-total", total);
+  set("ss-fir",   fir);
+  set("ss-gir",   gir);
+  set("ss-ud",    ud);
+  set("ss-score", avgScore.toFixed(1));
+}
+function clearSuccessSummary(){
+  ["ss-front","ss-back","ss-total","ss-fir","ss-gir","ss-ud","ss-score"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent="–";
+  });
+}
 // ── SUBMIT ────────────────────────────────────────────
 async function submitRound(){
+  renderSuccessSummary();
   const par=64; const total=state.scores[0].reduce((a,b)=>a+b,0);
-  const payload={date:state.date,player:state.players[0],course:COURSE.name,tees:"Blue",roundType:"18",holes:state.scores[0],par,stats:state.stats};
+  const pars=Array.from({length:18},(_,i)=>COURSE.holes[i%9].par);
+  const payload={date:state.date,player:state.players[0],course:COURSE.name,tees:"Blue",roundType:"18",holes:state.scores[0],par,pars,stats:state.stats};
   const spinner=document.getElementById('success-spinner');
   const title=document.getElementById('success-title');
   // Move to success screen immediately, showing spinner + "Posting…"
@@ -1013,6 +1076,7 @@ function newRound(){
   state.players=["Paul"]; state.currentHole=0;
   state.midroundSeen=false; state.roundStartTime=null;
   state.stats=[];
+  clearSuccessSummary();
   localStorage.removeItem('roundStartTime');
   if(durationTimer){ clearInterval(durationTimer); durationTimer=null; }
   renderPlayers(); showScreen('setup');
