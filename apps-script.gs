@@ -42,7 +42,7 @@ function scorecardHeader_() {
 }
 
 function statsHeader_() {
-  return ['Round ID', 'Date', 'Hole', 'FIR', 'GIR', 'U&D', '3+ Putts'];
+  return ['Round ID', 'Date', 'Hole', 'FIR', 'GIR', 'U&D', 'Putts', 'Score'];
 }
 
 function ensureSheet_(ss, name, header) {
@@ -83,12 +83,16 @@ function doPost(e) {
       const rows = [];
       for (let i = 0; i < 18; i++) {
         const s = p.stats[i] || {};
+        const strokes = holes[i];
+        const putts   = (s.putts != null) ? s.putts : '';
+        const score   = (strokes != null && putts !== '') ? (strokes - putts) : '';
         rows.push([
           roundId, date, i + 1,
-          s.fir   != null ? s.fir   : '',
-          s.gir   != null ? s.gir   : '',
-          s.ud    != null ? s.ud    : '',
-          s.putts != null ? s.putts : ''
+          s.fir != null ? s.fir : '',
+          s.gir != null ? s.gir : '',
+          s.ud  != null ? s.ud  : '',
+          putts,
+          score
         ]);
       }
       statsSh.getRange(statsSh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
