@@ -426,6 +426,33 @@
   }
   .switch input:checked + .slider-bg { background: var(--yellow); }
   .switch input:checked + .slider-bg::before { transform: translateX(27px); }
+  /* Putts counter — replaces toggle, default 2 */
+  .putts-counter {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08); border-radius: 20px; padding: 2px 8px;
+  }
+  .putts-btn {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,0.18); color: #fff;
+    font-size: 16px; line-height: 1; cursor: pointer;
+    touch-action: manipulation;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .putts-btn:active { background: rgba(255,255,255,0.32); }
+  #putts-value {
+    font-family: "DM Mono", monospace; font-size: 15px; font-weight: 500;
+    color: #fff; min-width: 14px; text-align: center;
+  }
+  /* Spinner for Post Score */
+  .spinner {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 4px solid rgba(55,127,9,0.18);
+    border-top-color: var(--green);
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none !important; }
 
   /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
   @media (max-height: 750px) {
@@ -538,8 +565,8 @@
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-gir" onchange="statChanged('gir')"><span class="slider-bg"></span></label></div>
       <div class="fg-left">U&amp;D</div>
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-ud" onchange="statChanged('ud')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">3+ Putts</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-putts" onchange="statChanged('putts')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">Putts</div>
+      <div class="fg-right"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
     </div>
   </div>
 </div>
@@ -618,8 +645,8 @@
     <div class="header-lower-title">Round Saved</div>
   </div>
   <div class="success-body">
-    <!-- <div class="success-icon">⛳</div> -->
-    <h2>Posted!</h2>
+    <div id="success-spinner" class="spinner"></div>
+    <h2 id="success-title">Posting…</h2>
     <!-- <p id="success-msg">Your scores have been submitted to Google Sheets.</p> -->
   </div>
   <div class="hole-actions">
@@ -754,7 +781,7 @@ function startRound() {
   state.holeList=[...COURSE.holes,...COURSE.holes];
   state.totalHoles=18;
   state.scores=state.players.map(()=>state.holeList.map(h=>h.par));
-  state.stats=Array.from({length:18},()=>({fir:null,gir:null,ud:null,putts:null}));
+  state.stats=Array.from({length:18},()=>({fir:null,gir:null,ud:null,putts:2}));
   state.currentHole=0; state.activePlayer=0;
   state.roundStartTime = Date.now();
   localStorage.setItem('roundStartTime', state.roundStartTime);
@@ -804,11 +831,22 @@ function showHole(index){
 }
 // ── STATS ─────────────────────────────────────────────
 function syncStatSliders(index){
-  const s=state.stats[index]||{};
-  ['fir','gir','ud','putts'].forEach(k=>{
+  const st=state.stats[index]||{};
+  ['fir','gir','ud'].forEach(k=>{
     const el=document.getElementById('slider-'+k);
-    if(el) el.checked = s[k]===1;
+    if(el) el.checked = st[k]===1;
   });
+  const pv=document.getElementById('putts-value');
+  if(pv) pv.textContent = (st.putts!=null ? st.putts : 2);
+}
+function adjustPutts(delta){
+  const i=state.currentHole;
+  if(!state.stats[i]) return;
+  const cur = state.stats[i].putts != null ? state.stats[i].putts : 2;
+  const next = Math.max(0, Math.min(9, cur + delta));
+  state.stats[i].putts = next;
+  const pv=document.getElementById('putts-value');
+  if(pv) pv.textContent = next;
 }
 function statChanged(key){
   if(!state.stats[state.currentHole]) return;
@@ -951,18 +989,24 @@ function goBackToRound(){
 async function submitRound(){
   const par=64; const total=state.scores[0].reduce((a,b)=>a+b,0);
   const payload={date:state.date,player:state.players[0],course:COURSE.name,tees:"Blue",roundType:"18",holes:state.scores[0],par,stats:state.stats};
-  const msg=document.getElementById('success-msg');
+  const spinner=document.getElementById('success-spinner');
+  const title=document.getElementById('success-title');
+  // Move to success screen immediately, showing spinner + "Posting…"
+  if(spinner) spinner.classList.remove('hidden');
+  if(title) title.textContent='Posting…';
+  showScreen('success');
   if(SHEETS_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
-    if(msg) msg.textContent=`Score of ${total} (${total-par>=0?'+':''}${total-par}) recorded. Add your Apps Script URL to enable live posting.`;
-    showScreen('success'); return;
+    if(spinner) spinner.classList.add('hidden');
+    if(title) title.textContent='Posted!';
+    return;
   }
   try {
     await fetch(SHEETS_URL,{method:"POST",body:JSON.stringify(payload)});
-    if(msg) msg.textContent=`Score of ${total} posted to Google Sheets.`;
+    if(title) title.textContent='Posted!';
   } catch(e){
-    if(msg) msg.textContent=`Score of ${total} saved. Check your connection.`;
+    if(title) title.textContent='Saved locally';
   }
-  showScreen('success');
+  if(spinner) spinner.classList.add('hidden');
 }
 function discardRound(){ if(confirm("Discard this round? All scores will be lost.")) newRound(); }
 function newRound(){
