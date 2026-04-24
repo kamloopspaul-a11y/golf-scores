@@ -2,23 +2,49 @@
 
 > **Rewritten at the end of every working session.** Captures what's in flight so the next session doesn't start cold.
 
-**Last updated:** April 23, 2026
+**Last updated:** April 23, 2026 (end of session 4)
 
 ---
 
-## In flight (uncommitted, ready to push)
+## ✅ Jitter fix — shipped
 
-**Jitter fix — 2-line CSS edit in `index.html`:**
-- `body { min-height: 100vh → 100dvh }` (~line 115)
-- `.screen { height: 100vh; height: 100dvh → height: 100dvh }` (~line 120)
+Committed and published via GitHub Desktop this session. Paul confirmed the jitter is fixed. Two-line CSS change: `body { min-height: 100dvh }` + `.screen { height: 100dvh }` (previously `100vh` — the unit mismatch was the culprit).
 
-Root cause: body used static `100vh` while `.screen` used `100dvh`. When iOS Safari's URL bar expanded/collapsed, the two layers disagreed → visible shift.
+## Schema locked — Google Sheets integration (next session's target)
 
-**Next-session workflow:**
-1. GitHub Desktop → review the diff → commit + Publish origin
-2. On iPhone: delete PWA from home screen → reopen `https://kamloopspaul-a11y.github.io/golf-scores/` in Safari → Add to Home Screen (busts the old service worker cache)
-3. Test for jitter. If it persists: revert the commit in GitHub Desktop, or bump SW cache version in `sw.js`.
-4. **Still uncommitted from April 17:** timer heartbeat + localStorage persistence. Safe to commit alongside the jitter fix or separately.
+Decisions from April 23 conversation:
+
+**Two tabs per user sheet:**
+- `Scorecard` — one row per round. Columns: `Round ID | Date | Player | Course | H1...H18 | Front | Back | Total | Notes`.
+- `Stats` — one row per hole per round. Columns: `Round ID | Date | Player | Hole | FIR | GIR | U&D | 3+ Putts`. Values stored as `1 / 0` (not Y/N) for formula-friendliness. Null row if stats not tracked for that round.
+
+**Design calls:**
+- All 18 per-hole scores stored on Scorecard tab (not just totals) — preserves future analytics.
+- Date format `YYYY-MM-DD` in the sheet; display-friendly formatting (e.g. "Apr 23, 2026") applied in the UI layer via lookup/formatter. No duplicate human-readable date column.
+- **One tab per year is rejected.** Use a `Year` column (derived from Date) instead — single query surface, easier for future dashboard.
+- Stat labels can be lengthened later without schema migration — just header text.
+- Home Course stored once in a `Settings` tab (or similar), not repeated per round.
+
+**Webhook principle:** Apps Script is trivially redeployable (paste → deploy → same URL). Keep the webhook thin; lock the schema now, iterate the handler freely.
+
+## Out of scope for next session (don't design for these yet)
+
+- AI-assisted dashboard / natural-language queries
+- Freemium → Pro unlock
+- "Buy me a coffee" nag
+- Book-a-lesson CTAs
+- Municipal course sponsorship flow
+
+Ship the free MVP first, get 5 users, then decide what earns a nag.
+
+## Next session — focused tasks (pick ONE)
+
+Paul's preference going forward: **task-specific sessions, one subject at a time.**
+
+Candidates, in recommended order:
+1. Wire the 4 slider switches to state (writes 1/0 per hole per stat into `state.stats`)
+2. Draft the Apps Script webhook + template Sheet structure (Scorecard + Stats + Settings tabs, with the schema above)
+3. Template-copy distribution flow for new users (OAuth → copy template → store Sheet ID locally)
 
 ---
 
@@ -82,14 +108,13 @@ Footer grid is 2-column (`1fr 1fr`) — yellow label left, slider right.
 2. **Slight vertical scroll/movement still possible** on certain iPhone heights — content basis 300 was the trim, but if it persists after fresh cache, may need another small reduction.
 3. **iOS keyboard accessory bar** on Player Entry — the ^ ∨ Done bar plus AutoFill suggestions. Imposed by Safari, can't suppress without custom keyboard. Paul accepted this for now. Could try `autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"` later to at least kill the AutoFill row.
 
-## Next up
+## Backlog (lower-priority, keep on file)
 
-1. Wire slider switches to state — toggle handler that writes 1/0 per hole per stat
-2. Add Apps Script URL to `SHEETS_URL` constant
-3. Wire stats to Google Sheets `Stats` tab (separate from scorecard, columns: Round ID | Date | Player | Hole | FIR | GIR | U&D | 3+ Putts)
-4. Test SW offline behaviour
-5. Create app icons (`icon-192.png`, `icon-512.png`)
-6. Hole 5 yardage update when new tee box is complete
+- Test SW offline behaviour
+- Create app icons (`icon-192.png`, `icon-512.png`)
+- Hole 5 yardage update when new tee box is complete
+- Privacy policy page (needed before OAuth distribution)
+- Beta test with Dave
 
 ## Reference
 
@@ -100,7 +125,10 @@ Footer grid is 2-column (`1fr 1fr`) — yellow label left, slider right.
 ## Notes for Claude
 
 - **The white-stage architecture is locked.** Body green, transparent chrome, white stage. Don't propose alternatives unless explicitly asked.
+- **The Sheets schema (above) is locked.** Don't re-open per-hole column questions, date format, year-column vs year-tab, or 1/0 vs Y/N.
 - Slider switches are placeholder-only; wiring them is the next real task.
 - Paul works KISS, short answers, fast iteration. No re-litigation of decisions.
+- **Task-specific sessions.** Paul prefers one subject per session going forward. Don't sprawl.
+- Lead with a **TL;DR** on any answer longer than a few sentences.
 - Visual consistency matters — fixed layouts, no shifting elements.
-- Sandbox commits leave orphan `.git` lock files on Paul's Mac. He clears them with `rm ~/Documents/Studio/golf-scores/.git/HEAD.lock ~/Documents/Studio/golf-scores/.git/objects/maintenance.lock` before pushing via GitHub Desktop.
+- Sandbox commits leave orphan `.git` lock files on Paul's Mac. Fix: quit GitHub Desktop first, then `rm -f ~/Documents/Studio/Golf/.git/*.lock ~/Documents/Studio/Golf/.git/objects/*.lock ~/Documents/Studio/Golf/.git/refs/heads/*.lock`, then reopen GitHub Desktop.
