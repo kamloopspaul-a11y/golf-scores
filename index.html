@@ -3,6 +3,10 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.12.1 — April 25 2026
+  - Fix: iOS Safari bottom URL bar was overlaying PUTTS row (100dvh quirk)
+  - Switched .screen + body to 100svh (small viewport) so layout always
+    fits within chrome-visible area, regardless of URL bar state
   v9.12 — April 25 2026
   - Fix: PUTTS row missing on iPhone Safari (footer overflowing clipped .screen)
   - Footer: dropped 230px padding-bottom hack; justify-content flex-start; min-height 220+safe
@@ -122,12 +126,12 @@
     font-family: 'DM Sans', sans-serif;
     background: var(--green);
     color: var(--text-primary);
-    min-height: 100dvh;
+    min-height: 100svh;
     width: 100%;
     margin: 0 auto;
     overflow-x: hidden;
   }
-  .screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
+  .screen { display: none; flex-direction: column; height: 100svh; overflow: hidden; }
   .screen.active { display: flex; }
   /* ── MASTHEADS ─────────────────────────────────────── */
   .masthead, .hole-masthead, .card-masthead {
