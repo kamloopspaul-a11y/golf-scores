@@ -1,7 +1,7 @@
 // My Golf Scores — Service Worker
-// Caches all app assets for offline play
+// Network-first for HTML, cache-first for assets
 
-const CACHE_NAME = 'golf-scores-v11';
+const CACHE_NAME = 'golf-scores-v12';
 const ASSETS = [
   '/',
   '/index.html',
@@ -10,7 +10,7 @@ const ASSETS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap'
 ];
 
-// Install — cache all assets
+// Install — pre-cache assets, take over immediately
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME)
@@ -19,20 +19,35 @@ self.addEventListener('install', e => {
   );
 });
 
-// Activate — remove old caches
+// Activate — drop old caches, claim clients
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch — serve from cache, fall back to network
+// Fetch — network-first for HTML/navigations, cache-first for everything else
 self.addEventListener('fetch', e => {
+  const req = e.request;
+  const isHTML = req.mode === 'navigate'
+              || (req.headers.get('accept') || '').includes('text/html');
+
+  if (isHTML) {
+    e.respondWith(
+      fetch(req)
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req).then(c => c || caches.match('/index.html')))
+    );
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request)
-      .then(cached => cached || fetch(e.request))
-      .catch(() => caches.match('/index.html'))
+    caches.match(req).then(cached => cached || fetch(req))
   );
 });
