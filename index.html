@@ -3,6 +3,12 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.13 — April 25 2026
+  - Refactor: stage is now elastic (flex: 1 1 auto), footer is content-sized
+  - Stage absorbs viewport variation; footer stays exactly as tall as 6 rows
+    + safe-area-inset-bottom + 12px buffer. No more padding-bottom hacks.
+  - Reverted to 100dvh (svh had prior issues per Paul's note)
+  - Robust against iOS Safari URL bar overlay, dvh quirks, device variation
   v9.12.1 — April 25 2026
   - Fix: iOS Safari bottom URL bar was overlaying PUTTS row (100dvh quirk)
   - Switched .screen + body to 100svh (small viewport) so layout always
@@ -126,12 +132,12 @@
     font-family: 'DM Sans', sans-serif;
     background: var(--green);
     color: var(--text-primary);
-    min-height: 100svh;
+    min-height: 100dvh;
     width: 100%;
     margin: 0 auto;
     overflow-x: hidden;
   }
-  .screen { display: none; flex-direction: column; height: 100svh; overflow: hidden; }
+  .screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
   .screen.active { display: flex; }
   /* ── MASTHEADS ─────────────────────────────────────── */
   .masthead, .hole-masthead, .card-masthead {
@@ -188,7 +194,7 @@
   .hole-yardage    { margin-top: 8px; }
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-    flex: 0 0 268px;
+    flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     background: #fff;
@@ -421,13 +427,9 @@
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
-    min-height: calc(220px + env(safe-area-inset-bottom));
-    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
-    flex: 1 0 auto;
+    padding: 20px 20px calc(env(safe-area-inset-bottom) + 12px);
+    flex: 0 0 auto;
     color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
   }
   .footer-grid {
     display: grid;
@@ -490,10 +492,8 @@
       height: calc(150px + env(safe-area-inset-top));
       padding: calc(20px + env(safe-area-inset-top)) 20px 14px;
     }
-    .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-      flex-basis: 210px;
-    }
-    .footer { min-height: calc(240px + env(safe-area-inset-bottom)); }
+    /* stage is elastic — no flex-basis override needed on small screens */
+    /* footer is content-sized; no min-height needed */
     .score-btn { width: 64px; height: 64px; font-size: 32px; }
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
