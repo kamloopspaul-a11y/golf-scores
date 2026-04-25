@@ -3,6 +3,16 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.12 — April 25 2026
+  - Fix: PUTTS row missing on iPhone Safari (footer overflowing clipped .screen)
+  - Footer: dropped 230px padding-bottom hack; justify-content flex-start; min-height 220+safe
+  - Header (small-screen): height 170 -> 150, top padding 32 -> 20 (reclaim ~30px)
+  - Score-section (small-screen): flex-basis 228 -> 210
+  - Service worker cache bumped v12 -> v13
+  v9.11 — April 25 2026
+  - Hole footer: 6 stat rows (FIR/GIR/PEN/UD/X-UD/PUTTS); X-UD now manual rocker
+  - Apps Script schema: PEN/UD/X-UD/PUTTS/Score columns; in-place migration
+  - Service worker: network-first for HTML, cache-first for assets (v12)
   v9.2 — April 17 2026
   - Player entry: custom green checkmark button beside input (mirrors × design)
   - Checkmark dims when input empty, activates when text entered
@@ -407,13 +417,13 @@
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
-    min-height: calc(244px + env(safe-area-inset-bottom));
-    padding: 20px 20px calc(230px + env(safe-area-inset-bottom));
+    min-height: calc(220px + env(safe-area-inset-bottom));
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
     flex: 1 0 auto;
     color: white;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
   .footer-grid {
     display: grid;
@@ -473,13 +483,13 @@
   /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
   @media (max-height: 750px) {
     .masthead, .hole-masthead, .card-masthead {
-      height: calc(170px + env(safe-area-inset-top));
-      padding: calc(32px + env(safe-area-inset-top)) 20px 14px;
+      height: calc(150px + env(safe-area-inset-top));
+      padding: calc(20px + env(safe-area-inset-top)) 20px 14px;
     }
     .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-      flex-basis: 228px;
+      flex-basis: 210px;
     }
-    .footer { min-height: calc(284px + env(safe-area-inset-bottom)); }
+    .footer { min-height: calc(240px + env(safe-area-inset-bottom)); }
     .score-btn { width: 64px; height: 64px; font-size: 32px; }
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
