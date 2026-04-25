@@ -407,7 +407,7 @@
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
-    min-height: calc(212px + env(safe-area-inset-bottom));
+    min-height: calc(244px + env(safe-area-inset-bottom));
     padding: 20px 20px calc(130px + env(safe-area-inset-bottom));
     flex: 1 0 auto;
     color: white;
@@ -479,7 +479,7 @@
     .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
       flex-basis: 228px;
     }
-    .footer { min-height: calc(252px + env(safe-area-inset-bottom)); }
+    .footer { min-height: calc(284px + env(safe-area-inset-bottom)); }
     .score-btn { width: 64px; height: 64px; font-size: 32px; }
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
@@ -521,9 +521,13 @@
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
       <div class="fg-left">GIR</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">U&amp;D</div>
+      <div class="fg-left">PEN</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">3+ Putts</div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
@@ -579,11 +583,13 @@
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
       <div class="fg-left">GIR</div>
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-gir" onchange="statChanged('gir')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PLTY</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-plty" onchange="statChanged('plty')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">U/D</div>
+      <div class="fg-left">PEN</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-pen" onchange="statChanged('pen')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">UD</div>
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-ud" onchange="statChanged('ud')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">Putts</div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-xud" onchange="statChanged('xud')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
       <div class="fg-right"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
     </div>
   </div>
@@ -612,9 +618,13 @@
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
       <div class="fg-left">GIR</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">U&amp;D</div>
+      <div class="fg-left">PEN</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">3+ Putts</div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
@@ -644,9 +654,13 @@
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
       <div class="fg-left">GIR</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">U&amp;D</div>
+      <div class="fg-left">PEN</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">3+ Putts</div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
@@ -689,9 +703,13 @@
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
       <div class="fg-left">GIR</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">U&amp;D</div>
+      <div class="fg-left">PEN</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">3+ Putts</div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
   </div>
@@ -725,6 +743,7 @@ async function fetchWeather() {
   } catch(e) { state.weatherStr = "Weather unavailable"; }
   updateAllWeather();
 }
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function updateAllWeather() {
   ["weather-setup","weather-hole","weather-midround","weather-card","weather-success"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=state.weatherStr;
@@ -755,7 +774,7 @@ function renderPlayers() {
 }
 function appendPlayerRow(i){
   const list=document.getElementById('players-list');
-  const name=(state.players[i]||'').replace(/"/g,'&quot;');
+  const name=esc(state.players[i]||'');
   const row=document.createElement('div');
   row.className='player-row';
   row.innerHTML=`<input class="player-input" id="player-input-${i}" type="text"
@@ -812,7 +831,7 @@ function startRound() {
   state.holeList=[...COURSE.holes,...COURSE.holes];
   state.totalHoles=18;
   state.scores=state.players.map(()=>state.holeList.map(h=>h.par));
-  state.stats=Array.from({length:18},()=>({fir:null,gir:null,plty:null,ud:null,putts:2}));
+  state.stats=Array.from({length:18},()=>({fir:null,gir:null,pen:null,ud:null,xud:null,putts:2}));
   state.currentHole=0; state.activePlayer=0;
   state.roundStartTime = Date.now();
   localStorage.setItem('roundStartTime', state.roundStartTime);
@@ -863,7 +882,7 @@ function showHole(index){
 // ── STATS ─────────────────────────────────────────────
 function syncStatSliders(index){
   const st=state.stats[index]||{};
-  ['fir','gir','plty','ud'].forEach(k=>{
+  ['fir','gir','pen','ud','xud'].forEach(k=>{
     const el=document.getElementById('slider-'+k);
     if(el) el.checked = st[k]===1;
   });
@@ -952,7 +971,7 @@ function buildMidroundCard(){
   html+=`<td class="tot-col">${par9}</td></tr>`;
   state.players.forEach((name,pi)=>{
     const rowCls=pi%2===0?'':' row-alt';
-    html+=`<tr class="${rowCls}"><td>${name||'P'+(pi+1)}</td>`;
+    html+=`<tr class="${rowCls}"><td>${esc(name||'P'+(pi+1))}</td>`;
     let tot=0;
     state.scores[pi].slice(0,9).forEach((s,i)=>{ tot+=s; html+=renderScoreCell(s,holes[i].par); });
     html+=`<td class="tot-col">${tot}</td></tr>`;
@@ -989,7 +1008,7 @@ function buildSection(tableId,start,end,isBack){
   html+='</tr>';
   state.players.forEach((name,pi)=>{
     const rowCls=pi%2===0?'':' row-alt';
-    html+=`<tr class="${rowCls}"><td>${name||'P'+(pi+1)}</td>`;
+    html+=`<tr class="${rowCls}"><td>${esc(name||'P'+(pi+1))}</td>`;
     const segs=state.scores[pi].slice(start,end);
     let segTot=0;
     segs.forEach((s,i)=>{ segTot+=s; html+=renderScoreCell(s,holes[i].par); });
