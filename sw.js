@@ -1,7 +1,7 @@
 // My Golf Scores — Service Worker
 // Caches all app assets for offline play
 
-const CACHE_NAME = 'golf-scores-v9';
+const CACHE_NAME = 'golf-scores-v10';
 const ASSETS = [
   '/',
   '/index.html',
