@@ -3,6 +3,9 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.13.1 — April 25 2026
+  - Fix: footer min-height restored so non-hole screens (Setup, midround, card,
+    success) match the hole-screen footer height. Visual parity preserved.
   v9.13 — April 25 2026
   - Refactor: stage is now elastic (flex: 1 1 auto), footer is content-sized
   - Stage absorbs viewport variation; footer stays exactly as tall as 6 rows
@@ -427,6 +430,7 @@
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
+    min-height: calc(220px + env(safe-area-inset-bottom));
     padding: 20px 20px calc(env(safe-area-inset-bottom) + 12px);
     flex: 0 0 auto;
     color: white;
