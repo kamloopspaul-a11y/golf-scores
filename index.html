@@ -3,6 +3,12 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.18 — April 25 2026
+  - Hole header: PAR moved to left column (above the hole number, replacing
+    the "Hole" label). YARDS stays right. Better grouping — par is
+    intrinsic to the hole, yards is reference info.
+  - Hole number bumped one size: 56px -> 64px (default), 46px -> 52px (small)
+  - .hole-left now flex column; tight 2px gap between PAR row and number
   v9.17 — April 25 2026
   - Hole header: PAR + YARDS now inline on a single line, baseline-aligned
     with the bottom of the hole number. Right side compacts from 4-row
@@ -215,11 +221,10 @@
   .hole-top-row {
     display: flex; justify-content: space-between; align-items: flex-end;
   }
-  .hole-left .hole-label {
-    font-size: 10px; font-weight: 500; opacity: 0.55;
-    letter-spacing: 1px; text-transform: uppercase; color: white; margin-bottom: 1px;
+  .hole-left {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
   }
-  .hole-num { font-size: 56px; font-weight: 600; letter-spacing: -2px; line-height: 1; color: white; }
+  .hole-num { font-size: 64px; font-weight: 600; letter-spacing: -2px; line-height: 1; color: white; }
   .hole-right { display: inline-flex; align-items: baseline; gap: 14px; }
   .stat-pair  { display: inline-flex; align-items: baseline; gap: 4px; }
   .hole-stat-val   { font-size: 22px; font-weight: 600; color: white; line-height: 1; }
@@ -531,7 +536,7 @@
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
-    .hole-num { font-size: 46px; }
+    .hole-num { font-size: 52px; }
     .header-lower-title { font-size: 46px; }
     .success-body { padding: 24px; }
   }
@@ -591,11 +596,10 @@
     </div>
     <div class="hole-top-row">
       <div class="hole-left">
-        <div class="hole-label">Hole</div>
+        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
         <div class="hole-num" id="hole-num">1</div>
       </div>
       <div class="hole-right">
-        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
         <span class="stat-pair"><span class="hole-stat-label">YARDS</span><span class="hole-stat-val" id="hole-yards-display">275</span></span>
       </div>
     </div>
