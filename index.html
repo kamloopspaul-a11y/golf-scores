@@ -3,6 +3,17 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.17 — April 25 2026
+  - Hole header: PAR + YARDS now inline on a single line, baseline-aligned
+    with the bottom of the hole number. Right side compacts from 4-row
+    stack to one tidy strip. Better visual balance with the title screens.
+  - .hole-top-row align-items: center -> flex-end
+  v9.16 — April 25 2026
+  - Fonts: robust cross-device fallback chain for DM Sans (-apple-system,
+    BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial). Locks out
+    weird default fonts even if Google Fonts is blocked.
+  - Forced buttons/inputs/selects/textareas to inherit body font (overrides
+    browser/OS form-control defaults that would otherwise fall to system fonts)
   v9.15 — April 25 2026
   - "Final Round Score" -> "Final Score" (shorter title fits at hole-num size)
   - Title font now matches hole-num exactly: 56px default / 46px small-screen
@@ -129,6 +140,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  button, input, select, textarea { font: inherit; }
   :root {
     --green:       #377f09;
     --green-hover: #2e6b07;
@@ -148,7 +160,7 @@
   }
   html, body { height: 100%; overflow-x: hidden; overscroll-behavior: none; }
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: var(--green);
     color: var(--text-primary);
     min-height: 100dvh;
@@ -201,17 +213,17 @@
   }
   /* Lower Header — Hole screen */
   .hole-top-row {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: space-between; align-items: flex-end;
   }
   .hole-left .hole-label {
     font-size: 10px; font-weight: 500; opacity: 0.55;
     letter-spacing: 1px; text-transform: uppercase; color: white; margin-bottom: 1px;
   }
   .hole-num { font-size: 56px; font-weight: 600; letter-spacing: -2px; line-height: 1; color: white; }
-  .hole-right { text-align: right; }
-  .hole-stat-val   { font-size: 22px; font-weight: 600; color: white; }
-  .hole-stat-label { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.6px; color: white; margin-top: 1px; }
-  .hole-yardage    { margin-top: 8px; }
+  .hole-right { display: inline-flex; align-items: baseline; gap: 14px; }
+  .stat-pair  { display: inline-flex; align-items: baseline; gap: 4px; }
+  .hole-stat-val   { font-size: 22px; font-weight: 600; color: white; line-height: 1; }
+  .hole-stat-label { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.6px; color: white; }
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
     flex: 1 1 auto;
@@ -257,14 +269,14 @@
     touch-action: manipulation;
     background: var(--green-pale); border: 1px dashed var(--green);
     border-radius: 12px; padding: 9px 14px;
-    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 500;
     color: var(--green); cursor: pointer; width: 100%; margin-top: 2px;
     transition: background 0.15s;
   }
   .add-player-btn:hover { background: #d6edbe; }
   /* ── 3D BUTTONS ────────────────────────────────────── */
   .btn-3d {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     touch-action: manipulation;
     font-size: 16px; font-weight: 600;
     color: white; border: none; border-radius: 14px; cursor: pointer;
@@ -372,7 +384,7 @@
   .sc-table th:first-child, .sc-table td:first-child { width: 52px; }
   .sc-table th, .sc-table td { width: 28px; }
   .sc-table th {
-    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600;
     text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-primary);
     padding: 7px 4px; text-align: center;
     border-bottom: 2px solid var(--border); background: var(--green-pale);
@@ -418,7 +430,7 @@
     width: 100%; padding: 13px; margin-top: 10px;
     background: transparent; color: var(--bogey);
     border: 1px solid rgba(220,38,38,0.2); border-radius: 16px;
-    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 500;
     cursor: pointer; transition: background 0.15s;
   }
   .discard-btn:hover { background: #fef2f2; }
@@ -583,12 +595,8 @@
         <div class="hole-num" id="hole-num">1</div>
       </div>
       <div class="hole-right">
-        <div class="hole-stat-val" id="hole-par-display">4</div>
-        <div class="hole-stat-label">Par</div>
-        <div class="hole-yardage">
-          <div class="hole-stat-val" id="hole-yards-display">275</div>
-          <div class="hole-stat-label">Yards</div>
-        </div>
+        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
+        <span class="stat-pair"><span class="hole-stat-label">YARDS</span><span class="hole-stat-val" id="hole-yards-display">275</span></span>
       </div>
     </div>
   </div>
