@@ -15,12 +15,12 @@ in this folder. It supersedes the spec below for any in-flight task.
 
 ## Current Build Status
 
-**Version:** v9.15 — April 25, 2026
+**Version:** v9.21.1 — April 25, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Golf`
 **Platform:** PWA, hosted on GitHub Pages
-**Service Worker:** v18 (network-first for HTML, cache-first for assets)
+**Service Worker:** v25 (network-first for HTML, cache-first for assets)
 
 ---
 
@@ -72,7 +72,7 @@ in this folder. It supersedes the spec below for any in-flight task.
 | Name | Description |
 |------|-------------|
 | **Header Upper** | Transparent green band: Course/Weather row + Date/Duration row |
-| **Header Lower** | Title (non-hole screens) OR Hole number + Par/Yards (hole screen). Title font matches hole-num: 56px default / 46px small-screen. |
+| **Header Lower** | Bottom row of masthead, locked to min-height 86px (default) / 74px (small-screen) across all screens. Hole screen: hole-number on top + "PAR 4" below (centered column) on the left, "275 YDS" inline on the right. Non-hole screens: title (My Golf Scores / Front 9 Score / Final Score / Save Round) at 56/46px, bottom-anchored within the fixed row. |
 | **Counter** | Three circles: − \| jewel score \| + |
 | **Nav Dots** | 18 dots — sole progress indicator |
 | **Nav Buttons** | Back + Next (fixed position bottom of stage, all screens) |
@@ -98,12 +98,12 @@ in this folder. It supersedes the spec below for any in-flight task.
 | `hole` | Hole [N] | Counter, Nav Dots, Nav Buttons, 6-row stats footer |
 | `midround` | Front 9 Score | After Hole 9; scorecard table only |
 | `card` | Final Score | After Hole 18; back 9 table + summary |
-| `success` | Round Saved | Confirmation after posting |
+| `success` | Save Round | Confirmation after posting |
 
 ## Component Guidelines (Paul's design rules)
 
 - Header Upper: Course (yellow, left) + Weather (right) / Date (left) + Duration (right)
-- Header Lower: title at 56/46px matches hole-num size; bottom-anchored
+- Header Lower: bottom row min-height locked at 86/74; hole-num white 64/52; title 56/46; PAR/YDS pair 16px white
 - All mastheads: identical height across screens — no layout shift
 - Nav Buttons: always same fixed position
 - Progress: Nav Dots only. No thin bar.

@@ -180,5 +180,13 @@ When Paul says "wrap up" or "save state":
 
 ## Last Updated
 
-April 25, 2026 — added Engineering plugin skills, Chrome MCP, Gmail + Drive
-connector status. Bumped to v9.15 / SW v18.
+April 25, 2026 (late) — typography + masthead iterations. Bumped to v9.21.1 / SW v25.
+
+Late-session work covered:
+- Cross-device font fallback chain (DM Sans + system fonts)
+- Hole header redesign: number on top, PAR below, YDS inline on right
+- Unified bottom-row min-height (86/74) across all five screens
+- "Round Saved" -> "Save Round"
+- Hole number white, 64/52px
+
+Resume after Paul's weekly chat limit clears.

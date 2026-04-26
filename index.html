@@ -3,6 +3,16 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.21.1 — April 25 2026
+  - Hole number color reverted from yellow to white
+  v9.21 — April 25 2026
+  - Unified bottom-row height across all mastheads. Both .hole-top-row and
+    .header-lower-title now have min-height 86px (default) / 74px (small).
+    No vertical shift between Hole screens and non-Hole screens.
+  - .header-lower-title flexed with align-items: flex-end so title text sits
+    at the bottom of the (now fixed-height) row. Vertical positioning within
+    the row will be iterated next.
+  - "Round Saved" -> "Save Round"
   v9.20 — April 25 2026
   - Removed recessed circular background on hole number (too overbearing)
   - PAR / YDS labels + values dropped from 22px to 16px (more proportional
@@ -229,17 +239,21 @@
     letter-spacing: -2px; color: white;
     line-height: 1;
     white-space: nowrap;
+    min-height: 86px;
+    display: flex;
+    align-items: flex-end;
   }
   /* Lower Header — Hole screen */
   .hole-top-row {
     display: flex; justify-content: space-between; align-items: flex-end;
+    min-height: 86px;
   }
   .hole-left {
     display: flex; flex-direction: column; align-items: center; gap: 6px;
   }
   .hole-num {
     font-size: 64px; font-weight: 600; letter-spacing: -2px; line-height: 1;
-    color: var(--yellow);
+    color: white;
   }
   .hole-right { display: inline-flex; align-items: baseline; gap: 14px; }
   .stat-pair  { display: inline-flex; align-items: baseline; gap: 5px; }
@@ -553,7 +567,8 @@
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
     .hole-num { font-size: 52px; }
-    .header-lower-title { font-size: 46px; }
+    .header-lower-title { font-size: 46px; min-height: 74px; }
+    .hole-top-row { min-height: 74px; }
     .success-body { padding: 24px; }
   }
 </style>
@@ -738,7 +753,7 @@
       <div class="hu-date" id="success-date-display"></div>
       <div class="hu-duration" id="success-duration"></div>
     </div>
-    <div class="header-lower-title">Round Saved</div>
+    <div class="header-lower-title">Save Round</div>
   </div>
   <div class="success-body">
     <div id="success-spinner" class="spinner"></div>
