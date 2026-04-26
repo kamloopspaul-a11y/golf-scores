@@ -3,6 +3,14 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.15 — April 25 2026
+  - "Final Round Score" -> "Final Score" (shorter title fits at hole-num size)
+  - Title font now matches hole-num exactly: 56px default / 46px small-screen
+  - Tops and bottoms of titles now align with the hole number's visual mass
+  v9.14 — April 25 2026
+  - Fix: non-hole title (My Golf Scores / Front 9 Score / Final Round Score
+    / Round Saved) now visually aligned with hole-screen number — bumped
+    .header-lower-title from 26px to 36px (default) / 30px (small-screen)
   v9.13.1 — April 25 2026
   - Fix: footer min-height restored so non-hole screens (Setup, midround, card,
     success) match the hole-screen footer height. Visual parity preserved.
@@ -26,6 +34,14 @@
   - Hole footer: 6 stat rows (FIR/GIR/PEN/UD/X-UD/PUTTS); X-UD now manual rocker
   - Apps Script schema: PEN/UD/X-UD/PUTTS/Score columns; in-place migration
   - Service worker: network-first for HTML, cache-first for assets (v12)
+  v9.10 — April 24 2026
+  - Google Sheets webhook live (Apps Script bound to user's Sheet)
+  - Slider switches wired: FIR / GIR / U&D toggles, PUTTS now a counter
+  - PUTTS counter replaced "3+ Putts" toggle (default 2, range 0-9)
+  - Server-side Score column = strokes − putts
+  - Post Score spinner ("Posting…" -> "Posted!")
+  - Sheet schema: Player column dropped, Year + Tees added to Scorecard
+  - Folder rename: golf-scores -> Golf (remote repo name unchanged)
   v9.2 — April 17 2026
   - Player entry: custom green checkmark button beside input (mirrors × design)
   - Checkmark dims when input empty, activates when text entered
@@ -178,9 +194,10 @@
   }
   /* Lower Header — title for Home / Scorecard screens */
   .header-lower-title {
-    font-size: 26px; font-weight: 600;
-    letter-spacing: -0.5px; color: white;
-    line-height: 1.1;
+    font-size: 56px; font-weight: 600;
+    letter-spacing: -2px; color: white;
+    line-height: 1;
+    white-space: nowrap;
   }
   /* Lower Header — Hole screen */
   .hole-top-row {
@@ -503,6 +520,7 @@
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
     .hole-num { font-size: 46px; }
+    .header-lower-title { font-size: 46px; }
     .success-body { padding: 24px; }
   }
 </style>
@@ -656,7 +674,7 @@
       <div class="hu-date" id="card-date-display"></div>
       <div class="hu-duration" id="card-duration"></div>
     </div>
-    <div class="header-lower-title" id="card-title">Final Round Score</div>
+    <div class="header-lower-title" id="card-title">Final Score</div>
   </div>
   <div class="scorecard-wrap">
     <div class="sc-section"><table class="sc-table" id="sc-back"></table></div>
