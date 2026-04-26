@@ -3,6 +3,15 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.19 — April 25 2026
+  - Hole header redesign:
+    - Hole number on TOP of left column, PAR display below it
+    - Hole number gets a recessed circular pill background (rgba black 15%
+      + inset shadow) and changes color from white to var(--yellow)
+    - PAR / YDS labels now styled like values (22px, weight 600, white)
+    - YARDS abbreviated to YDS, placed AFTER the number ("275 YDS")
+    - Left column uses align-items: center so the hole-number circle visually
+      centers over the "PAR 4" row
   v9.18 — April 25 2026
   - Hole header: PAR moved to left column (above the hole number, replacing
     the "Hole" label). YARDS stays right. Better grouping — par is
@@ -222,13 +231,21 @@
     display: flex; justify-content: space-between; align-items: flex-end;
   }
   .hole-left {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
   }
-  .hole-num { font-size: 64px; font-weight: 600; letter-spacing: -2px; line-height: 1; color: white; }
+  .hole-num {
+    font-size: 64px; font-weight: 600; letter-spacing: -2px; line-height: 1;
+    color: var(--yellow);
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(0,0,0,0.15);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.20);
+    padding: 0 12px;
+  }
   .hole-right { display: inline-flex; align-items: baseline; gap: 14px; }
-  .stat-pair  { display: inline-flex; align-items: baseline; gap: 4px; }
+  .stat-pair  { display: inline-flex; align-items: baseline; gap: 6px; }
   .hole-stat-val   { font-size: 22px; font-weight: 600; color: white; line-height: 1; }
-  .hole-stat-label { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.6px; color: white; }
+  .hole-stat-label { font-size: 22px; font-weight: 600; color: white; line-height: 1; letter-spacing: 0.5px; }
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
     flex: 1 1 auto;
@@ -536,7 +553,7 @@
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
-    .hole-num { font-size: 52px; }
+    .hole-num { font-size: 52px; min-width: 80px; height: 80px; padding: 0 10px; }
     .header-lower-title { font-size: 46px; }
     .success-body { padding: 24px; }
   }
@@ -596,11 +613,11 @@
     </div>
     <div class="hole-top-row">
       <div class="hole-left">
-        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
         <div class="hole-num" id="hole-num">1</div>
+        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
       </div>
       <div class="hole-right">
-        <span class="stat-pair"><span class="hole-stat-label">YARDS</span><span class="hole-stat-val" id="hole-yards-display">275</span></span>
+        <span class="stat-pair"><span class="hole-stat-val" id="hole-yards-display">275</span><span class="hole-stat-label">YDS</span></span>
       </div>
     </div>
   </div>
