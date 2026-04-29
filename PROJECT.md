@@ -14,7 +14,7 @@
 ## Core Spec
 
 - 18 holes always (Mt. Paul looped twice)
-- Up to 5 players; only the primary player posts to Google Sheets
+- **Single-player app.** Decided 2026-04-29: this app is for players interested in their own performance — multi-player UI is being removed (was: up to 5 players, primary-only-posts).
 - Player names: 6-character max
 - Green theme: `#377f09`
 - Weather: live temp °C + wind km/h via Open-Meteo API (Kamloops coords)
@@ -137,8 +137,72 @@
 - [ ] **Wire or remove placeholder sliders** on non-hole screens (setup, midround, card, success).
 - [ ] **Create app icons** — `icon-192.png`, `icon-512.png`.
 - [ ] **Test SW offline behaviour**.
+- [ ] **Remove Player Entry on Setup screen** — single-player focus (decided 2026-04-29). Drops add-player rows, player-list management, "Add Player" button. Player name still stored (used in Date column / round identity), but no UI to enter multiple. Player chips on hole screen are already hidden for solo play, so no change there.
+- [ ] **Remove Front | Back | Total row from Save Round summary** — redundant with the Final Score screen the player just saw (smaller fonts, but same numbers). Save Round summary becomes 2×3 (FIR/GIR/PEN · UD/X-UD/PUTTS) or 3×3 with another row TBD.
 - [ ] **Privacy policy page** — needed before broader OAuth distribution.
 - [ ] **Beta test with Dave**.
+
+## Design Threads (open — not yet committed to Plan)
+
+### Save Round screen as a receipt (not a coach)
+*Conversation 2026-04-29.*
+
+**Premise.** The Save Round screen's job is to confirm the round was logged and present the day's numbers cleanly — like a grocery receipt, not a coach's report. Diagnosis ("you putt poorly") and trends ("you're improving on approach play") belong on the Dashboard where the data has context.
+
+**Implications:**
+- Net Score and the HCP/TYP/Δ strip discussed earlier all move to the Dashboard. Not on the Save Round hero.
+- Hero cell options now: bare Total (gross), score-to-par, or no hero (clean 3×3 equal grid). Pending pick.
+- The handicap math + ratings + 2024 baseline (HI 20) are still useful — they just power the Dashboard, not the post-round screen.
+
+### Dashboard purpose — progress, not diagnosis
+*Reflection 2026-04-29.*
+
+**Paul's framing:** *"I know which aspects of my game need work. My process is to work from the greens back to the tee box. What I don't know is my handicap, my rate of improvement, or if I'm improving at all. I need Course Management and Consistency."*
+
+**Job to be done by the Dashboard:**
+- *Am I improving?* — handicap/score trend over time
+- *How consistent am I?* — variance/spread of recent rounds
+- *Where can I improve Course Management?* — patterns in the stats (e.g., higher Score on certain holes, recurring penalty holes)
+- *NOT* "what's wrong with my game" — players already feel that after the round
+
+This reframes the Phase 2 work in `~/Documents/Studio/Dashboard/PROJECT.md`. The dashboard is a progress tracker first, an analytical tool second — not a weakness-finder.
+
+### Handicap-based Net score on Save Round screen
+*Conversation 2026-04-29.*
+
+**Premise.** The Save Round hero cell could show a Net score (Gross − Course Handicap) instead of a raw stat. Net translates the round into a number relative to the player's own ability — constructive without being diagnostic. Diagnosis (where strokes were lost, weakness trends) belongs to the Dashboard, not the post-round screen.
+
+**Math (locked).** Course Handicap (CH) = HI × (SR / 113) + (CR − Par). WHS formula. **HI** = Handicap Index, the portable ability rating; **CH** = Course Handicap, that ability translated into stroke allowance on a specific course (course-difficulty adjusted). No 0.96 multiplier (retired post-2020). Differential = (Score − CR) × 113 / SR. Handicap Index = average of best 8 of last 20 differentials.
+
+**Mt. Paul ratings (locked).** 18-hole loop, Par 64.
+
+| Tee set | CR | SR |
+|---|---|---|
+| Mens Blue | 59.0 | 86 |
+| Mens Red | 57.9 | 72 |
+| Ladies Blue | 62.2 | 95 |
+| Ladies Red | 58.6 | 88 |
+
+**Paul's 2024 baseline (Mens Blue, 62 rounds).**
+- All 62 rounds: HI ≈ **20** (best 8 differentials averaged 19.55) → Course Handicap on Mt. Paul Blue = **10**.
+- Most recent 20 (Aug 20 – Oct 4 2024): HI ≈ **27** → CH = 16. Late-season form drop pulls this number up; not representative of season form.
+- Recommendation: seed Settings with HI 20 as starting point, let server recompute as 2026 rounds arrive.
+
+**Implementation sketch (not committed).**
+- Add `Handicap` and `TeeSet` rows to the Settings tab. TeeSet is a single 4-option pick per course that encodes tee + gender (no separate gender field). Multi-course support: ratings table is keyed by course, so each new course Paul adds (Kamloops GC, etc.) extends the table without schema changes.
+- Server-side `recomputeHandicap()` runs at end of each successful post. Reads last 20 rounds from Scorecard tab, averages best 8 differentials, writes the result to Settings.
+- Server returns the updated HI in the post-response payload. PWA caches it in `localStorage.handicap` so Net can render on the Save Round screen even when offline.
+- Offline path: round queues in `pendingRounds[]` (the outbox). Next online post triggers the server recompute as a side effect; PWA syncs from the response. No client-side counting required — the Sheet is the source of truth.
+- Decimal HI for math, integer for display.
+- Display format on the hero: bare Net number (e.g., `70`), with subtitle `Net · HCP 20 · Mens Blue` so the math is transparent.
+
+**Decided 2026-04-29.** No manual-override mode. The PWA's HI is unambiguously a personal/practical number — never claims to be an official Golf Canada / WHS handicap (those are paper-attested anyway, Sheets isn't an approved source). Players with official handicaps keep them for tournaments and use ours for personal tracking; the two answer different questions and don't need to conflict.
+
+**Open questions.**
+- *Onboarding for a brand-new player with zero rounds?* Soft prompt for an estimate at first run, or hide Net until round 20 and surprise them with a computed value? Either works; needs UX judgment.
+- *Display format:* bare Net number vs. net-to-par. Conversational golf-talk uses net-to-par; scorecards show bare numbers.
+
+**Why not Plan yet.** Target-audience needs around manual override and onboarding flow are not yet settled. Defer wiring until after the visible Stats Summary on Save Round screen ships, and after a beta tester has played with it.
 
 ## Distribution & Onboarding
 
@@ -152,7 +216,7 @@
 
 ## Phase 2 — Analytics Dashboard
 
-See `~/Documents/Studio/Dashboard/PROJECT.md`. Per-player stat trends (FIR, GIR, U&D, 3-Putts, scoring trends), insights, improvement suggestions. Depends on captured data.
+See `~/Documents/Studio/Dashboard/PROJECT.md`. Per-player stat trends (FIR, GIR, UD, X-UD, PEN, 3-Putts, scoring trends), insights, improvement suggestions. Depends on captured data.
 
 ## Business / Marketability
 

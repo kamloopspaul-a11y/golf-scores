@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-04-29 — Stats summary design pass + handicap math + strategic reframe
+
+**Did:**
+- Picked up from yesterday's HANDOFF. Locked the stats-summary grid widths: **15/15/15/55** with Avg Score as the col-4 hero (Option A). Built styled mockups using the app's actual `--green-pale` / `--green` palette so the design isn't just a claude.ai-themed sketch.
+- **UD label cleanup.** Standardized to `UD` / `X-UD` per the schema. Live changes: `U/D` → `UD` in the success-summary cell label (`index.html` line 781), and `U&D, 3-Putts` → `UD, X-UD, PEN, 3-Putts` in PROJECT.md's Phase 2 paragraph. Left the historical changelog/journal entries and the `apps-script.gs` migration code alone — those reference old labels for legitimate reasons.
+- **Handicap math pass (real numbers, not theory).** Pulled the 2024 Golf Stats sheet via Drive MCP (62 rounds at Mt. Paul Mens Blue) and computed two HI estimates from the WHS formula: **HI ≈ 27** from the most recent 20 rounds (Aug 20 – Oct 4, late-season form drop) vs. **HI ≈ 20** from best 8 of all 62. Recommended HI 20 as the seed value. Course Handicap on Mt. Paul Blue from HI 20 = **10 strokes**.
+- **Locked the math + ratings in PROJECT.md.** Course Handicap (CH) = HI × (SR/113) + (CR − Par), no 0.96 multiplier (retired post-2020 under WHS). Acronyms HI/CH spelled out inline so the doc is self-explanatory next session. Mt. Paul ratings table (Mens Blue/Red, Ladies Blue/Red) embedded; Paul will provide Kamloops GC and other courses as we go.
+- **Server-side recompute design.** Apps Script reads last 20 rounds from Scorecard tab, averages best-8 differentials, writes to Settings. Returns updated HI in post-response payload. PWA caches in `localStorage.handicap` so Net renders even offline. No client-side counting needed — Sheet is the source of truth. Integrates cleanly with the offline-outbox pattern from yesterday.
+- **Manual-mode dropped.** Decided the PWA's HI is unambiguously a personal/practical number — never claims to be an official Golf Canada / WHS handicap (those are paper-attested anyway, Sheets isn't an approved source). One auto behavior, no override mode.
+- **Long teach-back on Net / Slope / Course Rating.** Paul wanted the mechanics in plain language. Walked through gross vs net, what Slope actually measures (relative-difficulty gap between scratch and bogey), what Course Rating measures (scratch's expected score), and how both feed into CH at two points (computing HI from a round, and converting HI back to a course-specific stroke allowance).
+- **Hero-cell strip design.** HCP 20 · TYP +6 · Δ. Paul liked it, picked red-for-bad / dark-green-for-good color scheme (avoids the "minus = good" confusion). For players with <20 rounds, show "N/A (Less than 20 Rounds entered)".
+- **Strategic reframe.** After designing the whole Net-Score-as-hero scheme, Paul stepped back: most casual golfers don't think in net terms. Diagnosis they already feel after a round. What they don't know is whether they're improving. **Save Round = receipt; Dashboard = progress tracker.** Net Score moves to the Dashboard. Save Round hero options now: bare Total, score-to-par, or no hero (3×3 equal grid).
+- **Two new Open Items.** *Remove Player Entry on Setup screen* (single-player focus) and *Remove Front|Back|Total row from Save Round summary* (redundant with the Final Score screen the player just left).
+- **Core Spec updated:** single-player app. Multi-player history preserved in the spec text but new direction unambiguous.
+- **Bonus quick fix:** Hole 18 button "View Card" → "Next" (committed yesterday in `f6623af`, pushed today).
+
+**Learned:**
+- Paul's real 2024 baseline: HI ≈20 (capable Paul), HI ≈27 (late-season Paul). Big gap — form trailed off in the last 6 weeks of the season.
+- WHS post-2020 dropped the 0.96 multiplier. Formula is just `mean(best 8 of last 20 differentials)`. Many older sources still mention 0.96.
+- Mt. Paul is short *and* relatively forgiving (low CR, low SR) → CH shrinks for everyone. A 20-handicap gets 10 strokes here vs ~23 on a tougher regulation course. The math correctly punishes/rewards course difficulty.
+- Iterative-thinker move: hero-cell design went Net → drop Net → "receipt" framing in one conversation. Decisions carry forward without re-litigation; we don't lose the handicap research, it just powers Dashboard now.
+- Paul's process for self-diagnosis: greens back to tee. Putting improved (lags closer, fewer 3-putts), approach play needs work (UD vs lay-up for higher GIR), driving recovered after slice correction. He knows his weaknesses. What he doesn't know is rate of improvement, current handicap, or whether he's improving at all. **That's the Dashboard's actual job-to-be-done.**
+
+**Next:**
+- Pick the Save Round hero: bare Total, score-to-par, or no hero (3×3 equal grid). Likely no hero — fits "receipt" framing best.
+- Confirm grid layout after removing Front|Back|Total row.
+- Failure-screen copy + 'i' overlay wording (still pending from yesterday).
+- Offline-queue / outbox build (still pending from yesterday).
+- Player Entry removal — touches Setup screen markup, player-list management code, "Add Player" button.
+- Update `Studio/Dashboard/PROJECT.md` with the progress-not-diagnosis reframe (next time Dashboard is the active project).
+
+---
+
 ## 2026-04-28 — v9.22: 2-row lower header + design pass on offline / failure screen
 
 **Did:**
