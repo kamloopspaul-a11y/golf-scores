@@ -4,11 +4,11 @@
 
 ## Status
 
-**Version:** v9.21.1 — April 25, 2026
+**Version:** v9.22 — April 28, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Golf`
-**Service Worker:** v25 (network-first for HTML, cache-first for assets)
+**Service Worker:** v26 (network-first for HTML, cache-first for assets)
 **Stage:** GUI polish / pre-release
 
 ## Core Spec
@@ -70,7 +70,7 @@
 | Name | Description |
 |------|-------------|
 | **Header Upper** | Transparent green band: Course/Weather + Date/Duration |
-| **Header Lower** | Bottom row, min-height 86 (default) / 74 (small-screen). Hole screen: hole-num on top + "PAR 4" below (centered column) on the left, "275 YDS" inline on the right. Non-hole screens: title (My Golf Scores / Front 9 Score / Final Score / Save Round) at 56/46px, bottom-anchored. |
+| **Header Lower** | 2-row strip, identical structure on every screen. **Top row** (`min-height 86/74`) holds title-or-hole-number, bottom-anchored. **Bottom row** (`min-height 38/32`) holds the PAR \| YDS strip on Hole screens, empty on the other four. `min-height` keeps the empty row from collapsing — every masthead has identical total height, no layout shift. Title 56/46px white; hole-num 64/52px white; PAR/YDS 16px white. |
 | **Counter** | Three circles: − \| jewel score \| + |
 | **Nav Dots** | 18 dots — sole progress indicator |
 | **Nav Buttons** | Back + Next, fixed position bottom of stage on all screens |
@@ -99,7 +99,7 @@
 ## Component Guidelines (Paul's design rules)
 
 - Header Upper: Course (yellow, left) + Weather (right) / Date (left) + Duration (right)
-- Header Lower: bottom-row min-height 86/74; hole-num white 64/52; title 56/46; PAR/YDS 16px white
+- Header Lower (2-row): top-row min-height 86/74 (title or hole-num, bottom-anchored); bot-row min-height 38/32 (PAR | YDS strip on Hole, empty elsewhere). Hole-num white 64/52; title 56/46; PAR/YDS 16px white.
 - All mastheads: identical height across screens — no layout shift
 - Nav Buttons: always same fixed position
 - Progress: Nav Dots only. No thin bar.
@@ -117,10 +117,18 @@
 - **Webhook stability** — Apps Script redeploys keep the same `/exec` URL.
 - **Folder name** — `Golf` (was `golf-scores`). Remote repo name unchanged.
 - **Title font parity** — non-hole title matches hole-num size (56/46px).
+- **Header Lower 2-row structure** — top 86/74 + bot 38/32, `min-height` holds empty bot-row. Identical total height on every screen.
 
 ## Open / Pending Items
 
-- [ ] **Stats summary on Save Round screen** — front/back/total, FIR/GIR/UD hit counts, avg Score. Fixed-height summary inside `.success-body` (`flex: 0 0 300px`, won't shift layout). ~30 min.
+- [ ] **Stats summary on Save Round screen + title swap** — fixed-height summary inside `.success-body` (`flex: 0 0 300px`, no layout shift). Layout: 4-col × 3-row grid, col 4 spans all 3 rows. Columns 15% / 15% / 15% / 55% (or 20/20/20/40 — pending pick).
+  - Row 1: Front · Back · Total
+  - Row 2: FIR · GIR · PEN
+  - Row 3: UD · X-UD · PUTTS
+  - Col 4 (rowspan 3): **Avg Score** as the hero number (per-hole average of server-derived `Score = strokes − putts`).
+  - Replaces the current `<h2>Posted!</h2>`. Title bar swaps instead: "Save Round" → **"Round Saved"** (yellow `var(--yellow)`) on success, failure copy in white.
+- [ ] **Offline-queue / outbox for unposted rounds** — replace the misleading "Saved locally" label. On post failure, write the full payload to `localStorage.pendingRounds[]` (queue, not overwrite — losing a round is worse than the extra code). On app boot, if the queue is non-empty show a banner on Setup: "Unposted round from <date> — [Repost] [Discard]". Successful repost shifts the queue. iOS Safari has no Background Sync support, so manual repost is the realistic path. KISS v1: queue + boot-banner + repost button. ~30–60 min.
+- [ ] **Failure screen — 'i' info overlay pattern** — small circular "i" icon on the failure screen opens a layered information message (e.g., "No Internet — your round is safe and queued; repost when back online"). First-time users get the explanation; returning users who recognize the situation can dismiss without wading through it. Wording + visual layout TBD.
 - [ ] **Tee selector** — Mt. Paul Blue + Red, one-time pick stored in Settings tab. Restructure `COURSE.holes` to `{par, blue, red}`. Future courses may add white/gold/black.
 - [ ] **Touch-target review** — `.putts-btn` (26×26) and `.switch` (53×26) below Apple's 44×44 minimum.
 - [ ] **Settings `Home Course` value** — currently seeded `Kamloops G&CC`, should be `Mt. Paul`.

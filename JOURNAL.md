@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-04-28 — v9.22: 2-row lower header + design pass on offline / failure screen
+
+**Did:**
+- **v9.22 shipped + pushed.** Restructured the Header Lower into a 2-row strip used by every screen — top row 86/74px holds title-or-hole-number; bottom row 38/32px holds the PAR | YDS strip on Hole screens, empty on the other four. `min-height` on the empty bottom row holds it open instead of the old `<img>` shim or padding-math kludge. Removed superseded `.hole-top-row` / `.hole-left` / `.hole-right` rules. SW bumped to v26. Visual confirmed by Paul on iPhone post-push: titles are fixed in place across all screens.
+- **Hole 18 button**: "View Card" → "Next" (one-line change to the ternary in `nextHole()`).
+- Built `_header-preview.html` — standalone side-by-side mockup of all four header states with dashed alignment guides. Untracked scratch file. Skipped Chrome MCP verification (extension wasn't connected this session).
+- Memory consolidation: updated PROJECT.md (status, Header Lower component, Component Guidelines, Locked Decisions, refined Stats Summary spec, added two new open items). Wrote live HANDOFF for next session. Retired stale `Studio/SESSION_HANDOFF.md` (April 17, superseded by `Claude/HANDOFF.md` architecture).
+
+**Decided (uncoded — for next session):**
+- **Stats summary grid**: 4 cols × 3 rows, col 4 spans all 3 rows. 15% / 15% / 15% / 55% (Avg Score as the hero number). Front/Back/Total · FIR/GIR/PEN · UD/X-UD/PUTTS. Replaces the `<h2>Posted!</h2>` — title swap instead.
+- **Title color**: success → "Round Saved" in yellow; failure → white copy. Color carries the meaning so no extra status text needed.
+- **Offline-queue is a queue, not overwrite.** `localStorage.pendingRounds[]` array. Boot-banner on Setup if non-empty. KISS v1, no SW Background Sync (iOS Safari doesn't support it).
+- **Failure screen 'i' overlay**: small circular info icon opens a layered message. First-time users get the explanation, returning users dismiss. Wording TBD next session.
+- Honest current-state diagnosis: today's "Saved locally" label is a lie — nothing is actually persisted on post failure. Round data lives only in `state` until JS process dies. Outbox pattern fixes this properly.
+
+**Learned:**
+- `min-height` on a row is the modern CSS-native equivalent of the old transparent-pixel shim. One line, no markup hack.
+- iOS Safari + PWA: tabs background and may be evicted under memory pressure. Any unposted round in memory is at risk. The fix is durable storage, not better UX copy.
+- Service Worker Background Sync API would auto-retry posts when network returns, but iOS Safari doesn't support it. Manual repost button is the realistic path for this audience.
+- Author identity in the sandboxed git: defaults to `modest-eloquent-volta@claude.(none)`; need to either set `user.name`/`user.email` per-repo or amend with `--reset-author` to match Paul's existing commits (`kamloopspaul-a11y <kamloopspaul@gmail.com>`).
+
+**Next:**
+- Pick the implementation order: stats-summary + title swap first (cosmetic, low risk), then the offline-queue + 'i' overlay (functional, more design).
+- Confirm column widths (15×3+55 vs 20×3+40) before building the grid.
+- Define exact failure-screen copy + 'i' overlay wording.
+- Quick wins still pending: Settings `Home Course` → "Mt. Paul", remove Discard Round button, clean up `.test_write` / `manifest-v1.json` / `sw-v1.js` strays.
+
+---
+
 ## 2026-04-26 — Memory architecture stand-up + Golf consolidation
 
 **Did:**
