@@ -964,7 +964,7 @@ function showHole(index){
   const pl=document.getElementById('progress-label'); if(pl) pl.textContent='Hole '+(index+1)+' of '+state.totalHoles;
   document.querySelectorAll('.dot').forEach((d,i)=>d.className='dot'+(i===index?' active':i<index?' scored':''));
   document.getElementById('back-btn').textContent=index===0?'Setup':'Back';
-  document.getElementById('next-btn').textContent=index===state.totalHoles-1?'View Card':'Next';
+  document.getElementById('next-btn').textContent='Next';
   updateScoreDisplay(index);
   syncStatSliders(index);
 }
