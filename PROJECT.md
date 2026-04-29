@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v9.22 — April 28, 2026
+**Version:** v9.23 — April 29, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Golf`
@@ -121,12 +121,8 @@
 
 ## Open / Pending Items
 
-- [ ] **Stats summary on Save Round screen + title swap** — fixed-height summary inside `.success-body` (`flex: 0 0 300px`, no layout shift). Layout: 4-col × 3-row grid, col 4 spans all 3 rows. Columns 15% / 15% / 15% / 55% (or 20/20/20/40 — pending pick).
-  - Row 1: Front · Back · Total
-  - Row 2: FIR · GIR · PEN
-  - Row 3: UD · X-UD · PUTTS
-  - Col 4 (rowspan 3): **Avg Score** as the hero number (per-hole average of server-derived `Score = strokes − putts`).
-  - Replaces the current `<h2>Posted!</h2>`. Title bar swaps instead: "Save Round" → **"Round Saved"** (yellow `var(--yellow)`) on success, failure copy in white.
+- [x] **Stats summary on Save Round screen** — SHIPPED v9.23. 4-col × 2-row grid, col 4 hero spans both rows. Columns 15% / 15% / 15% / 55%. Row 1: FIR · GIR · PEN. Row 2: UD · X-UD · PUTTS. Hero (rowspan 2): Actual Score (gross) at 56px with fine-print sub-line `HI: 20 | Net Score: 70`. Net = Gross − round(HI × SR/113 + (CR − Par)) using `COURSE.ratings`. HI + tee set are hardcoded for now (TODO: Settings lookup once onboarding is wired).
+- [ ] **Title swap on Save Round screen** — replace `<h2>Posted!</h2>` with title-bar swap: "Save Round" → **"Round Saved"** (yellow `var(--yellow)`) on success, failure copy in white. Pairs with the failure-screen 'i' overlay below.
 - [ ] **Offline-queue / outbox for unposted rounds** — replace the misleading "Saved locally" label. On post failure, write the full payload to `localStorage.pendingRounds[]` (queue, not overwrite — losing a round is worse than the extra code). On app boot, if the queue is non-empty show a banner on Setup: "Unposted round from <date> — [Repost] [Discard]". Successful repost shifts the queue. iOS Safari has no Background Sync support, so manual repost is the realistic path. KISS v1: queue + boot-banner + repost button. ~30–60 min.
 - [ ] **Failure screen — 'i' info overlay pattern** — small circular "i" icon on the failure screen opens a layered information message (e.g., "No Internet — your round is safe and queued; repost when back online"). First-time users get the explanation; returning users who recognize the situation can dismiss without wading through it. Wording + visual layout TBD.
 - [ ] **Tee selector** — Mt. Paul Blue + Red, one-time pick stored in Settings tab. Restructure `COURSE.holes` to `{par, blue, red}`. Future courses may add white/gold/black.
@@ -137,22 +133,19 @@
 - [ ] **Wire or remove placeholder sliders** on non-hole screens (setup, midround, card, success).
 - [ ] **Create app icons** — `icon-192.png`, `icon-512.png`.
 - [ ] **Test SW offline behaviour**.
-- [ ] **Remove Player Entry on Setup screen** — single-player focus (decided 2026-04-29). Drops add-player rows, player-list management, "Add Player" button. Player name still stored (used in Date column / round identity), but no UI to enter multiple. Player chips on hole screen are already hidden for solo play, so no change there.
-- [ ] **Remove Front | Back | Total row from Save Round summary** — redundant with the Final Score screen the player just saw (smaller fonts, but same numbers). Save Round summary becomes 2×3 (FIR/GIR/PEN · UD/X-UD/PUTTS) or 3×3 with another row TBD.
 - [ ] **Privacy policy page** — needed before broader OAuth distribution.
 - [ ] **Beta test with Dave**.
 
 ## Design Threads (open — not yet committed to Plan)
 
 ### Save Round screen as a receipt (not a coach)
-*Conversation 2026-04-29.*
+*Conversation 2026-04-29. Synthesis landed v9.23.*
 
 **Premise.** The Save Round screen's job is to confirm the round was logged and present the day's numbers cleanly — like a grocery receipt, not a coach's report. Diagnosis ("you putt poorly") and trends ("you're improving on approach play") belong on the Dashboard where the data has context.
 
-**Implications:**
-- Net Score and the HCP/TYP/Δ strip discussed earlier all move to the Dashboard. Not on the Save Round hero.
-- Hero cell options now: bare Total (gross), score-to-par, or no hero (clean 3×3 equal grid). Pending pick.
-- The handicap math + ratings + 2024 baseline (HI 20) are still useful — they just power the Dashboard, not the post-round screen.
+**Synthesis (built v9.23).** Hero cell shows **Actual Score (gross)** at 56px — the universal language every golfer reads instantly — with a fine-print sub-line below: `HI: 20 | Net Score: 70`. The dominant number is the receipt; the small line gives just enough analytical context for the curious player without dominating. The HCP/TYP/Δ strip we discussed (with red/green color coding for delta vs. average) is deferred to the Dashboard — that's where trend context belongs.
+
+**The handicap math + ratings + 2024 baseline (HI 20) are now live in the PWA** (COURSE.ratings extends with mensBlue/mensRed/ladiesBlue/ladiesRed). HI + tee set are still hardcoded; Settings-tab lookup arrives with onboarding.
 
 ### Dashboard purpose — progress, not diagnosis
 *Reflection 2026-04-29.*
