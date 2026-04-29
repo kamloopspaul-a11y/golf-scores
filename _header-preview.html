@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Header Preview — v9.22</title>
+<style>
+  :root { --green: #377f09; --yellow: #fbbf24; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #1a1a1a; color: #eee;
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+  h1 { font-size: 16px; font-weight: 500; margin: 0; opacity: 0.7; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .phone {
+    width: 390px; height: 280px;
+    background: var(--green);
+    overflow: hidden;
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .phone::after {
+    /* dashed alignment guide at the title baseline (~86px from top of lower-header) */
+    content: '';
+    position: absolute; left: 0; right: 0;
+    top: 124px;          /* 38 padding + 86 top-row */
+    border-top: 1px dashed rgba(255,255,255,0.25);
+    pointer-events: none;
+  }
+  .label {
+    text-align: center; font-size: 13px; opacity: 0.6;
+    width: 390px;
+  }
+  .masthead {
+    background: transparent; padding: 38px 20px 14px;
+    color: white; height: 240px; box-sizing: border-box;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .header-upper {
+    display: grid; grid-template-columns: 1fr 1fr;
+    row-gap: 3px; margin-bottom: 14px;
+  }
+  .hu-course   { font-size: 13px; color: var(--yellow); font-weight: 500; }
+  .hu-weather  { font-size: 13px; color: rgba(255,255,255,0.8); text-align: right; }
+  .hu-date     { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .hu-duration { font-size: 12px; color: rgba(255,255,255,0.5); text-align: right; }
+  /* NEW lower-header */
+  .header-lower      { display: flex; flex-direction: column; }
+  .header-lower-top  { min-height: 86px; display: flex; align-items: flex-end; }
+  .header-lower-bot  { min-height: 38px; display: flex; align-items: center;
+                       justify-content: space-between;
+                       outline: 1px dashed rgba(255,255,255,0.18); /* visible guide */ }
+  .header-lower-title {
+    font-size: 56px; font-weight: 600; letter-spacing: -2px;
+    color: white; line-height: 1; white-space: nowrap;
+  }
+  .hole-num {
+    font-size: 64px; font-weight: 600; letter-spacing: -2px;
+    line-height: 1; color: white;
+  }
+  .stat-pair       { display: inline-flex; align-items: baseline; gap: 5px; }
+  .hole-stat-val   { font-size: 16px; font-weight: 600; color: white; line-height: 1; }
+  .hole-stat-label { font-size: 16px; font-weight: 600; color: white; line-height: 1; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+
+<h1>Header preview — v9.22 (dashed guides show row boundaries)</h1>
+
+<div class="row">
+
+  <div>
+    <div class="phone">
+      <div class="masthead">
+        <div class="header-upper">
+          <div class="hu-course">Mt. Paul</div>
+          <div class="hu-weather">14&deg;C &middot; 8 km/h</div>
+          <div class="hu-date">2026-04-28</div>
+          <div class="hu-duration">00:42</div>
+        </div>
+        <div class="header-lower">
+          <div class="header-lower-top">
+            <div class="hole-num">5</div>
+          </div>
+          <div class="header-lower-bot">
+            <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val">4</span></span>
+            <span class="stat-pair"><span class="hole-stat-val">275</span><span class="hole-stat-label">YDS</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="label">Hole screen</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="masthead">
+        <div class="header-upper">
+          <div class="hu-course">Mt. Paul</div>
+          <div class="hu-weather">14&deg;C &middot; 8 km/h</div>
+          <div class="hu-date">2026-04-28</div>
+          <div class="hu-duration">00:42</div>
+        </div>
+        <div class="header-lower">
+          <div class="header-lower-top">
+            <div class="header-lower-title">Front 9 Score</div>
+          </div>
+          <div class="header-lower-bot"></div>
+        </div>
+      </div>
+    </div>
+    <div class="label">Non-hole screen (Front 9 Score)</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="masthead">
+        <div class="header-upper">
+          <div class="hu-course">Mt. Paul</div>
+          <div class="hu-weather">14&deg;C &middot; 8 km/h</div>
+          <div class="hu-date">2026-04-28</div>
+          <div class="hu-duration">00:42</div>
+        </div>
+        <div class="header-lower">
+          <div class="header-lower-top">
+            <div class="header-lower-title">My Golf Scores</div>
+          </div>
+          <div class="header-lower-bot"></div>
+        </div>
+      </div>
+    </div>
+    <div class="label">Non-hole screen (Setup)</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="masthead">
+        <div class="header-upper">
+          <div class="hu-course">Mt. Paul</div>
+          <div class="hu-weather">14&deg;C &middot; 8 km/h</div>
+          <div class="hu-date">2026-04-28</div>
+          <div class="hu-duration">00:42</div>
+        </div>
+        <div class="header-lower">
+          <div class="header-lower-top">
+            <div class="header-lower-title">Save Round</div>
+          </div>
+          <div class="header-lower-bot"></div>
+        </div>
+      </div>
+    </div>
+    <div class="label">Non-hole screen (Save Round)</div>
+  </div>
+
+</div>
+
+</body>
+</html>
