@@ -3,6 +3,30 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.23 — April 29 2026
+  - Save Round summary refactored: dropped redundant Front|Back|Total row
+    (already shown on the Final Score screen). Grid is now 4 cols x 2 rows
+    with col 4 spanning both rows. Hero shows Actual Score (gross) at 56px;
+    fine-print sub-line below: "HI: 20 | Net Score: 70". Stats cells are
+    now FIR/GIR/PEN on row 1 and UD/X-UD/PUTTS on row 2 (replaces the old
+    FIR/GIR/UD/Avg-Score row).
+  - COURSE constant extended with par (=64) and ratings table
+    (mensBlue/mensRed/ladiesBlue/ladiesRed, each {cr, sr}). Multi-course
+    ready — Kamloops GC and others extend the table without schema changes.
+  - Net Score calc inline (TODO: read HI + tee set from Settings tab once
+    onboarding is wired). Hardcoded HI 20 and Mens Blue for now.
+  - Single-player app — multi-player UI removed.
+    - Setup screen: dynamic players-list + "+ Add Player" button replaced
+      by a single static name input. Pre-filled with "Paul"; editable;
+      6-char max preserved.
+    - Removed JS: renderPlayers(), appendPlayerRow(), addPlayer(),
+      removePlayer(), confirmPlayer(), updateAddButtonVisibility(),
+      updateConfirmBtn(), MAX_PLAYERS constant.
+    - Removed CSS: .players-list, .add-player-btn, .remove-btn,
+      .confirm-btn (and .player-row's gap-for-remove-btn slot).
+    - state.players stays as a single-element array so downstream code
+      (scoring, posting, success summary) is unchanged.
+    - Player chips on hole screen continue to auto-hide for solo play.
   v9.22 — April 28 2026
   - Lower header restructured into a 2-row strip (.header-lower / -top / -bot).
     Top row 86/74px holds title-or-hole-number; bottom row 38/32px holds
@@ -267,7 +291,6 @@
   .hole-actions { background: #fff; }
   /* ── SETUP ─────────────────────────────────────────── */
   .setup-body { padding: 16px 24px; }
-  .players-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 5px; }
   .player-row   { display: flex; gap: 8px; align-items: center; }
   .player-input {
     flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -275,37 +298,6 @@
     color: var(--text-primary); outline: none; transition: border-color 0.2s;
   }
   .player-input:focus { border-color: var(--green); }
-  .remove-btn {
-    width: 34px; height: 34px; border-radius: 50%;
-    touch-action: manipulation;
-    border: 1px solid rgba(220,38,38,0.2); background: #fef2f2;
-    color: var(--bogey); font-size: 20px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: background 0.15s;
-  }
-  .remove-btn:hover { background: #fee2e2; }
-  /* Confirm (check) button — mirrors remove-btn dimensions, green tint */
-  .confirm-btn {
-    width: 34px; height: 34px; border-radius: 50%;
-    touch-action: manipulation;
-    border: 1px solid rgba(55,127,9,0.2); background: #f0f7e8;
-    color: var(--green); font-size: 18px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: background 0.15s, opacity 0.15s;
-    opacity: 0.35; padding: 0; line-height: 1;
-  }
-  .confirm-btn.active { opacity: 1; background: var(--green-pale); }
-  .confirm-btn.active:hover { background: #d6edbe; }
-  .add-player-btn {
-    display: flex; align-items: center; gap: 8px;
-    touch-action: manipulation;
-    background: var(--green-pale); border: 1px dashed var(--green);
-    border-radius: 12px; padding: 9px 14px;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 500;
-    color: var(--green); cursor: pointer; width: 100%; margin-top: 2px;
-    transition: background 0.15s;
-  }
-  .add-player-btn:hover { background: #d6edbe; }
   /* ── 3D BUTTONS ────────────────────────────────────── */
   .btn-3d {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -477,17 +469,23 @@
   .success-icon { width: 80px; height: 80px; background: var(--green-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; }
   .success-body h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 14px; }
   .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
-  /* Round summary on Posted! screen */
-  .success-summary { width: 100%; display: flex; flex-direction: column; gap: 8px; }
-  .ss-row { display: grid; gap: 8px; }
-  .ss-row.ss-score { grid-template-columns: repeat(3, 1fr); }
-  .ss-row.ss-stats { grid-template-columns: repeat(4, 1fr); }
+  /* Round summary on Save Round screen — 4x2 grid, col 4 hero spans both rows */
+  .success-summary {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 15% 15% 15% 55%;
+    grid-template-rows: 1fr 1fr;
+    gap: 6px;
+  }
   .ss-cell {
-    display: flex; flex-direction: column; align-items: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 8px 4px; background: var(--green-pale); border-radius: 10px;
   }
   .ss-val { font-size: 20px; font-weight: 600; color: var(--green); letter-spacing: -0.5px; line-height: 1.1; }
   .ss-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); margin-top: 3px; }
+  .ss-hero { grid-column: 4; grid-row: 1 / span 2; }
+  .ss-hero .ss-val { font-size: 56px; line-height: 1; letter-spacing: -2px; }
+  .ss-hero .ss-fine { font-size: 11px; color: var(--text-secondary); margin-top: 8px; letter-spacing: 0.3px; white-space: nowrap; }
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
@@ -594,8 +592,12 @@
     </div>
   </div>
   <div class="setup-body">
-    <div class="players-list" id="players-list"></div>
-    <button class="add-player-btn" id="add-player-btn" onclick="addPlayer()">+ Add Player</button>
+    <div class="player-row">
+      <input class="player-input" id="player-name" type="text"
+        placeholder="Your name" value="Paul" maxlength="6"
+        enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"
+        onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}" />
+    </div>
   </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
@@ -770,17 +772,16 @@
     <h2 id="success-title">Posting…</h2>
     <!-- <p id="success-msg">Your scores have been submitted to Google Sheets.</p> -->
     <div id="success-summary" class="success-summary">
-      <div class="ss-row ss-score">
-        <div class="ss-cell"><span class="ss-val" id="ss-front">–</span><span class="ss-lbl">Front</span></div>
-        <div class="ss-cell"><span class="ss-val" id="ss-back">–</span><span class="ss-lbl">Back</span></div>
-        <div class="ss-cell"><span class="ss-val" id="ss-total">–</span><span class="ss-lbl">Total</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-fir">–</span><span class="ss-lbl">FIR</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-gir">–</span><span class="ss-lbl">GIR</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-pen">–</span><span class="ss-lbl">PEN</span></div>
+      <div class="ss-cell ss-hero">
+        <span class="ss-val" id="ss-actual">–</span>
+        <span class="ss-fine"><span id="ss-hi">HI: –</span> | <span id="ss-net">Net Score: –</span></span>
       </div>
-      <div class="ss-row ss-stats">
-        <div class="ss-cell"><span class="ss-val" id="ss-fir">–</span><span class="ss-lbl">FIR</span></div>
-        <div class="ss-cell"><span class="ss-val" id="ss-gir">–</span><span class="ss-lbl">GIR</span></div>
-        <div class="ss-cell"><span class="ss-val" id="ss-ud">–</span><span class="ss-lbl">UD</span></div>
-        <div class="ss-cell"><span class="ss-val" id="ss-score">–</span><span class="ss-lbl">Avg Score</span></div>
-      </div>
+      <div class="ss-cell"><span class="ss-val" id="ss-ud">–</span><span class="ss-lbl">UD</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-xud">–</span><span class="ss-lbl">X-UD</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-putts">–</span><span class="ss-lbl">PUTTS</span></div>
     </div>
   </div>
   <div class="hole-actions">
@@ -808,6 +809,13 @@
 // ── COURSE (variable for future multi-course support) ──
 const COURSE = {
   name: "Mt. Paul",
+  par: 64,            // 18-hole round (looped twice; per-loop par 32)
+  ratings: {          // 18-hole CR/SR by tee set. Multi-course-ready.
+    mensBlue:   { cr: 59.0, sr: 86 },
+    mensRed:    { cr: 57.9, sr: 72 },
+    ladiesBlue: { cr: 62.2, sr: 95 },
+    ladiesRed:  { cr: 58.6, sr: 88 }
+  },
   holes: [
     {par:4,yards:275},{par:3,yards:137},{par:3,yards:179},
     {par:4,yards:300},{par:3,yards:95 },{par:4,yards:345},
@@ -815,7 +823,6 @@ const COURSE = {
   ]
 };
 const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbzYOZI0wy2H5CQNf8TLInatEwZKDAX4SA5ij0Z5RcX4Bv81MscF_aRlSDW08KwbS1Ud5w/exec";
-const MAX_PLAYERS = 4;
 let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
   scores:[], holeList:[], totalHoles:18, weatherStr:"—",
@@ -855,67 +862,15 @@ function formatDate(iso) {
   const [y,m,d]=iso.split('-');
   return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m)-1]+" "+parseInt(d)+", "+y;
 }
-// ── PLAYERS ──────────────────────────────────────────
-function renderPlayers() {
-  const list=document.getElementById('players-list'); list.innerHTML='';
-  state.players.forEach((_,i)=>appendPlayerRow(i));
-  updateAddButtonVisibility();
-}
-function appendPlayerRow(i){
-  const list=document.getElementById('players-list');
-  const name=esc(state.players[i]||'');
-  const row=document.createElement('div');
-  row.className='player-row';
-  row.innerHTML=`<input class="player-input" id="player-input-${i}" type="text"
-      placeholder="Player ${i+1}" value="${name}" maxlength="6"
-      enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"
-      oninput="state.players[${i}]=this.value; updateConfirmBtn(${i})"
-      onkeydown="if(event.key==='Enter'){event.preventDefault(); confirmPlayer(${i});}">
-      <button class="confirm-btn" id="confirm-btn-${i}" type="button" onclick="confirmPlayer(${i})" aria-label="Confirm name">✓</button>
-      ${i>0?`<button class="remove-btn" type="button" onclick="removePlayer(${i})">×</button>`:'<div style="width:34px;flex-shrink:0"></div>'}`;
-  list.appendChild(row);
-  updateConfirmBtn(i);
-}
-function updateAddButtonVisibility(){
-  document.getElementById('add-player-btn').style.display=state.players.length>=MAX_PLAYERS?'none':'flex';
-}
-function updateConfirmBtn(i){
-  const input=document.getElementById('player-input-'+i);
-  const btn=document.getElementById('confirm-btn-'+i);
-  if(!input||!btn) return;
-  if(input.value.trim().length>0) btn.classList.add('active');
-  else btn.classList.remove('active');
-}
-function addPlayer() {
-  if(state.players.length>=MAX_PLAYERS) return;
-  const i=state.players.length;
-  state.players.push("");
-  appendPlayerRow(i);
-  updateAddButtonVisibility();
-  // Focus synchronously inside the user-gesture handler — iOS-safe
-  const el=document.getElementById('player-input-'+i);
-  if(el) el.focus();
-}
-function removePlayer(i){ state.players.splice(i,1); renderPlayers(); }
-function confirmPlayer(i){
-  const input=document.getElementById('player-input-'+i);
-  if(!input||!input.value.trim()) return;
-  state.players[i]=input.value.trim();
-  const nextInput=document.getElementById('player-input-'+(i+1));
-  if(nextInput){
-    nextInput.focus();
-  } else if(state.players.length<MAX_PLAYERS){
-    addPlayer();
-  } else {
-    input.blur();
-  }
+// ── PLAYER NAME (single-player app) ──────────────────
+function readPlayerName(){
+  const el=document.getElementById('player-name');
+  const v=el ? el.value.trim() : '';
+  return v.length ? v : 'Paul';
 }
 // ── START ─────────────────────────────────────────────
 function startRound() {
-  // Read all visible player inputs directly
-  const inputs = document.querySelectorAll('.player-input');
-  state.players = Array.from(inputs).map(el=>el.value.trim()).filter(p=>p.length>0);
-  if(!state.players.length) state.players=["Paul"];
+  state.players = [readPlayerName()];
   state.date=new Date().toISOString().split('T')[0];
   state.holeList=[...COURSE.holes,...COURSE.holes];
   state.totalHoles=18;
@@ -1125,34 +1080,45 @@ function goBackToRound(){
   state.currentHole=state.totalHoles-1; showHole(state.currentHole); showScreen('hole');
 }
 // ── SUCCESS SUMMARY ──────────────────────────────────
+function courseHandicap(hi, teeKey){
+  const tee = COURSE.ratings[teeKey] || COURSE.ratings.mensBlue;
+  return Math.round(hi * (tee.sr / 113) + (tee.cr - COURSE.par));
+}
 function renderSuccessSummary(){
   const holes = (state.scores[0]||[]);
-  const front = holes.slice(0,9).reduce((a,b)=>a+(b||0),0);
-  const back  = holes.slice(9,18).reduce((a,b)=>a+(b||0),0);
-  const total = front + back;
-  let fir=0, gir=0, ud=0, puttsTotal=0, puttsHoles=0;
+  const total = holes.reduce((a,b)=>a+(b||0),0);
+  let fir=0, gir=0, pen=0, ud=0, xud=0, puttsTotal=0;
   (state.stats||[]).forEach(s=>{
     if(!s) return;
     if(s.fir===1) fir++;
     if(s.gir===1) gir++;
+    if(s.pen===1) pen++;
     if(s.ud===1)  ud++;
-    if(typeof s.putts === "number"){ puttsTotal += s.putts; puttsHoles++; }
+    if(s.xud===1) xud++;
+    if(typeof s.putts === "number") puttsTotal += s.putts;
   });
-  const holesPlayed = holes.filter(v=>typeof v==="number" && v>0).length;
-  const avgScore = holesPlayed > 0 ? ((total - puttsTotal)/holesPlayed) : 0;
+  // TODO: read HI + teeKey from Settings tab once onboarding is wired.
+  const HI = 20;
+  const teeKey = "mensBlue";
+  const ch = courseHandicap(HI, teeKey);
+  const net = total - ch;
   const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
-  set("ss-front", front);
-  set("ss-back",  back);
-  set("ss-total", total);
-  set("ss-fir",   fir);
-  set("ss-gir",   gir);
-  set("ss-ud",    ud);
-  set("ss-score", avgScore.toFixed(1));
+  set("ss-fir",    fir);
+  set("ss-gir",    gir);
+  set("ss-pen",    pen);
+  set("ss-ud",     ud);
+  set("ss-xud",    xud);
+  set("ss-putts",  puttsTotal);
+  set("ss-actual", total);
+  set("ss-hi",     "HI: " + HI);
+  set("ss-net",    "Net Score: " + net);
 }
 function clearSuccessSummary(){
-  ["ss-front","ss-back","ss-total","ss-fir","ss-gir","ss-ud","ss-score"].forEach(id=>{
+  ["ss-fir","ss-gir","ss-pen","ss-ud","ss-xud","ss-putts","ss-actual"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent="–";
   });
+  const hi=document.getElementById("ss-hi"); if(hi) hi.textContent="HI: –";
+  const net=document.getElementById("ss-net"); if(net) net.textContent="Net Score: –";
 }
 // ── SUBMIT ────────────────────────────────────────────
 async function submitRound(){
@@ -1187,7 +1153,8 @@ function newRound(){
   clearSuccessSummary();
   localStorage.removeItem('roundStartTime');
   if(durationTimer){ clearInterval(durationTimer); durationTimer=null; }
-  renderPlayers(); showScreen('setup');
+  const el=document.getElementById('player-name'); if(el) el.value='Paul';
+  showScreen('setup');
 }
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1203,7 +1170,7 @@ if(savedStart){
   state.roundStartTime = parseInt(savedStart, 10);
   durationTimer = setInterval(updateAllWeather, 30000);
 }
-renderPlayers(); fetchWeather();
+fetchWeather();
 </script>
 </body>
 </html>
