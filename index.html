@@ -3,6 +3,13 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.22 — April 28 2026
+  - Lower header restructured into a 2-row strip (.header-lower / -top / -bot).
+    Top row 86/74px holds title-or-hole-number; bottom row 38/32px holds
+    PAR | YDS strip on Hole screens, empty on the other four. min-height on
+    .header-lower-bot keeps the row from collapsing on non-Hole screens, so
+    every masthead has identical total height. No layout shift between screens.
+  - Removed .hole-top-row / .hole-left / .hole-right (superseded).
   v9.21.1 — April 25 2026
   - Hole number color reverted from yellow to white
   v9.21 — April 25 2026
@@ -233,30 +240,20 @@
     font-size: 12px; color: rgba(255,255,255,0.5);
     text-align: right; white-space: nowrap;
   }
-  /* Lower Header — title for Home / Scorecard screens */
+  /* Lower Header — 2-row strip, identical structure on every screen */
+  .header-lower      { display: flex; flex-direction: column; }
+  .header-lower-top  { min-height: 86px; display: flex; align-items: flex-end; }
+  .header-lower-bot  { min-height: 38px; display: flex; align-items: center;
+                       justify-content: space-between; }
   .header-lower-title {
-    font-size: 56px; font-weight: 600;
-    letter-spacing: -2px; color: white;
-    line-height: 1;
-    white-space: nowrap;
-    min-height: 86px;
-    display: flex;
-    align-items: flex-end;
-  }
-  /* Lower Header — Hole screen */
-  .hole-top-row {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    min-height: 86px;
-  }
-  .hole-left {
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-size: 56px; font-weight: 600; letter-spacing: -2px;
+    color: white; line-height: 1; white-space: nowrap;
   }
   .hole-num {
-    font-size: 64px; font-weight: 600; letter-spacing: -2px; line-height: 1;
-    color: white;
+    font-size: 64px; font-weight: 600; letter-spacing: -2px;
+    line-height: 1; color: white;
   }
-  .hole-right { display: inline-flex; align-items: baseline; gap: 14px; }
-  .stat-pair  { display: inline-flex; align-items: baseline; gap: 5px; }
+  .stat-pair       { display: inline-flex; align-items: baseline; gap: 5px; }
   .hole-stat-val   { font-size: 16px; font-weight: 600; color: white; line-height: 1; }
   .hole-stat-label { font-size: 16px; font-weight: 600; color: white; line-height: 1; letter-spacing: 0.5px; }
   /* ── CONTENT AREA (shared sizing across all screens) ── */
@@ -567,8 +564,9 @@
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
     .hole-num { font-size: 52px; }
-    .header-lower-title { font-size: 46px; min-height: 74px; }
-    .hole-top-row { min-height: 74px; }
+    .header-lower-title { font-size: 46px; }
+    .header-lower-top { min-height: 74px; }
+    .header-lower-bot { min-height: 32px; }
     .success-body { padding: 24px; }
   }
 </style>
@@ -590,7 +588,10 @@
       <div class="hu-date" id="setup-date-display"></div>
       <div class="hu-duration"></div>
     </div>
-    <div class="header-lower-title">My Golf Scores</div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">My Golf Scores</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
   </div>
   <div class="setup-body">
     <div class="players-list" id="players-list"></div>
@@ -625,12 +626,12 @@
       <div class="hu-date" id="hole-date-display"></div>
       <div class="hu-duration" id="hole-duration">00:00</div>
     </div>
-    <div class="hole-top-row">
-      <div class="hole-left">
+    <div class="header-lower">
+      <div class="header-lower-top">
         <div class="hole-num" id="hole-num">1</div>
-        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
       </div>
-      <div class="hole-right">
+      <div class="header-lower-bot">
+        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
         <span class="stat-pair"><span class="hole-stat-val" id="hole-yards-display">275</span><span class="hole-stat-label">YDS</span></span>
       </div>
     </div>
@@ -682,7 +683,10 @@
       <div class="hu-date" id="midround-date-display"></div>
       <div class="hu-duration" id="midround-duration"></div>
     </div>
-    <div class="header-lower-title">Front 9 Score</div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">Front 9 Score</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
   </div>
   <div class="midround-wrap">
     <div class="sc-section"><table class="sc-table" id="sc-midround"></table></div>
@@ -717,7 +721,10 @@
       <div class="hu-date" id="card-date-display"></div>
       <div class="hu-duration" id="card-duration"></div>
     </div>
-    <div class="header-lower-title" id="card-title">Final Score</div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title" id="card-title">Final Score</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
   </div>
   <div class="scorecard-wrap">
     <div class="sc-section"><table class="sc-table" id="sc-back"></table></div>
@@ -753,7 +760,10 @@
       <div class="hu-date" id="success-date-display"></div>
       <div class="hu-duration" id="success-duration"></div>
     </div>
-    <div class="header-lower-title">Save Round</div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">Save Round</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
   </div>
   <div class="success-body">
     <div id="success-spinner" class="spinner"></div>
