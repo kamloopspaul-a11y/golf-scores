@@ -121,6 +121,17 @@
 
 ## Open / Pending Items
 
+### Hot list — post-publish iPhone feedback (2026-04-29 evening)
+
+- [ ] **Player name on Setup screen → non-editable display.** The single input field becomes display-only on Setup. Editable name moves into onboarding (first run / install) and Settings tab. Match Setup's player-name styling to how it appears on other screens. Default value still "Paul" until the install step is built.
+- [ ] **Drop the "!" from "Posted!"** — title becomes plain "Posted" (or whatever the title-swap design lands on; this nudge probably gets folded into the planned "Save Round → Round Saved" yellow title swap).
+- [ ] **Hero cell width 55% → 40%.** Grid columns become 20% / 20% / 20% / 40% (was 15/15/15/55). The 55% hero was clipping the right edge of the stage on iPhone. Small cells get more breathing room as a side effect.
+- [ ] **Match Hero (Actual Score) font size to the page title.** Page title is 56/46px (default/small-screen); hero `.ss-val` is currently 56px with no small-screen rule. Add a small-screen variant so the hero scales the same way the title does, and verify visual parity on iPhone.
+
+### Considerations (open)
+
+- **Track Stats Too? toggle on Setup screen.** Now that Player Entry is gone, Setup is sparse — just a name and a Start Round button. Worth giving Setup a real job: a Yes/No toggle for stats tracking. If No, the hole-screen footer (FIR/GIR/PEN/UD/X-UD/PUTTS sliders) stays empty for casual players who just want to track score. If Yes, the footer is live. Default TBD. Open question: where does the toggle state live (per-round in `state` only, or persisted in Settings as a default-on/default-off preference)? This also resolves the "what's the Setup button on Hole 1 actually for" question — it'd be a meaningful pre-round preference picker instead of a stub.
+
 - [x] **Stats summary on Save Round screen** — SHIPPED v9.23. 4-col × 2-row grid, col 4 hero spans both rows. Columns 15% / 15% / 15% / 55%. Row 1: FIR · GIR · PEN. Row 2: UD · X-UD · PUTTS. Hero (rowspan 2): Actual Score (gross) at 56px with fine-print sub-line `HI: 20 | Net Score: 70`. Net = Gross − round(HI × SR/113 + (CR − Par)) using `COURSE.ratings`. HI + tee set are hardcoded for now (TODO: Settings lookup once onboarding is wired).
 - [ ] **Title swap on Save Round screen** — replace `<h2>Posted!</h2>` with title-bar swap: "Save Round" → **"Round Saved"** (yellow `var(--yellow)`) on success, failure copy in white. Pairs with the failure-screen 'i' overlay below.
 - [ ] **Offline-queue / outbox for unposted rounds** — replace the misleading "Saved locally" label. On post failure, write the full payload to `localStorage.pendingRounds[]` (queue, not overwrite — losing a round is worse than the extra code). On app boot, if the queue is non-empty show a banner on Setup: "Unposted round from <date> — [Repost] [Discard]". Successful repost shifts the queue. iOS Safari has no Background Sync support, so manual repost is the realistic path. KISS v1: queue + boot-banner + repost button. ~30–60 min.

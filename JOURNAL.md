@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-04-29 (evening) — v9.23 ship: single-player + Save Round refactor + Mt. Paul ratings live
+
+**Did:**
+- **Removed multi-player UI entirely** (decided yesterday, executed today). Setup screen has a single editable name input pre-filled "Paul". Net −68 lines of code in `index.html`. `state.players` stays as a single-element array so all downstream scoring/posting/summary code is untouched.
+- **Refactored Save Round summary** per Paul's spec. Grid is now 4 cols × 2 rows with col 4 hero spanning both rows. Widths 15/15/15/55. Hero shows **Actual Score (gross)** at 56px with fine-print sub-line `HI: 20 | Net Score: 70` below. Stats cells: FIR/GIR/PEN row 1, UD/X-UD/PUTTS row 2. Replaces the old Front/Back/Total + 4-stat dual-row layout.
+- **Mt. Paul ratings now live in `COURSE.ratings`** (mensBlue/mensRed/ladiesBlue/ladiesRed, each `{cr, sr}`). Added `COURSE.par = 64`. Multi-course architecture ready — Kamloops GC and others extend the table without schema changes.
+- **Net Score wired inline.** New `courseHandicap(hi, teeKey)` helper applies the WHS formula. `renderSuccessSummary()` computes Net = Gross − round(CH). HI 20 and `mensBlue` are hardcoded for now (TODO: read from Settings tab once onboarding is wired).
+- **PROJECT.md updates:** v9.22 → v9.23, multiple Open Items closed (Player Entry removal, Front|Back|Total row removal, stats-summary built), "Save Round as receipt" design thread updated to capture the synthesis (gross hero + analytical fine print, not no-hero).
+- Two commits today (`83c5e35` from this morning's design pass + `88517fe` for v9.23 implementation), both published.
+- **Captured post-publish iPhone feedback** as a "Hot list" subsection at the top of Open Items: non-editable Setup name (with name capture moving to install/onboarding), drop "!" from "Posted!", hero width 55% → 40% (was clipping the stage right edge on iPhone), match hero font to page title sizing.
+- **New Consideration captured:** "Track Stats Too?" toggle on Setup screen. Gives Setup a real job now that Player Entry is gone, and resolves the "what's the Setup button on Hole 1 actually for" question. If No → hole-screen footer stays empty (casual mode). If Yes → footer sliders are live.
+
+**Learned:**
+- 55% hero clipped the stage edge on iPhone. Designing at desktop widths in claude.ai-themed mockups underestimates the proportional weight on a 390px viewport. Next time, mock at iPhone width specifically.
+- Hero font 56px vs page title 46px (small-screen) is a mismatch — the hero is bigger than the title on small screens. Either both should follow the same media-query scaling, or the hero needs an explicit small-screen rule. Worth adding to the "small-screen" CSS group.
+- `node --check` on the inline JS (extracted from `<script>`) is a fast confidence check between edits — caught one syntax issue early in the refactor.
+- Iterative-thinker move in real-time: "no hero" (yesterday's reframe) → "Actual Score hero with HI/Net fine print" (today's synthesis). The receipt framing didn't get abandoned, just refined to include a small analytical sidebar inside the receipt.
+
+**Next:**
+- Hot list (UI polish): non-editable name + name moves to install, drop "!" from Posted, hero 55→40%, hero font scaling.
+- Make the Track Stats Too? decision and either build it or park it explicitly.
+- Pending from prior sessions: title swap on success ("Save Round" → "Round Saved" yellow), failure-screen 'i' info overlay (still TBD wording), offline-queue / outbox build.
+- Tee selector + Settings tab `Handicap` / `TeeSet` rows (unblocks the Net Score from its hardcoded HI 20 / mensBlue).
+- Quick wins still pending: Settings `Home Course` value, remove Discard Round button, cleanup strays (`.test_write`, `manifest-v1.json`, `sw-v1.js`), app icons.
+
+---
+
 ## 2026-04-29 — Stats summary design pass + handicap math + strategic reframe
 
 **Did:**
