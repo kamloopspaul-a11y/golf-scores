@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v9.23 — April 29, 2026
+**Version:** v9.24 — April 30, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Golf`
@@ -118,17 +118,34 @@
 - **Folder name** — `Golf` (was `golf-scores`). Remote repo name unchanged.
 - **Title font parity** — non-hole title matches hole-num size (56/46px).
 - **Header Lower 2-row structure** — top 86/74 + bot 38/32, `min-height` holds empty bot-row. Identical total height on every screen.
+- **Add Players permanently removed.** Single-player app, no revisiting. Setup has one player only.
+- **Setup screen** — Record Stats toggle + Start Round button. That's it. No player name input (display-only), no tee selector per-round.
+- **Player Profile** — name, home tees, HI stored locally. Rarely changed. Accessible via a Settings link on Setup, not a per-round prompt.
+- **Tee selection** — lives in Player Profile, not Setup. Set once, change only when needed.
+- **Cheering.mp3** — Easter egg. No toggle, not documented. Stays as-is.
+- **HI with <20 rounds** — WHS scaling table (best 1 of 3, best 2 of 6, etc.). Show "—" until round 3. No hardcoded default.
+- **Multi-course strategy** — local-first, API fallback. Each course fetched from API once, then cached in localStorage permanently. Pre-load regional courses. Manual entry as fallback if not in API.
 
 ## Open / Pending Items
 
 ### Hot list — post-publish iPhone feedback (2026-04-29 evening)
 
-- [ ] **Player name on Setup screen → non-editable display.** The single input field becomes display-only on Setup. Editable name moves into onboarding (first run / install) and Settings tab. Match Setup's player-name styling to how it appears on other screens. Default value still "Paul" until the install step is built.
-- [ ] **Drop the "!" from "Posted!"** — title becomes plain "Posted" (or whatever the title-swap design lands on; this nudge probably gets folded into the planned "Save Round → Round Saved" yellow title swap).
-- [ ] **Hero cell width 55% → 40%.** Grid columns become 20% / 20% / 20% / 40% (was 15/15/15/55). The 55% hero was clipping the right edge of the stage on iPhone. Small cells get more breathing room as a side effect.
-- [ ] **Match Hero (Actual Score) font size to the page title.** Page title is 56/46px (default/small-screen); hero `.ss-val` is currently 56px with no small-screen rule. Add a small-screen variant so the hero scales the same way the title does, and verify visual parity on iPhone.
+- [x] **Player name on Setup screen → non-editable display.** The single input field becomes display-only on Setup. Editable name moves into onboarding (first run / install) and Settings tab. Match Setup's player-name styling to how it appears on other screens. Default value still "Paul" until the install step is built.
+- [x] **Drop the "!" from "Posted!"** — title becomes plain "Posted" (or whatever the title-swap design lands on; this nudge probably gets folded into the planned "Save Round → Round Saved" yellow title swap).
+- [x] **Hero cell width 55% → 40%.** Grid columns become 20% / 20% / 20% / 40% (was 15/15/15/55). The 55% hero was clipping the right edge of the stage on iPhone. Small cells get more breathing room as a side effect.
+- [x] **Match Hero (Actual Score) font size to the page title.** Page title is 56/46px (default/small-screen); hero `.ss-val` is currently 56px with no small-screen rule. Add a small-screen variant so the hero scales the same way the title does, and verify visual parity on iPhone.
 
 ### Considerations (open)
+
+- **Record Stats toggle on Setup screen** — Yes/No before round starts. If No, footer stats grid hidden (casual mode). If Yes, footer sliders live. Persisted as default in Player Profile. Replaces the old "Track Stats Too?" framing — decision: build it.
+
+- **Player Profile screen** — name (editable here, display-only on Setup), home tees (Blue/Red per course), Handicap Index. Stored in localStorage. Accessible via a small "Settings" link on Setup. This is where tee selection lives between rounds.
+
+- **Multi-course support** — localStorage for 12–20 courses (~60KB total, well within limits). Course data schema matches GolfCourseAPI.com response (hole-by-hole par/yardage/handicap per tee set, CR/SR, GPS coords, male/female tee separation). Include Export/Import to JSON file as backup against accidental Safari cache wipe.
+
+- **GolfCourseAPI.com integration** — free tier, ~30K courses, 300 session limit then paid. Pattern: search local cache first → API fallback → manual entry if not found. Each course fetched once and cached. 300 free calls goes far with local-first caching. API key embedded in PWA (acceptable for free tier). Confirm Canadian/Kamloops coverage by testing search before committing.
+
+- **Tee recommendation** — warn player if selected tees don't match HI (e.g., "You sure you want Black tees? You're a 12 handicap."). CH formula already in place.
 
 - **Track Stats Too? toggle on Setup screen.** Now that Player Entry is gone, Setup is sparse — just a name and a Start Round button. Worth giving Setup a real job: a Yes/No toggle for stats tracking. If No, the hole-screen footer (FIR/GIR/PEN/UD/X-UD/PUTTS sliders) stays empty for casual players who just want to track score. If Yes, the footer is live. Default TBD. Open question: where does the toggle state live (per-round in `state` only, or persisted in Settings as a default-on/default-off preference)? This also resolves the "what's the Setup button on Hole 1 actually for" question — it'd be a meaningful pre-round preference picker instead of a stub.
 

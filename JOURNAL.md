@@ -4,6 +4,52 @@
 
 ---
 
+## 2026-04-30 — v9.24: iPhone polish + Setup redesign + multi-course architecture
+
+**Did:**
+- **Shipped v9.24** — all 4 iPhone hot-list items from the April 29 evening feedback:
+  - Hero grid 15/15/15/55 → 20/20/20/40 (fixes right-edge clip on iPhone)
+  - Hero `.ss-val` small-screen rule: 56px → 46px (matches 46px title scaling)
+  - "Posted!" → "Posted" (drop exclamation mark)
+  - Player name input → display-only span on Setup; `readPlayerName()` updated to read `.textContent`; `newRound()` reset updated; CSS `.player-name-display` added (green pill, pointer-events none)
+- **Disabled Stage Manager** via Control Center (was parking non-active windows in a left sidebar, making split-window layouts impossible). Paul confirmed it was annoying him for a while.
+- **Terminal orientation** — Paul getting comfortable with Terminal ahead of Claude Code. Covered: `pwd`, `ls`, `cd`, `git status/add/commit/push`, `-m` flag (keeps commit on one line, avoids vim), `open .` shortcut.
+- **Setup screen redesign decided** — after working through every candidate toggle (Add Players, Record Stats, Select Tees, Diagnostics, Hole-in-One sound), landed on a clean two-element Setup: **Record Stats toggle + Start Round button**. Everything else moves elsewhere.
+- **Add Players permanently retired** — reasoned through the complexity of per-player tee assignments, mixed gender groups, separate Sheets records, and concluded it reintroduces all the friction the single-player decision was meant to avoid.
+- **Player Profile concept defined** — name (editable here, display-only on Setup), home tees, HI. Stored in localStorage. Accessible via a "Settings" link on Setup. Tee selection lives here, not as a per-round prompt.
+- **Cheering.mp3** — stays as-is, Easter egg, not documented, no toggle.
+- **HI with <20 rounds** — WHS scaling table approach: best 1 of 3, best 2 of 6, etc. Show "—" until round 3. No hardcoded seed.
+- **Multi-course architecture designed:**
+  - localStorage for 12–20 courses (~60KB, well within 5–10MB iOS Safari limit)
+  - Export/Import to JSON file as backup against accidental cache wipe
+  - Local-first, API fallback pattern: check cache → call API → manual entry
+  - Each course fetched from API once, then cached permanently
+- **Researched GolfCourseAPI.com** — free tier, ~30K courses, 300 session limit. API schema reviewed (openapi.yml downloaded to Golf folder). Fits our COURSE model well: hole-by-hole par/yardage/handicap per tee set, CR/SR, GPS coords, male/female tee separation. 300 calls goes far with local-first caching. Canadian coverage unconfirmed — needs API key test.
+- **Tee recommendation feature** — warn if player's HI doesn't match selected tees. CH formula already live.
+- **Commercial angle** — GPS auto-detect course, course DB APIs (GolfAPI.io at 42K courses, Golf Intelligence for verified data). Free tier sufficient for personal/beta use. Paid tier consideration deferred until traction.
+
+**Decided (new locked):**
+- Add Players permanently removed. No revisiting.
+- Setup = Record Stats toggle + Start Round. Clean and focused.
+- Player Profile replaces editable name on Setup. Tee selection lives there.
+- Cheering.mp3 is an Easter egg. No toggle.
+- Multi-course: local-first, GolfCourseAPI.com as fallback, manual entry as last resort.
+- HI <20 rounds: WHS scaling, "—" until round 3.
+
+**Learned:**
+- Stage Manager (com.apple.WindowManager) was confirmed active and dismissed via Control Center click. Terminal granted at "click" tier — typing/keypresses blocked, so Escape key couldn't be sent; used title bar click to dismiss Control Center instead.
+- GolfCourseAPI.com openapi.yml confirms hole-level data (par, yardage, handicap/stroke-index) per tee set, which is exactly what our COURSE model needs. The male/female tee separation is a bonus that handles mixed groups cleanly.
+- localStorage course data is ~2–3KB per course. 20 courses = ~60KB. Storage is not a concern. The real risk is accidental Safari "Clear Website Data" wipe — Export/Import JSON is the mitigation.
+- 300 free API sessions sounds tight but with local-first caching, most players would consume <10 calls in their lifetime (one per new course discovered).
+
+**Next:**
+- Record Stats toggle on Setup (build it, persist in Player Profile)
+- Player Profile screen (name, tees, HI — localStorage)
+- GolfCourseAPI.com: register for API key, test Kamloops/Mt. Paul search to confirm Canadian coverage
+- Remaining open items: title swap "Save Round" → "Round Saved" (yellow), offline queue / outbox, failure screen 'i' overlay, tee selector, touch-target review, remove Discard Round button, app icons
+
+---
+
 ## 2026-04-29 (evening) — v9.23 ship: single-player + Save Round refactor + Mt. Paul ratings live
 
 **Did:**

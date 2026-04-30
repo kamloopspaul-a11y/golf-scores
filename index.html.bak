@@ -1,0 +1,1176 @@
+<!--
+  My Golf Scores — PWA
+  https://kamloopspaul-a11y.github.io/golf-scores
+  Built with Claude AI
+  CHANGELOG
+  v9.23 — April 29 2026
+  - Save Round summary refactored: dropped redundant Front|Back|Total row
+    (already shown on the Final Score screen). Grid is now 4 cols x 2 rows
+    with col 4 spanning both rows. Hero shows Actual Score (gross) at 56px;
+    fine-print sub-line below: "HI: 20 | Net Score: 70". Stats cells are
+    now FIR/GIR/PEN on row 1 and UD/X-UD/PUTTS on row 2 (replaces the old
+    FIR/GIR/UD/Avg-Score row).
+  - COURSE constant extended with par (=64) and ratings table
+    (mensBlue/mensRed/ladiesBlue/ladiesRed, each {cr, sr}). Multi-course
+    ready — Kamloops GC and others extend the table without schema changes.
+  - Net Score calc inline (TODO: read HI + tee set from Settings tab once
+    onboarding is wired). Hardcoded HI 20 and Mens Blue for now.
+  - Single-player app — multi-player UI removed.
+    - Setup screen: dynamic players-list + "+ Add Player" button replaced
+      by a single static name input. Pre-filled with "Paul"; editable;
+      6-char max preserved.
+    - Removed JS: renderPlayers(), appendPlayerRow(), addPlayer(),
+      removePlayer(), confirmPlayer(), updateAddButtonVisibility(),
+      updateConfirmBtn(), MAX_PLAYERS constant.
+    - Removed CSS: .players-list, .add-player-btn, .remove-btn,
+      .confirm-btn (and .player-row's gap-for-remove-btn slot).
+    - state.players stays as a single-element array so downstream code
+      (scoring, posting, success summary) is unchanged.
+    - Player chips on hole screen continue to auto-hide for solo play.
+  v9.22 — April 28 2026
+  - Lower header restructured into a 2-row strip (.header-lower / -top / -bot).
+    Top row 86/74px holds title-or-hole-number; bottom row 38/32px holds
+    PAR | YDS strip on Hole screens, empty on the other four. min-height on
+    .header-lower-bot keeps the row from collapsing on non-Hole screens, so
+    every masthead has identical total height. No layout shift between screens.
+  - Removed .hole-top-row / .hole-left / .hole-right (superseded).
+  v9.21.1 — April 25 2026
+  - Hole number color reverted from yellow to white
+  v9.21 — April 25 2026
+  - Unified bottom-row height across all mastheads. Both .hole-top-row and
+    .header-lower-title now have min-height 86px (default) / 74px (small).
+    No vertical shift between Hole screens and non-Hole screens.
+  - .header-lower-title flexed with align-items: flex-end so title text sits
+    at the bottom of the (now fixed-height) row. Vertical positioning within
+    the row will be iterated next.
+  - "Round Saved" -> "Save Round"
+  v9.20 — April 25 2026
+  - Removed recessed circular background on hole number (too overbearing)
+  - PAR / YDS labels + values dropped from 22px to 16px (more proportional
+    to the big yellow hole number above)
+  v9.19 — April 25 2026
+  - Hole header redesign:
+    - Hole number on TOP of left column, PAR display below it
+    - Hole number gets a recessed circular pill background (rgba black 15%
+      + inset shadow) and changes color from white to var(--yellow)
+    - PAR / YDS labels now styled like values (22px, weight 600, white)
+    - YARDS abbreviated to YDS, placed AFTER the number ("275 YDS")
+    - Left column uses align-items: center so the hole-number circle visually
+      centers over the "PAR 4" row
+  v9.18 — April 25 2026
+  - Hole header: PAR moved to left column (above the hole number, replacing
+    the "Hole" label). YARDS stays right. Better grouping — par is
+    intrinsic to the hole, yards is reference info.
+  - Hole number bumped one size: 56px -> 64px (default), 46px -> 52px (small)
+  - .hole-left now flex column; tight 2px gap between PAR row and number
+  v9.17 — April 25 2026
+  - Hole header: PAR + YARDS now inline on a single line, baseline-aligned
+    with the bottom of the hole number. Right side compacts from 4-row
+    stack to one tidy strip. Better visual balance with the title screens.
+  - .hole-top-row align-items: center -> flex-end
+  v9.16 — April 25 2026
+  - Fonts: robust cross-device fallback chain for DM Sans (-apple-system,
+    BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial). Locks out
+    weird default fonts even if Google Fonts is blocked.
+  - Forced buttons/inputs/selects/textareas to inherit body font (overrides
+    browser/OS form-control defaults that would otherwise fall to system fonts)
+  v9.15 — April 25 2026
+  - "Final Round Score" -> "Final Score" (shorter title fits at hole-num size)
+  - Title font now matches hole-num exactly: 56px default / 46px small-screen
+  - Tops and bottoms of titles now align with the hole number's visual mass
+  v9.14 — April 25 2026
+  - Fix: non-hole title (My Golf Scores / Front 9 Score / Final Round Score
+    / Round Saved) now visually aligned with hole-screen number — bumped
+    .header-lower-title from 26px to 36px (default) / 30px (small-screen)
+  v9.13.1 — April 25 2026
+  - Fix: footer min-height restored so non-hole screens (Setup, midround, card,
+    success) match the hole-screen footer height. Visual parity preserved.
+  v9.13 — April 25 2026
+  - Refactor: stage is now elastic (flex: 1 1 auto), footer is content-sized
+  - Stage absorbs viewport variation; footer stays exactly as tall as 6 rows
+    + safe-area-inset-bottom + 12px buffer. No more padding-bottom hacks.
+  - Reverted to 100dvh (svh had prior issues per Paul's note)
+  - Robust against iOS Safari URL bar overlay, dvh quirks, device variation
+  v9.12.1 — April 25 2026
+  - Fix: iOS Safari bottom URL bar was overlaying PUTTS row (100dvh quirk)
+  - Switched .screen + body to 100svh (small viewport) so layout always
+    fits within chrome-visible area, regardless of URL bar state
+  v9.12 — April 25 2026
+  - Fix: PUTTS row missing on iPhone Safari (footer overflowing clipped .screen)
+  - Footer: dropped 230px padding-bottom hack; justify-content flex-start; min-height 220+safe
+  - Header (small-screen): height 170 -> 150, top padding 32 -> 20 (reclaim ~30px)
+  - Score-section (small-screen): flex-basis 228 -> 210
+  - Service worker cache bumped v12 -> v13
+  v9.11 — April 25 2026
+  - Hole footer: 6 stat rows (FIR/GIR/PEN/UD/X-UD/PUTTS); X-UD now manual rocker
+  - Apps Script schema: PEN/UD/X-UD/PUTTS/Score columns; in-place migration
+  - Service worker: network-first for HTML, cache-first for assets (v12)
+  v9.10 — April 24 2026
+  - Google Sheets webhook live (Apps Script bound to user's Sheet)
+  - Slider switches wired: FIR / GIR / U&D toggles, PUTTS now a counter
+  - PUTTS counter replaced "3+ Putts" toggle (default 2, range 0-9)
+  - Server-side Score column = strokes − putts
+  - Post Score spinner ("Posting…" -> "Posted!")
+  - Sheet schema: Player column dropped, Year + Tees added to Scorecard
+  - Folder rename: golf-scores -> Golf (remote repo name unchanged)
+  v9.2 — April 17 2026
+  - Player entry: custom green checkmark button beside input (mirrors × design)
+  - Checkmark dims when input empty, activates when text entered
+  - Tap ✓ confirms name, auto-focuses next input (keyboard stays up)
+  - Enter key also confirms (works with iOS keyboard Done)
+  - enterkeyhint="done", autocorrect/autocomplete off → cleaner iOS keyboard
+  - Synchronous focus on Add Player → reliable iOS keyboard open
+  v9.1 — April 16 2026
+  - Scorecard font size increased to 16px for readability
+  - Scorecard header font increased to 13px
+  - Scorecard row padding increased for breathing room
+  v9 — April 16 2026
+  - Upper header font size increased to match Discard Round button
+  - Course name prefixed with "Course:" as static label
+  - Hole-in-One: cheering.mp3 plays when score reaches 1
+  - touch-action: manipulation on all buttons — prevents double-tap zoom on iOS
+  - Service Worker added — full offline support, caches all assets
+  - manifest.json added — improves PWA installation on iOS and Android
+  - Start New Round button moved to fixed nav position on Posted screen
+  - Player name max length set to 6 characters
+  - Fixed column widths on scorecards (name col wider, data cols equal)
+  - Header fixed height 186px across all screens
+  - Duration format changed to 00:00 (HH:MM)
+  - Leaderboard removed from both scorecard screens
+  - Thin progress bar removed — dots are sole progress indicator
+  - All nav buttons fixed position across all screens including Home
+  v8 — April 16 2026
+  - Leaderboard removed from both scorecard screens
+  - Duration moved to Upper Header (row 2 right), live on all screens
+  - Thin progress bar removed — dots are the sole progress indicator
+  - All mastheads unified: identical padding, consistent height
+  - Nav Buttons fixed position on all screens incl. Home Start Round
+  - Start Round button matches Nav Button dimensions and position
+  v7 — April 16 2026
+  - Merged v6 features into corrected header/layout codebase
+  - Front 9 Score Card: summary bar (Total, Par, vs Par for Par 32)
+  - Front 9 Score Card title → "Front 9 Score"
+  - Eagle scorecard cell: double circle (not square)
+  - Jewel score entry: plain jewel, no rings
+  - Round duration timer: starts on Start Round, shown on Final Round Score
+  - midroundSeen flag: Back on Hole 10+ returns to Front 9 Score Card
+  - Par row added to back 9 table on Final Round Score
+  - OUT/IN/TOT column order corrected on Final Round Score
+  - Bogey (+1 only): square box on scorecard
+  - Double bogey+: plain number
+  - Unified header structure (header-upper grid) across all screens
+  - "Final Round Score" title on 18-hole summary screen
+  - Discard Round button retained for testing phase
+  v6 — April 15 2026
+  - (recovered from corrupted file — features merged into v7)
+  v5 — April 15 2026
+  - Back and Post Score buttons equal size, both green, 3D raised effect
+  - Next and Back buttons also 3D raised effect
+  - Arrows removed from Back / Next button labels
+  - Mid-round 9-hole summary shown after hole 9, before hole 10 (no Post Score, no summary bar)
+  - Next on mid-round card proceeds directly to hole 10
+  - Birdie: circle only, black text (no blue)
+  - Eagle: square border, black text (no purple)
+  - Score entry: no red/blue colouring on +/- buttons, grey only
+  - Birdie/Bogey/etc. text label removed from below jewel score
+  - Header row: Course name left (yellow), Weather+Wind right, same line
+  - Course stored as variable (future GPS / multi-course ready)
+  - Player tabs moved out of green header into score area
+  - Progress bar removed from hole header
+  - "Built with Claude AI" footer, text only
+  v4 — April 15 2026
+  - Green #377f09, jewel score, corrected scoring logic, two-section scorecard
+  v3 — April 15 2026
+  - Temp/wind persistent, 5 players, progress bar, date display only
+  v2 — April 15 2026
+  - Multi-player, live weather, white header text
+  v1 — April 15 2026
+  - Initial prototype
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golf Scores">
+<link rel="manifest" href="manifest.json">
+<title>My Golf Scores</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  button, input, select, textarea { font: inherit; }
+  :root {
+    --green:       #377f09;
+    --green-hover: #2e6b07;
+    --green-deep:  #1f4d05;
+    --green-pale:  #eaf4e1;
+    --cream:       #faf9f6;
+    --card:        #ffffff;
+    --text-primary:   #1a1a1a;
+    --text-secondary: #6b7280;
+    --text-muted:     #9ca3af;
+    --bogey:   #dc2626;
+    --border:  rgba(0,0,0,0.10);
+    --yellow:  #f5c842;
+    --row-alt: #f2f2f2;
+    --btn-gray: #e8e8e8;
+    --btn-gray-border: #c0c0c0;
+  }
+  html, body { height: 100%; overflow-x: hidden; overscroll-behavior: none; }
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--green);
+    color: var(--text-primary);
+    min-height: 100dvh;
+    width: 100%;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+  .screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
+  .screen.active { display: flex; }
+  /* ── MASTHEADS ─────────────────────────────────────── */
+  .masthead, .hole-masthead, .card-masthead {
+    background: transparent;
+    padding: calc(44px + env(safe-area-inset-top)) 20px 28px;
+    color: white;
+    height: calc(240px + env(safe-area-inset-top));
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  /* Upper Header: 2-col grid — Course|Weather / Date|Duration */
+  .header-upper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 3px;
+    margin-bottom: 14px;
+  }
+  .hu-course {
+    font-size: 13px; color: var(--yellow); font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hu-weather {
+    font-size: 13px; color: rgba(255,255,255,0.8);
+    text-align: right; white-space: nowrap;
+  }
+  .hu-date {
+    font-size: 12px; color: rgba(255,255,255,0.5);
+    white-space: nowrap;
+  }
+  .hu-duration {
+    font-size: 12px; color: rgba(255,255,255,0.5);
+    text-align: right; white-space: nowrap;
+  }
+  /* Lower Header — 2-row strip, identical structure on every screen */
+  .header-lower      { display: flex; flex-direction: column; }
+  .header-lower-top  { min-height: 86px; display: flex; align-items: flex-end; }
+  .header-lower-bot  { min-height: 38px; display: flex; align-items: center;
+                       justify-content: space-between; }
+  .header-lower-title {
+    font-size: 56px; font-weight: 600; letter-spacing: -2px;
+    color: white; line-height: 1; white-space: nowrap;
+  }
+  .hole-num {
+    font-size: 64px; font-weight: 600; letter-spacing: -2px;
+    line-height: 1; color: white;
+  }
+  .stat-pair       { display: inline-flex; align-items: baseline; gap: 5px; }
+  .hole-stat-val   { font-size: 16px; font-weight: 600; color: white; line-height: 1; }
+  .hole-stat-label { font-size: 16px; font-weight: 600; color: white; line-height: 1; letter-spacing: 0.5px; }
+  /* ── CONTENT AREA (shared sizing across all screens) ── */
+  .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    background: #fff;
+    margin-top: 12px;
+  }
+  .hole-actions { background: #fff; }
+  /* ── SETUP ─────────────────────────────────────────── */
+  .setup-body { padding: 16px 24px; }
+  .player-row   { display: flex; gap: 8px; align-items: center; }
+  .player-input {
+    flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500;
+    color: var(--text-primary); outline: none; transition: border-color 0.2s;
+  }
+  .player-input:focus { border-color: var(--green); }
+  /* ── 3D BUTTONS ────────────────────────────────────── */
+  .btn-3d {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    touch-action: manipulation;
+    font-size: 16px; font-weight: 600;
+    color: white; border: none; border-radius: 14px; cursor: pointer;
+    background: linear-gradient(180deg, #4a9e0d 0%, var(--green) 50%, var(--green-deep) 100%);
+    box-shadow:
+      0 6px 0 #164803,
+      0 8px 16px rgba(0,0,0,0.28),
+      inset 0 1px 0 rgba(255,255,255,0.18);
+    transition: transform 0.08s, box-shadow 0.08s, color 0.15s;
+    position: relative; top: 0;
+  }
+  .btn-3d:hover  { color: var(--yellow); }
+  .btn-3d:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #164803, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
+    top: 4px;
+  }
+  .start-btn { width: 100%; padding: 17px; margin-top: 16px; }
+  /* ── SCORE SECTION ─────────────────────────────────── */
+  .score-section {
+    display: flex; flex-direction: column;
+    align-items: center; padding: 16px 24px 8px;
+  }
+  /* Player name chips inside score area */
+  .player-chips {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 14px;
+  }
+  .player-chip {
+    padding: 5px 14px; border-radius: 20px;
+    border: 1.5px solid var(--border); background: var(--card);
+    font-size: 13px; font-weight: 500; color: var(--text-secondary);
+    cursor: pointer; transition: all 0.18s;
+  }
+  .player-chip.active {
+    background: var(--green); color: white; border-color: var(--green);
+  }
+  .player-chip:hover:not(.active) { border-color: var(--green); color: var(--green); }
+  /* Progress bar — hidden, dots are the progress indicator */
+  .progress-wrap  { display: none; }
+  .score-center {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .score-row { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; }
+  /* +/- buttons — grey, no colour coding */
+  .score-btn {
+    width: 80px; height: 80px; border-radius: 50%;
+    touch-action: manipulation;
+    border: 2px solid var(--btn-gray-border);
+    background: linear-gradient(180deg, #f5f5f5 0%, var(--btn-gray) 60%, #d4d4d4 100%);
+    box-shadow: 0 4px 0 #aaa, 0 6px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+    color: #444; font-size: 38px; font-weight: 300;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.08s, box-shadow 0.08s; line-height: 1;
+    position: relative; top: 0;
+  }
+  .score-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #aaa, 0 2px 6px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+    top: 3px;
+  }
+  /* Jewel score */
+  .score-indicator {
+    position: relative; width: 110px; height: 110px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* Jewel score — plain, no rings on score entry screen */
+  .score-ring       { display: none; }
+  .score-ring-outer { display: none !important; }
+  .score-jewel {
+    width: 90px; height: 90px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffffff 0%, #e8e8e8 30%, #c0c0c0 65%, #a0a0a0 100%);
+    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.25), inset 0 4px 8px rgba(255,255,255,0.6), 0 4px 16px rgba(0,0,0,0.18);
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .score-jewel::after {
+    content: ''; position: absolute; top: 10px; left: 14px;
+    width: 28px; height: 16px;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.75) 0%, transparent 100%);
+    border-radius: 50%; transform: rotate(-20deg);
+  }
+  .score-inner-num {
+    font-size: 44px; font-weight: 400; letter-spacing: -2px; color: #2a2a2a;
+    font-family: 'DM Mono', monospace;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.6), 0 -1px 1px rgba(0,0,0,0.15);
+    position: relative; z-index: 1;
+  }
+  .nav-dots {
+    display: flex; justify-content: center; gap: 5px;
+    padding: 8px 0; flex-wrap: wrap; max-width: 340px;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all 0.2s; cursor: pointer; }
+  .dot.active { background: var(--green); width: 18px; border-radius: 3px; }
+  .dot.scored { background: var(--green); opacity: 0.45; }
+  /* NAV BUTTONS — fixed position, all screens */
+  .hole-actions { padding: 8px 24px 16px; display: flex; gap: 12px; flex-shrink: 0; }
+  .nav-btn { flex: 1; padding: 15px; }
+  .start-btn { padding: 15px; margin-top: 0; }
+  /* ── SCORECARD ─────────────────────────────────────── */
+  .scorecard-wrap { padding: 16px 12px; overflow-x: hidden; }
+  .sc-section { margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sc-section { margin-bottom: 12px; overflow-x: auto; }
+  .sc-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; table-layout: fixed; }
+  .sc-table th:first-child, .sc-table td:first-child { width: 52px; }
+  .sc-table th, .sc-table td { width: 28px; }
+  .sc-table th {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-primary);
+    padding: 7px 4px; text-align: center;
+    border-bottom: 2px solid var(--border); background: var(--green-pale);
+  }
+  .sc-table th:first-child { text-align: left; padding-left: 8px; }
+  .sc-table td { padding: 7px 4px; text-align: center; border-top: 1px solid var(--border); color: var(--text-primary); }
+  .sc-table td:first-child { text-align: left; padding-left: 8px; font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+  .sc-table .par-row td { color: var(--text-muted); font-size: 12px; font-weight: 400; }
+  .sc-table .tot-col { font-weight: 700; }
+  .row-alt { background: var(--row-alt); }
+  /* Score cell styles — monochrome, no blue/red */
+  .birdie-cell {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border: 1.5px solid #333; border-radius: 50%;
+    color: #1a1a1a; font-size: 13px; font-weight: 500;
+    vertical-align: middle; line-height: 1;
+  }
+  /* Eagle = double circle via box-shadow */
+  .eagle-cell {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px;
+    border: 1.5px solid #333; border-radius: 50%;
+    box-shadow: 0 0 0 2.5px #333;
+    color: #1a1a1a; font-size: 12px; font-weight: 500;
+    vertical-align: middle; line-height: 1;
+    margin: 3px;
+  }
+  .bogey-cell {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border: 1.5px solid #333; border-radius: 0;
+    color: #1a1a1a; font-size: 13px; font-weight: 500;
+    vertical-align: middle; line-height: 1;
+  }
+  .double-bogey-cell { color: var(--text-primary); }
+  .hio-cell    { font-weight: 700; color: var(--text-primary); }
+  /* Card action buttons */
+  .card-actions { display: flex; gap: 12px; margin-top: 4px; }
+  .back-card-btn { flex: 1; padding: 16px; }
+  .post-btn      { flex: 1; padding: 16px; font-size: 16px; }
+  .discard-btn {
+    width: 100%; padding: 13px; margin-top: 10px;
+    background: transparent; color: var(--bogey);
+    border: 1px solid rgba(220,38,38,0.2); border-radius: 16px;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .discard-btn:hover { background: #fef2f2; }
+  /* Mid-round 9-hole card */
+  .midround-wrap { padding: 16px 12px; }
+  .midround-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+  /* ── SUCCESS ───────────────────────────────────────── */
+  .success-body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start; padding: 24px 20px; text-align: center;
+  }
+  .success-icon { width: 80px; height: 80px; background: var(--green-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; }
+  .success-body h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 14px; }
+  .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
+  /* Round summary on Save Round screen — 4x2 grid, col 4 hero spans both rows */
+  .success-summary {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 15% 15% 15% 55%;
+    grid-template-rows: 1fr 1fr;
+    gap: 6px;
+  }
+  .ss-cell {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 4px; background: var(--green-pale); border-radius: 10px;
+  }
+  .ss-val { font-size: 20px; font-weight: 600; color: var(--green); letter-spacing: -0.5px; line-height: 1.1; }
+  .ss-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); margin-top: 3px; }
+  .ss-hero { grid-column: 4; grid-row: 1 / span 2; }
+  .ss-hero .ss-val { font-size: 56px; line-height: 1; letter-spacing: -2px; }
+  .ss-hero .ss-fine { font-size: 11px; color: var(--text-secondary); margin-top: 8px; letter-spacing: 0.3px; white-space: nowrap; }
+  .new-round-btn   { padding: 17px 48px; }
+  .footer {
+    background: transparent;
+    min-height: calc(220px + env(safe-area-inset-bottom));
+    padding: 20px 20px calc(env(safe-area-inset-bottom) + 12px);
+    flex: 0 0 auto;
+    color: white;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 6px;
+    font-size: 13px;
+  }
+  .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
+  .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
+  /* Stat controls belong only on the hole screen */
+  #screen-setup    .footer-grid,
+  #screen-midround .footer-grid,
+  #screen-card     .footer-grid,
+  #screen-success  .footer-grid { display: none; }
+  /* iOS-style slider (unscripted placeholder) */
+  .switch { position: relative; display: inline-block; width: 53px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider-bg {
+    position: absolute; cursor: pointer; inset: 0;
+    background: rgba(255,255,255,0.25); border-radius: 26px; transition: 0.2s;
+  }
+  .switch .slider-bg::before {
+    position: absolute; content: ""; height: 22px; width: 22px;
+    left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .slider-bg { background: var(--yellow); }
+  .switch input:checked + .slider-bg::before { transform: translateX(27px); }
+  /* Putts counter — replaces toggle, default 2 */
+  .putts-counter {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08); border-radius: 20px; padding: 2px 8px;
+  }
+  .putts-btn {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,0.18); color: #fff;
+    font-size: 16px; line-height: 1; cursor: pointer;
+    touch-action: manipulation;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .putts-btn:active { background: rgba(255,255,255,0.32); }
+  #putts-value {
+    font-family: "DM Mono", monospace; font-size: 15px; font-weight: 500;
+    color: #fff; min-width: 14px; text-align: center;
+  }
+  /* Spinner for Post Score */
+  .spinner {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 4px solid rgba(55,127,9,0.18);
+    border-top-color: var(--green);
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none !important; }
+
+  /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
+  @media (max-height: 750px) {
+    .masthead, .hole-masthead, .card-masthead {
+      height: calc(150px + env(safe-area-inset-top));
+      padding: calc(20px + env(safe-area-inset-top)) 20px 14px;
+    }
+    /* stage is elastic — no flex-basis override needed on small screens */
+    /* footer is content-sized; no min-height needed */
+    .score-btn { width: 64px; height: 64px; font-size: 32px; }
+    .score-indicator { width: 92px; height: 92px; }
+    .score-jewel { width: 74px; height: 74px; }
+    .score-inner-num { font-size: 36px; }
+    .hole-num { font-size: 52px; }
+    .header-lower-title { font-size: 46px; }
+    .header-lower-top { min-height: 74px; }
+    .header-lower-bot { min-height: 32px; }
+    .success-body { padding: 24px; }
+  }
+</style>
+<script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
+</script>
+</head>
+<body>
+<!-- ══════════════ SETUP ══════════════ -->
+<div class="screen active" id="screen-setup">
+  <div class="masthead">
+    <div class="header-upper">
+      <div class="hu-course" id="setup-course-name"></div>
+      <div class="hu-weather" id="weather-setup">—</div>
+      <div class="hu-date" id="setup-date-display"></div>
+      <div class="hu-duration"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">My Golf Scores</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+  <div class="setup-body">
+    <div class="player-row">
+      <input class="player-input" id="player-name" type="text"
+        placeholder="Your name" value="Paul" maxlength="6"
+        enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"
+        onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}" />
+    </div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
+  </div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PEN</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+    </div>
+  </div>
+</div>
+<!-- ══════════════ HOLE ══════════════ -->
+<div class="screen" id="screen-hole">
+  <div class="hole-masthead">
+    <div class="header-upper">
+      <div class="hu-course" id="hole-course-name"></div>
+      <div class="hu-weather" id="weather-hole">—</div>
+      <div class="hu-date" id="hole-date-display"></div>
+      <div class="hu-duration" id="hole-duration">00:00</div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top">
+        <div class="hole-num" id="hole-num">1</div>
+      </div>
+      <div class="header-lower-bot">
+        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
+        <span class="stat-pair"><span class="hole-stat-val" id="hole-yards-display">275</span><span class="hole-stat-label">YDS</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="score-section">
+    <!-- Player chips -->
+    <div class="player-chips" id="player-chips"></div>
+    <!-- Score -->
+    <div class="score-center">
+      <div class="score-row">
+        <button class="score-btn" onclick="adjustScore(-1)">−</button>
+        <div class="score-indicator">
+          <div class="score-ring" id="score-ring"></div>
+          <div class="score-ring-outer" id="outer-ring"></div>
+          <div class="score-jewel"><div class="score-inner-num" id="score-num">4</div></div>
+        </div>
+        <button class="score-btn" onclick="adjustScore(1)">+</button>
+      </div>
+      <div class="nav-dots" id="nav-dots"></div>
+    </div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" id="back-btn" onclick="prevHole()">Back</button>
+    <button class="btn-3d nav-btn" id="next-btn" onclick="nextHole()">Next</button>
+  </div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-gir" onchange="statChanged('gir')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PEN</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-pen" onchange="statChanged('pen')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-ud" onchange="statChanged('ud')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-xud" onchange="statChanged('xud')"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
+      <div class="fg-right"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
+    </div>
+  </div>
+</div>
+<!-- ══════════════ MID-ROUND 9-HOLE CARD ══════════════ -->
+<div class="screen" id="screen-midround">
+  <div class="card-masthead">
+    <div class="header-upper">
+      <div class="hu-course" id="midround-course-name"></div>
+      <div class="hu-weather" id="weather-midround">—</div>
+      <div class="hu-date" id="midround-date-display"></div>
+      <div class="hu-duration" id="midround-duration"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">Front 9 Score</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+  <div class="midround-wrap">
+    <div class="sc-section"><table class="sc-table" id="sc-midround"></table></div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" onclick="goBackFromMidround()">Back</button>
+    <button class="btn-3d nav-btn" onclick="continueToBack9()">Next</button>
+  </div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PEN</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+    </div>
+  </div>
+</div>
+<!-- ══════════════ FINAL SCORECARD ══════════════ -->
+<div class="screen" id="screen-card">
+  <div class="card-masthead">
+    <div class="header-upper">
+      <div class="hu-course" id="card-course-name"></div>
+      <div class="hu-weather" id="weather-card">—</div>
+      <div class="hu-date" id="card-date-display"></div>
+      <div class="hu-duration" id="card-duration"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title" id="card-title">Final Score</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+  <div class="scorecard-wrap">
+    <div class="sc-section"><table class="sc-table" id="sc-back"></table></div>
+    <!-- <button class="discard-btn" onclick="discardRound()">Discard Round</button> -->
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" onclick="goBackToRound()">Back</button>
+    <button class="btn-3d nav-btn" onclick="submitRound()">Post Score</button>
+  </div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PEN</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+    </div>
+  </div>
+</div>
+<!-- ══════════════ SUCCESS ══════════════ -->
+<div class="screen" id="screen-success">
+  <div class="card-masthead">
+    <div class="header-upper">
+      <div class="hu-course" id="success-course-name"></div>
+      <div class="hu-weather" id="weather-success">—</div>
+      <div class="hu-date" id="success-date-display"></div>
+      <div class="hu-duration" id="success-duration"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">Save Round</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+  <div class="success-body">
+    <div id="success-spinner" class="spinner"></div>
+    <h2 id="success-title">Posting…</h2>
+    <!-- <p id="success-msg">Your scores have been submitted to Google Sheets.</p> -->
+    <div id="success-summary" class="success-summary">
+      <div class="ss-cell"><span class="ss-val" id="ss-fir">–</span><span class="ss-lbl">FIR</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-gir">–</span><span class="ss-lbl">GIR</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-pen">–</span><span class="ss-lbl">PEN</span></div>
+      <div class="ss-cell ss-hero">
+        <span class="ss-val" id="ss-actual">–</span>
+        <span class="ss-fine"><span id="ss-hi">HI: –</span> | <span id="ss-net">Net Score: –</span></span>
+      </div>
+      <div class="ss-cell"><span class="ss-val" id="ss-ud">–</span><span class="ss-lbl">UD</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-xud">–</span><span class="ss-lbl">X-UD</span></div>
+      <div class="ss-cell"><span class="ss-val" id="ss-putts">–</span><span class="ss-lbl">PUTTS</span></div>
+    </div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" onclick="newRound()">Start New Round</button>
+  </div>
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="fg-left">FIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">GIR</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PEN</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">X-UD</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+      <div class="fg-left">PUTTS</div>
+      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+    </div>
+  </div>
+</div>
+<audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
+<script>
+// ── COURSE (variable for future multi-course support) ──
+const COURSE = {
+  name: "Mt. Paul",
+  par: 64,            // 18-hole round (looped twice; per-loop par 32)
+  ratings: {          // 18-hole CR/SR by tee set. Multi-course-ready.
+    mensBlue:   { cr: 59.0, sr: 86 },
+    mensRed:    { cr: 57.9, sr: 72 },
+    ladiesBlue: { cr: 62.2, sr: 95 },
+    ladiesRed:  { cr: 58.6, sr: 88 }
+  },
+  holes: [
+    {par:4,yards:275},{par:3,yards:137},{par:3,yards:179},
+    {par:4,yards:300},{par:3,yards:95 },{par:4,yards:345},
+    {par:3,yards:135},{par:4,yards:251},{par:4,yards:270}
+  ]
+};
+const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbzYOZI0wy2H5CQNf8TLInatEwZKDAX4SA5ij0Z5RcX4Bv81MscF_aRlSDW08KwbS1Ud5w/exec";
+let state = {
+  players:[], date:"", currentHole:0, activePlayer:0,
+  scores:[], holeList:[], totalHoles:18, weatherStr:"—",
+  roundStartTime: null, midroundSeen: false,
+  stats: []
+};
+let durationTimer = null;
+// ── WEATHER ──────────────────────────────────────────
+async function fetchWeather() {
+  try {
+    const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=50.6745&longitude=-120.3273&current=temperature_2m,wind_speed_10m&temperature_unit=celsius&wind_speed_unit=kmh");
+    const d = await r.json();
+    state.weatherStr = Math.round(d.current.temperature_2m)+"°C  Wind: "+Math.round(d.current.wind_speed_10m)+" km/h";
+  } catch(e) { state.weatherStr = "Weather unavailable"; }
+  updateAllWeather();
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function updateAllWeather() {
+  ["weather-setup","weather-hole","weather-midround","weather-card","weather-success"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent=state.weatherStr;
+  });
+  ["setup-course-name","hole-course-name","midround-course-name","card-course-name","success-course-name"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent='Course: '+COURSE.name;
+  });
+  const dateStr=state.date?formatDate(state.date):'';
+  ["setup-date-display","hole-date-display","midround-date-display","card-date-display","success-date-display"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent=dateStr;
+  });
+  // Duration — propagate to all header duration slots
+  const durStr=state.roundStartTime ? formatDuration(Date.now()-state.roundStartTime) : '';
+  ["hole-duration","midround-duration","card-duration","success-duration"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent=durStr;
+  });
+}
+// ── DATE ─────────────────────────────────────────────
+function formatDate(iso) {
+  const [y,m,d]=iso.split('-');
+  return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m)-1]+" "+parseInt(d)+", "+y;
+}
+// ── PLAYER NAME (single-player app) ──────────────────
+function readPlayerName(){
+  const el=document.getElementById('player-name');
+  const v=el ? el.value.trim() : '';
+  return v.length ? v : 'Paul';
+}
+// ── START ─────────────────────────────────────────────
+function startRound() {
+  state.players = [readPlayerName()];
+  state.date=new Date().toISOString().split('T')[0];
+  state.holeList=[...COURSE.holes,...COURSE.holes];
+  state.totalHoles=18;
+  state.scores=state.players.map(()=>state.holeList.map(h=>h.par));
+  state.stats=Array.from({length:18},()=>({fir:null,gir:null,pen:null,ud:null,xud:null,putts:2}));
+  state.currentHole=0; state.activePlayer=0;
+  state.roundStartTime = Date.now();
+  localStorage.setItem('roundStartTime', state.roundStartTime);
+  if(durationTimer) clearInterval(durationTimer);
+  durationTimer = setInterval(updateAllWeather, 30000);
+  buildDots(); buildPlayerChips(); showHole(0); showScreen('hole');
+}
+// ── PLAYER CHIPS ──────────────────────────────────────
+function buildPlayerChips() {
+  const chips=document.getElementById('player-chips'); chips.innerHTML='';
+  chips.style.display='flex';
+  state.players.forEach((name,i)=>{
+    const chip=document.createElement('button');
+    chip.className='player-chip'+(i===0?' active':'');
+    chip.textContent=name||'P'+(i+1);
+    chip.onclick=()=>switchPlayer(i); chips.appendChild(chip);
+  });
+}
+function switchPlayer(i){
+  state.activePlayer=i;
+  document.querySelectorAll('.player-chip').forEach((c,ci)=>c.className='player-chip'+(ci===i?' active':''));
+  updateScoreDisplay(state.currentHole);
+}
+// ── HOLES ─────────────────────────────────────────────
+function buildDots(){
+  const c=document.getElementById('nav-dots'); c.innerHTML='';
+  state.holeList.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='dot'+(i===0?' active':''); d.id='dot-'+i;
+    d.onclick=()=>{ state.currentHole=i; showHole(i); };
+    c.appendChild(d);
+  });
+}
+function showHole(index){
+  const hole=state.holeList[index];
+  document.getElementById('hole-num').textContent=index+1;
+  document.getElementById('hole-par-display').textContent=hole.par;
+  document.getElementById('hole-yards-display').textContent=hole.yards;
+  const pct=((index+1)/state.totalHoles*100).toFixed(1);
+  const pf=document.getElementById('progress-fill'); if(pf) pf.style.width=pct+'%';
+  const pl=document.getElementById('progress-label'); if(pl) pl.textContent='Hole '+(index+1)+' of '+state.totalHoles;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.className='dot'+(i===index?' active':i<index?' scored':''));
+  document.getElementById('back-btn').textContent=index===0?'Setup':'Back';
+  document.getElementById('next-btn').textContent='Next';
+  updateScoreDisplay(index);
+  syncStatSliders(index);
+}
+// ── STATS ─────────────────────────────────────────────
+function syncStatSliders(index){
+  const st=state.stats[index]||{};
+  ['fir','gir','pen','ud','xud'].forEach(k=>{
+    const el=document.getElementById('slider-'+k);
+    if(el) el.checked = st[k]===1;
+  });
+  const pv=document.getElementById('putts-value');
+  if(pv) pv.textContent = (st.putts!=null ? st.putts : 2);
+}
+function adjustPutts(delta){
+  const i=state.currentHole;
+  if(!state.stats[i]) return;
+  const cur = state.stats[i].putts != null ? state.stats[i].putts : 2;
+  const next = Math.max(0, Math.min(9, cur + delta));
+  state.stats[i].putts = next;
+  const pv=document.getElementById('putts-value');
+  if(pv) pv.textContent = next;
+}
+function statChanged(key){
+  if(!state.stats[state.currentHole]) return;
+  const el=document.getElementById('slider-'+key);
+  state.stats[state.currentHole][key] = el && el.checked ? 1 : null;
+}
+// ── SCORING ───────────────────────────────────────────
+function updateScoreDisplay(index){
+  const score=state.scores[state.activePlayer][index];
+  const par=state.holeList[index].par;
+  const diff=score-par;
+  document.getElementById('score-num').textContent=score;
+  const ring=document.getElementById('score-ring');
+  const outer=document.getElementById('outer-ring');
+  ring.className='score-ring';
+  outer.className='score-ring-outer'; outer.style.display='none';
+  if(score===1){
+    ring.classList.add('hio'); outer.style.display='block';
+  } else if(diff<=-2){
+    ring.classList.add('eagle'); outer.style.display='block'; outer.classList.add('eagle-outer');
+  } else if(diff===-1){
+    ring.classList.add('birdie'); outer.style.display='block';
+  } else if(diff>=1){
+    ring.classList.add('bogey');
+  }
+}
+function adjustScore(delta){
+  const i=state.currentHole;
+  state.scores[state.activePlayer][i]=Math.max(1,state.scores[state.activePlayer][i]+delta);
+  if(state.scores[state.activePlayer][i]===1){
+    const snd=document.getElementById('hio-sound');
+    if(snd){ snd.currentTime=0; snd.play(); }
+  }
+  updateScoreDisplay(i);
+}
+// ── NAVIGATION ────────────────────────────────────────
+function nextHole(){
+  if(state.currentHole===8){
+    // After hole 9 — show mid-round front 9 card
+    state.midroundSeen = true;
+    buildMidroundCard();
+    showScreen('midround');
+  } else if(state.currentHole<state.totalHoles-1){
+    state.currentHole++; showHole(state.currentHole);
+  } else {
+    showSummary();
+  }
+}
+function prevHole(){
+  if(state.currentHole===0) showScreen('setup');
+  else if(state.currentHole===9 && state.midroundSeen){
+    buildMidroundCard(); showScreen('midround');
+  }
+  else { state.currentHole--; showHole(state.currentHole); }
+}
+function continueToBack9(){
+  state.currentHole=9; showHole(9); showScreen('hole');
+}
+function goBackFromMidround(){
+  state.currentHole=8; showHole(8); showScreen('hole');
+}
+// ── MID-ROUND CARD ────────────────────────────────────
+function buildMidroundCard(){
+  const table=document.getElementById('sc-midround');
+  const holes=state.holeList.slice(0,9);
+  const par9=holes.reduce((a,h)=>a+h.par,0);
+  let html='<thead><tr><th>Hole</th>';
+  for(let i=1;i<=9;i++) html+=`<th>${i}</th>`;
+  html+='<th>OUT</th></tr></thead><tbody>';
+  html+='<tr class="par-row row-alt"><td>Par</td>';
+  holes.forEach(h=>{ html+=`<td>${h.par}</td>`; });
+  html+=`<td class="tot-col">${par9}</td></tr>`;
+  state.players.forEach((name,pi)=>{
+    const rowCls=pi%2===0?'':' row-alt';
+    html+=`<tr class="${rowCls}"><td>${esc(name||'P'+(pi+1))}</td>`;
+    let tot=0;
+    state.scores[pi].slice(0,9).forEach((s,i)=>{ tot+=s; html+=renderScoreCell(s,holes[i].par); });
+    html+=`<td class="tot-col">${tot}</td></tr>`;
+  });
+  html+='</tbody>';
+  table.innerHTML=html;
+}
+// ── FINAL SCORECARD ───────────────────────────────────
+function formatDuration(ms){
+  const totalMin=Math.floor(ms/60000);
+  const h=Math.floor(totalMin/60); const m=totalMin%60;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+function showSummary(){
+  buildSection('sc-back',9,18,true);
+  showScreen('card');
+}
+function buildSection(tableId,start,end,isBack){
+  const table=document.getElementById(tableId);
+  const holes=state.holeList.slice(start,end);
+  let html='<thead><tr><th>Hole</th>';
+  for(let i=start;i<end;i++) html+=`<th>${i+1}</th>`;
+  html+=isBack?'<th>OUT</th><th>IN</th><th>TOT</th>':'<th>OUT</th>';
+  html+='</tr></thead><tbody>';
+  // Par row on both sections
+  html+='<tr class="par-row row-alt"><td>Par</td>';
+  let parTot=0; holes.forEach(h=>{ html+=`<td>${h.par}</td>`; parTot+=h.par; });
+  if(!isBack){
+    html+=`<td class="tot-col">${parTot}</td>`;
+  } else {
+    const frontPar=state.holeList.slice(0,9).reduce((a,h)=>a+h.par,0);
+    html+=`<td class="tot-col">${frontPar}</td><td class="tot-col">${parTot}</td><td class="tot-col">${frontPar+parTot}</td>`;
+  }
+  html+='</tr>';
+  state.players.forEach((name,pi)=>{
+    const rowCls=pi%2===0?'':' row-alt';
+    html+=`<tr class="${rowCls}"><td>${esc(name||'P'+(pi+1))}</td>`;
+    const segs=state.scores[pi].slice(start,end);
+    let segTot=0;
+    segs.forEach((s,i)=>{ segTot+=s; html+=renderScoreCell(s,holes[i].par); });
+    if(!isBack){
+      html+=`<td class="tot-col">${segTot}</td>`;
+    } else {
+      const frontTot=state.scores[pi].slice(0,9).reduce((a,b)=>a+b,0);
+      html+=`<td class="tot-col">${frontTot}</td><td class="tot-col">${segTot}</td><td class="tot-col">${frontTot+segTot}</td>`;
+    }
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  table.innerHTML=html;
+}
+function renderScoreCell(score,par){
+  const diff=score-par;
+  if(score===1) return `<td><span class="hio-cell">1</span></td>`;
+  if(diff<=-2)  return `<td><span class="eagle-cell">${score}</span></td>`;
+  if(diff===-1) return `<td><span class="birdie-cell">${score}</span></td>`;
+  if(diff===1)  return `<td><span class="bogey-cell">${score}</span></td>`;
+  if(diff>=2)   return `<td class="double-bogey-cell">${score}</td>`;
+  return `<td>${score}</td>`;
+}
+function goBackToRound(){
+  state.currentHole=state.totalHoles-1; showHole(state.currentHole); showScreen('hole');
+}
+// ── SUCCESS SUMMARY ──────────────────────────────────
+function courseHandicap(hi, teeKey){
+  const tee = COURSE.ratings[teeKey] || COURSE.ratings.mensBlue;
+  return Math.round(hi * (tee.sr / 113) + (tee.cr - COURSE.par));
+}
+function renderSuccessSummary(){
+  const holes = (state.scores[0]||[]);
+  const total = holes.reduce((a,b)=>a+(b||0),0);
+  let fir=0, gir=0, pen=0, ud=0, xud=0, puttsTotal=0;
+  (state.stats||[]).forEach(s=>{
+    if(!s) return;
+    if(s.fir===1) fir++;
+    if(s.gir===1) gir++;
+    if(s.pen===1) pen++;
+    if(s.ud===1)  ud++;
+    if(s.xud===1) xud++;
+    if(typeof s.putts === "number") puttsTotal += s.putts;
+  });
+  // TODO: read HI + teeKey from Settings tab once onboarding is wired.
+  const HI = 20;
+  const teeKey = "mensBlue";
+  const ch = courseHandicap(HI, teeKey);
+  const net = total - ch;
+  const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set("ss-fir",    fir);
+  set("ss-gir",    gir);
+  set("ss-pen",    pen);
+  set("ss-ud",     ud);
+  set("ss-xud",    xud);
+  set("ss-putts",  puttsTotal);
+  set("ss-actual", total);
+  set("ss-hi",     "HI: " + HI);
+  set("ss-net",    "Net Score: " + net);
+}
+function clearSuccessSummary(){
+  ["ss-fir","ss-gir","ss-pen","ss-ud","ss-xud","ss-putts","ss-actual"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent="–";
+  });
+  const hi=document.getElementById("ss-hi"); if(hi) hi.textContent="HI: –";
+  const net=document.getElementById("ss-net"); if(net) net.textContent="Net Score: –";
+}
+// ── SUBMIT ────────────────────────────────────────────
+async function submitRound(){
+  renderSuccessSummary();
+  const par=64; const total=state.scores[0].reduce((a,b)=>a+b,0);
+  const pars=Array.from({length:18},(_,i)=>COURSE.holes[i%9].par);
+  const payload={date:state.date,player:state.players[0],course:COURSE.name,tees:"Blue",roundType:"18",holes:state.scores[0],par,pars,stats:state.stats};
+  const spinner=document.getElementById('success-spinner');
+  const title=document.getElementById('success-title');
+  // Move to success screen immediately, showing spinner + "Posting…"
+  if(spinner) spinner.classList.remove('hidden');
+  if(title) title.textContent='Posting…';
+  showScreen('success');
+  if(SHEETS_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
+    if(spinner) spinner.classList.add('hidden');
+    if(title) title.textContent='Posted!';
+    return;
+  }
+  try {
+    await fetch(SHEETS_URL,{method:"POST",body:JSON.stringify(payload)});
+    if(title) title.textContent='Posted!';
+  } catch(e){
+    if(title) title.textContent='Saved locally';
+  }
+  if(spinner) spinner.classList.add('hidden');
+}
+function discardRound(){ if(confirm("Discard this round? All scores will be lost.")) newRound(); }
+function newRound(){
+  state.players=["Paul"]; state.currentHole=0;
+  state.midroundSeen=false; state.roundStartTime=null;
+  state.stats=[];
+  clearSuccessSummary();
+  localStorage.removeItem('roundStartTime');
+  if(durationTimer){ clearInterval(durationTimer); durationTimer=null; }
+  const el=document.getElementById('player-name'); if(el) el.value='Paul';
+  showScreen('setup');
+}
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  updateAllWeather();
+}
+// ── INIT ──────────────────────────────────────────────
+const today=new Date().toISOString().split('T')[0];
+state.date=today; state.players=["Paul"];
+// Restore persisted round start time (survives app close/reopen mid-round)
+const savedStart = localStorage.getItem('roundStartTime');
+if(savedStart){
+  state.roundStartTime = parseInt(savedStart, 10);
+  durationTimer = setInterval(updateAllWeather, 30000);
+}
+fetchWeather();
+</script>
+</body>
+</html>
