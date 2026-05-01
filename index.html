@@ -605,6 +605,7 @@
     <div class="player-row">
       <span class="player-input player-name-display" id="player-name">Paul</span>
     </div>
+    <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
   </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
@@ -811,6 +812,38 @@
     </div>
   </div>
 </div>
+<!-- ══════════════ COURSE SELECT ══════════════ -->
+<div class="screen" id="screen-course">
+  <div class="masthead">
+    <div class="header-upper">
+      <div class="hu-course" id="cs-course-name"></div>
+      <div class="hu-weather" id="cs-weather">—</div>
+      <div class="hu-date" id="cs-date"></div>
+      <div class="hu-duration"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">Select Course</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+  <div class="setup-body" id="course-select-body">
+    <div class="course-search-row">
+      <input type="text" id="course-search-input" class="course-search-input"
+        placeholder="Course or club name…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter')doSearch()" />
+      <button class="btn-3d course-search-btn" onclick="doSearch()">Search</button>
+    </div>
+    <div class="course-status" id="course-status"></div>
+    <div id="course-results"></div>
+    <div id="tee-section" class="tee-section hidden"></div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" onclick="showScreen('setup')">Back</button>
+    <button class="btn-3d nav-btn" id="use-course-btn" onclick="useSelectedCourse()" style="opacity:0.45;pointer-events:none">Use Course</button>
+  </div>
+  <div class="footer"><div class="footer-grid"></div></div>
+</div>
 <audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
 <script>
 // ── COURSE (variable for future multi-course support) ──
@@ -851,9 +884,7 @@ function updateAllWeather() {
   ["weather-setup","weather-hole","weather-midround","weather-card","weather-success"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=state.weatherStr;
   });
-  ["setup-course-name","hole-course-name","midround-course-name","card-course-name","success-course-name"].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.textContent='Course: '+COURSE.name;
-  });
+  updateCourseNameDisplay();
   const dateStr=state.date?formatDate(state.date):'';
   ["setup-date-display","hole-date-display","midround-date-display","card-date-display","success-date-display"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=dateStr;
@@ -879,10 +910,16 @@ function readPlayerName(){
 function startRound() {
   state.players = [readPlayerName()];
   state.date=new Date().toISOString().split('T')[0];
-  state.holeList=[...COURSE.holes,...COURSE.holes];
-  state.totalHoles=18;
-  state.scores=state.players.map(()=>state.holeList.map(h=>h.par));
-  state.stats=Array.from({length:18},()=>({fir:null,gir:null,pen:null,ud:null,xud:null,putts:2}));
+  if (activeCourseData && activeCourseData.holes && activeCourseData.holes.length) {
+    state.holeList  = [...activeCourseData.holes];
+    state.totalHoles = activeCourseData.holes.length;
+  } else {
+    state.holeList   = [...COURSE.holes, ...COURSE.holes];
+    state.totalHoles = 18;
+  }
+  state.scores = state.players.map(() => state.holeList.map(h => h.par));
+  state.stats  = Array.from({length: state.totalHoles}, () =>
+    ({fir:null, gir:null, pen:null, ud:null, xud:null, putts:2}));
   state.currentHole=0; state.activePlayer=0;
   state.roundStartTime = Date.now();
   localStorage.setItem('roundStartTime', state.roundStartTime);
@@ -1088,8 +1125,18 @@ function goBackToRound(){
 }
 // ── SUCCESS SUMMARY ──────────────────────────────────
 function courseHandicap(hi, teeKey){
-  const tee = COURSE.ratings[teeKey] || COURSE.ratings.mensBlue;
-  return Math.round(hi * (tee.sr / 113) + (tee.cr - COURSE.par));
+  let cr, sr, par;
+  if (activeCourseData) {
+    cr  = activeCourseData.cr;
+    sr  = activeCourseData.sr;
+    par = activeCourseData.par;
+  } else {
+    const tee = COURSE.ratings[teeKey] || COURSE.ratings.mensBlue;
+    cr  = tee.cr;
+    sr  = tee.sr;
+    par = COURSE.par;
+  }
+  return Math.round(hi * (sr / 113) + (cr - par));
 }
 function renderSuccessSummary(){
   const holes = (state.scores[0]||[]);
@@ -1130,9 +1177,13 @@ function clearSuccessSummary(){
 // ── SUBMIT ────────────────────────────────────────────
 async function submitRound(){
   renderSuccessSummary();
-  const par=64; const total=state.scores[0].reduce((a,b)=>a+b,0);
-  const pars=Array.from({length:18},(_,i)=>COURSE.holes[i%9].par);
-  const payload={date:state.date,player:state.players[0],course:COURSE.name,tees:"Blue",roundType:"18",holes:state.scores[0],par,pars,stats:state.stats};
+  const total    = state.scores[0].reduce((a,b)=>a+b,0);
+  const par      = activeCourseData ? activeCourseData.par      : COURSE.par;
+  const courseName = activeCourseData ? activeCourseData.name   : COURSE.name;
+  const teeName  = activeCourseData ? activeCourseData.teeName  : 'Blue';
+  const pars     = state.holeList.map(h => h.par);
+  const payload  = {date:state.date, player:state.players[0], course:courseName,
+    tees:teeName, roundType:'18', holes:state.scores[0], par, pars, stats:state.stats};
   const spinner=document.getElementById('success-spinner');
   const title=document.getElementById('success-title');
   // Move to success screen immediately, showing spinner + "Posting…"
@@ -1168,6 +1219,221 @@ function showScreen(name){
   document.getElementById('screen-'+name).classList.add('active');
   updateAllWeather();
 }
+// ── GOLFCOURSEAPI CACHE LAYER ─────────────────────────
+const GCAPI_KEY  = 'K5MCOZPT4S2SLPODUOK4JAEWTI';
+const GCAPI_BASE = 'https://api.golfcourseapi.com';
+
+// In-session state
+let _searchResults    = [];
+let _selectedApiCourse = null;
+let _selectedTeeEntry  = null;   // { teeBox, gender }
+let activeCourseData   = null;   // normalized; drives startRound / courseHandicap
+
+// Local cache helpers
+function _getCache() {
+  try { return JSON.parse(localStorage.getItem('courseCache') || '{}'); } catch(e) { return {}; }
+}
+function getCachedCourse(id) { return _getCache()[id] || null; }
+function saveCourseToCache(course) {
+  const c = _getCache();
+  c[course.id] = { ...course, cachedAt: new Date().toISOString().split('T')[0] };
+  localStorage.setItem('courseCache', JSON.stringify(c));
+}
+
+// API calls
+async function searchCourses(query) {
+  const r = await fetch(
+    GCAPI_BASE + '/v1/search?search_query=' + encodeURIComponent(query),
+    { headers: { 'Authorization': 'Key ' + GCAPI_KEY } }
+  );
+  if (!r.ok) throw new Error('Search failed ' + r.status);
+  const d = await r.json();
+  return d.courses || [];
+}
+async function getCourseById(id) {
+  const cached = getCachedCourse(id);
+  if (cached) return cached;
+  const r = await fetch(
+    GCAPI_BASE + '/v1/courses/' + id,
+    { headers: { 'Authorization': 'Key ' + GCAPI_KEY } }
+  );
+  if (!r.ok) throw new Error('Course fetch failed ' + r.status);
+  const d = await r.json();
+  // API wraps in {course:...} but handle direct too
+  const course = (d && d.course) ? d.course : d;
+  saveCourseToCache(course);
+  return course;
+}
+
+// Normalize API course+tee into the shape startRound() needs
+function buildActiveCourseData(course, teeBox, gender) {
+  const count = Math.min(teeBox.number_of_holes || 18, 18);
+  const holes  = (teeBox.holes || []).slice(0, count)
+                   .map(h => ({ par: h.par, yards: h.yardage }));
+  const label  = (!course.course_name || course.course_name === course.club_name)
+    ? course.club_name
+    : course.club_name + ' – ' + course.course_name;
+  return {
+    name:     label,
+    par:      teeBox.par_total || holes.reduce((a, h) => a + h.par, 0),
+    holes:    holes,
+    cr:       teeBox.course_rating,
+    sr:       teeBox.slope_rating,
+    teeName:  teeBox.tee_name,
+    gender:   gender,
+    looped:   false,
+    apiId:    course.id
+  };
+}
+
+// Persist / restore active course
+function saveActiveCourseData(data) {
+  activeCourseData = data;
+  localStorage.setItem('activeCourse', JSON.stringify(data));
+}
+function loadActiveCourse() {
+  try {
+    const raw = localStorage.getItem('activeCourse');
+    if (raw) activeCourseData = JSON.parse(raw);
+  } catch(e) { activeCourseData = null; }
+  updateCourseNameDisplay();
+}
+
+// ── COURSE SELECT UI ──────────────────────────────────
+function showCourseSelect() {
+  _searchResults     = [];
+  _selectedApiCourse = null;
+  _selectedTeeEntry  = null;
+  document.getElementById('course-search-input').value = '';
+  document.getElementById('course-status').textContent = '';
+  document.getElementById('course-results').innerHTML  = '';
+  const ts = document.getElementById('tee-section');
+  ts.classList.add('hidden');
+  ts.innerHTML = '';
+  delete ts._teeList;
+  setUseCourseEnabled(false);
+  showScreen('course');
+}
+
+function setUseCourseEnabled(on) {
+  const btn = document.getElementById('use-course-btn');
+  if (!btn) return;
+  btn.style.opacity       = on ? '1' : '0.45';
+  btn.style.pointerEvents = on ? 'auto' : 'none';
+}
+
+async function doSearch() {
+  const input  = document.getElementById('course-search-input');
+  const query  = input ? input.value.trim() : '';
+  if (!query) return;
+  const status  = document.getElementById('course-status');
+  const results = document.getElementById('course-results');
+  status.textContent = 'Searching…';
+  results.innerHTML  = '';
+  const ts = document.getElementById('tee-section');
+  ts.classList.add('hidden'); ts.innerHTML = ''; delete ts._teeList;
+  setUseCourseEnabled(false);
+  try {
+    _searchResults = await searchCourses(query);
+    if (!_searchResults.length) {
+      status.textContent = 'No courses found — try a different search.';
+      return;
+    }
+    status.textContent = _searchResults.length + ' result' + (_searchResults.length !== 1 ? 's' : '');
+    results.innerHTML = _searchResults.map((c, i) => {
+      const loc = c.location || {};
+      const locParts = [loc.city, loc.state, loc.country].filter(Boolean).join(', ');
+      const sub = (c.course_name && c.course_name !== c.club_name)
+        ? esc(c.course_name) + ' · ' + esc(locParts)
+        : esc(locParts);
+      return '<div class="course-result-item" id="cr-' + i + '" onclick="selectSearchResult(' + i + ')">'
+           + '<div class="course-result-name">' + esc(c.club_name) + '</div>'
+           + '<div class="course-result-sub">'  + sub + '</div>'
+           + '</div>';
+    }).join('');
+  } catch(e) {
+    status.textContent = 'Search unavailable — check your connection.';
+  }
+}
+
+async function selectSearchResult(i) {
+  document.querySelectorAll('.course-result-item')
+    .forEach((el, j) => el.classList.toggle('selected', j === i));
+  _selectedApiCourse = null;
+  _selectedTeeEntry  = null;
+  setUseCourseEnabled(false);
+  const ts = document.getElementById('tee-section');
+  ts.innerHTML = '<div class="tee-section-label">Loading tees…</div>';
+  ts.classList.remove('hidden');
+  try {
+    const full = await getCourseById(_searchResults[i].id);
+    _selectedApiCourse = full;
+    renderTeePicker(full);
+  } catch(e) {
+    ts.innerHTML = '<div class="course-status">Could not load tee data — try again.</div>';
+  }
+}
+
+function renderTeePicker(course) {
+  const allTees = [];
+  ((course.tees || {}).male   || []).forEach(t => allTees.push({ teeBox: t, gender: 'male' }));
+  ((course.tees || {}).female || []).forEach(t => allTees.push({ teeBox: t, gender: 'female' }));
+  const ts = document.getElementById('tee-section');
+  if (!allTees.length) {
+    ts.innerHTML = '<div class="tee-section-label">No tee data available for this course.</div>';
+    return;
+  }
+  ts.innerHTML = '<div class="tee-section-label">Select Tees</div>'
+    + allTees.map((t, i) => {
+        const tb     = t.teeBox;
+        const yards  = tb.total_yards   ? tb.total_yards + ' yds'  : '';
+        const cr     = tb.course_rating ? 'CR ' + tb.course_rating : '';
+        const sr     = tb.slope_rating  ? 'SR ' + tb.slope_rating  : '';
+        const detail = [yards, cr, sr].filter(Boolean).join(' · ');
+        const glyph  = t.gender === 'female' ? ' ♀' : ' ♂';
+        return '<div class="tee-option" id="tee-opt-' + i + '" onclick="selectTeeOption(' + i + ')">'
+             + '<div class="tee-option-name">'   + esc(tb.tee_name) + glyph + '</div>'
+             + '<div class="tee-option-detail">' + esc(detail)              + '</div>'
+             + '</div>';
+      }).join('');
+  ts._teeList = allTees;
+}
+
+function selectTeeOption(i) {
+  document.querySelectorAll('.tee-option')
+    .forEach((el, j) => el.classList.toggle('selected', j === i));
+  const ts = document.getElementById('tee-section');
+  const list = ts._teeList || [];
+  _selectedTeeEntry = list[i] || null;
+  setUseCourseEnabled(!!_selectedTeeEntry && !!_selectedApiCourse);
+}
+
+function useSelectedCourse() {
+  if (!_selectedApiCourse || !_selectedTeeEntry) return;
+  const data = buildActiveCourseData(
+    _selectedApiCourse,
+    _selectedTeeEntry.teeBox,
+    _selectedTeeEntry.gender
+  );
+  saveActiveCourseData(data);
+  updateCourseNameDisplay();
+  showScreen('setup');
+}
+
+function updateCourseNameDisplay() {
+  const name = activeCourseData ? activeCourseData.name : COURSE.name;
+  const label = 'Course: ' + name;
+  ["setup-course-name","hole-course-name","midround-course-name",
+   "card-course-name","success-course-name","cs-course-name"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = label;
+  });
+  // Update Change Course link text to show active course
+  const lnk = document.getElementById('setup-course-link');
+  if (lnk) lnk.textContent = activeCourseData
+    ? 'Playing: ' + activeCourseData.name + ' (' + activeCourseData.teeName + ') — Change'
+    : 'Change Course';
+}
+
 // ── INIT ──────────────────────────────────────────────
 const today=new Date().toISOString().split('T')[0];
 state.date=today; state.players=["Paul"];
@@ -1177,6 +1443,7 @@ if(savedStart){
   state.roundStartTime = parseInt(savedStart, 10);
   durationTimer = setInterval(updateAllWeather, 30000);
 }
+loadActiveCourse();
 fetchWeather();
 </script>
 </body>
