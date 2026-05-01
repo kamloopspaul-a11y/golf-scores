@@ -3,6 +3,11 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.25 — May 1 2026
+  - GolfCourseAPI.com integration: cache layer (getCourseById, searchCourses,
+    localStorage.courseCache) + Course Select screen (search → results → tee
+    picker → Use Course). activeCourseData drives startRound/courseHandicap/
+    submitRound. Mt. Paul remains default; Change Course link on Setup.
   v9.24 — April 30 2026
   - Hero grid columns 15/15/15/55 → 20/20/20/40 (fixes iPhone right-edge clip)
   - Hero score (.ss-val) small-screen rule: 56px → 46px (matches title scaling)
@@ -556,6 +561,56 @@
     margin: 0 auto 16px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── COURSE SELECT ──────────────────────────────────── */
+  .change-course-link {
+    display: block; margin-top: 14px;
+    font-size: 13px; color: var(--green); text-align: center;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+    background: none; border: none; width: 100%; padding: 4px;
+    font-family: inherit;
+  }
+  .course-search-row {
+    display: flex; gap: 8px; margin-bottom: 12px;
+  }
+  .course-search-input {
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px 14px;
+    font-family: 'DM Sans', -apple-system, sans-serif; font-size: 15px;
+    color: var(--text-primary); outline: none; transition: border-color 0.2s;
+  }
+  .course-search-input:focus { border-color: var(--green); }
+  .course-search-btn { padding: 10px 18px; border-radius: 12px; white-space: nowrap; }
+  .course-status {
+    font-size: 14px; color: var(--text-secondary);
+    margin-bottom: 10px; min-height: 20px;
+  }
+  .course-result-item {
+    padding: 12px 14px; border-radius: 12px;
+    border: 1.5px solid var(--border); background: var(--card);
+    margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .course-result-item:hover { border-color: var(--green); }
+  .course-result-item.selected { border-color: var(--green); background: var(--green-pale); }
+  .course-result-name { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+  .course-result-sub  { font-size: 13px; color: var(--text-secondary); }
+  .tee-section {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
+  }
+  .tee-section-label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-muted); margin-bottom: 10px; font-weight: 600;
+  }
+  .tee-option {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-radius: 12px;
+    border: 1.5px solid var(--border); background: var(--card);
+    margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .tee-option:hover { border-color: var(--green); }
+  .tee-option.selected { border-color: var(--green); background: var(--green-pale); }
+  .tee-option-name   { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .tee-option-detail { font-size: 13px; color: var(--text-secondary); text-align: right; }
   .hidden { display: none !important; }
 
   /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
@@ -606,6 +661,7 @@
       <span class="player-input player-name-display" id="player-name">Paul</span>
     </div>
     <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
+    <p style="color:red;font-size:18px;text-align:center;margin-top:12px">v9.25 TEST — Lorem ipsum dolor sit amet</p>
   </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
