@@ -511,13 +511,13 @@
   /* Stats info overlay */
   .ss-info-btn {
     position: absolute; top: 6px; right: 6px;
-    width: 18px; height: 18px; border-radius: 50%;
-    background: rgba(0,0,0,0.12); border: none; cursor: pointer;
-    font-size: 11px; font-weight: 700; color: var(--text-secondary);
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--green); cursor: pointer;
+    font-size: 14px; font-weight: 700; color: var(--green);
     display: flex; align-items: center; justify-content: center;
     line-height: 1; padding: 0; flex-shrink: 0;
   }
-  .ss-info-btn:active { background: rgba(0,0,0,0.22); }
+  .ss-info-btn:active { background: var(--green-pale); }
   .ss-hero { position: relative; }
   .stats-help-overlay {
     display: none; position: absolute; inset: 0;
@@ -540,10 +540,14 @@
     line-height: 1.45;
   }
   .stats-help-close {
-    position: absolute; top: 5px; right: 6px;
-    font-size: 14px; background: none; border: none;
-    cursor: pointer; color: var(--text-secondary); line-height: 1;
+    position: absolute; top: 6px; right: 6px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--green); cursor: pointer;
+    font-size: 13px; font-weight: 700; color: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1; padding: 0;
   }
+  .stats-help-close:active { background: var(--green-pale); }
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
