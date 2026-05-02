@@ -3,6 +3,13 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.27 — May 2 2026
+  - Success screen: grid-template-columns 20%/20%/20%/40% → 1fr/1fr/1fr/2fr (fixes right-padding overflow with gap)
+  - Success screen: stats "i" info overlay on hero cell (HI, Net Score, FIR, GIR, PEN, UD, X-UD, PUTTS)
+  v9.26 — May 2 2026
+  - Added 3 BC courses: Bighorn, Meadow Creek (9-hole loop), Pineridge
+  - courses.json sorted A-Z, IDs renumbered 1-12
+  - GolfCourseAPI removed; app is fully local-data-only
   v9.25 — May 1 2026
   - Course data: local courses.json seed (seedCourseCache). API removed v9.26.
     localStorage.courseCache) + Course Select screen (search → results → tee
@@ -487,7 +494,7 @@
   .success-summary {
     width: 100%;
     display: grid;
-    grid-template-columns: 20% 20% 20% 40%;
+    grid-template-columns: 1fr 1fr 1fr 2fr;
     grid-template-rows: 1fr 1fr;
     gap: 6px;
   }
@@ -500,6 +507,43 @@
   .ss-hero { grid-column: 4; grid-row: 1 / span 2; }
   .ss-hero .ss-val { font-size: 56px; line-height: 1; letter-spacing: -2px; }
   .ss-hero .ss-fine { font-size: 11px; color: var(--text-secondary); margin-top: 8px; letter-spacing: 0.3px; white-space: nowrap; }
+
+  /* Stats info overlay */
+  .ss-info-btn {
+    position: absolute; top: 6px; right: 6px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0,0,0,0.12); border: none; cursor: pointer;
+    font-size: 11px; font-weight: 700; color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1; padding: 0; flex-shrink: 0;
+  }
+  .ss-info-btn:active { background: rgba(0,0,0,0.22); }
+  .ss-hero { position: relative; }
+  .stats-help-overlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.97); border-radius: 10px;
+    padding: 10px 12px; overflow-y: auto; z-index: 10;
+    text-align: left;
+  }
+  .stats-help-overlay.open { display: block; }
+  .stats-help-overlay h4 {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--green); margin: 0 0 7px;
+  }
+  .stats-help-overlay dl { margin: 0; }
+  .stats-help-overlay dt {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-primary); margin-top: 6px;
+  }
+  .stats-help-overlay dd {
+    font-size: 10px; color: var(--text-secondary); margin: 1px 0 0 0;
+    line-height: 1.4;
+  }
+  .stats-help-close {
+    position: absolute; top: 5px; right: 6px;
+    font-size: 14px; background: none; border: none;
+    cursor: pointer; color: var(--text-secondary); line-height: 1;
+  }
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
@@ -839,8 +883,31 @@
       <div class="ss-cell"><span class="ss-val" id="ss-gir">–</span><span class="ss-lbl">GIR</span></div>
       <div class="ss-cell"><span class="ss-val" id="ss-pen">–</span><span class="ss-lbl">PEN</span></div>
       <div class="ss-cell ss-hero">
+        <button class="ss-info-btn" onclick="toggleStatsHelp(event)" aria-label="Stats help">i</button>
         <span class="ss-val" id="ss-actual">–</span>
         <span class="ss-fine"><span id="ss-hi">HI: –</span> | <span id="ss-net">Net Score: –</span></span>
+        <div id="stats-help-overlay" class="stats-help-overlay">
+          <button class="stats-help-close" onclick="toggleStatsHelp(event)" aria-label="Close">✕</button>
+          <h4>Round Stats</h4>
+          <dl>
+            <dt>HI — Handicap Index</dt>
+            <dd>Your portable handicap number. Lower = better. Calculated from your best recent rounds.</dd>
+            <dt>Net Score</dt>
+            <dd>Your gross score minus your Course Handicap. A net score near par means you played to your ability.</dd>
+            <dt>FIR — Fairway in Regulation</dt>
+            <dd>Tee shot lands on the fairway. Tracked on par 4s and 5s only.</dd>
+            <dt>GIR — Green in Regulation</dt>
+            <dd>Ball on the putting surface in (par − 2) strokes or fewer.</dd>
+            <dt>PEN — Penalty Strokes</dt>
+            <dd>Total penalty strokes taken (water hazards, out of bounds, etc.).</dd>
+            <dt>UD — Up &amp; Down</dt>
+            <dd>Missed the green in regulation but still made par or better — chip/pitch + one putt.</dd>
+            <dt>X-UD — Missed Up &amp; Down</dt>
+            <dd>Missed the green in regulation and took more than one putt to hole out.</dd>
+            <dt>PUTTS</dt>
+            <dd>Total putts for the round. Tour average is around 29. Under 30 is solid.</dd>
+          </dl>
+        </div>
       </div>
       <div class="ss-cell"><span class="ss-val" id="ss-ud">–</span><span class="ss-lbl">UD</span></div>
       <div class="ss-cell"><span class="ss-val" id="ss-xud">–</span><span class="ss-lbl">X-UD</span></div>
@@ -1505,6 +1572,21 @@ if(savedStart){
 loadActiveCourse();
 seedCourseCache(); // silent background cache seed
 fetchWeather();
+
+// Stats help overlay toggle
+function toggleStatsHelp(e) {
+  e.stopPropagation();
+  const overlay = document.getElementById('stats-help-overlay');
+  overlay.classList.toggle('open');
+}
+// Close overlay if user taps anywhere outside hero cell
+document.addEventListener('click', function(e) {
+  const overlay = document.getElementById('stats-help-overlay');
+  if (!overlay) return;
+  if (overlay.classList.contains('open') && !overlay.closest('.ss-hero').contains(e.target)) {
+    overlay.classList.remove('open');
+  }
+});
 </script>
 </body>
 </html>
