@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.27l — May 2 2026
+  v9.27m — May 2 2026
   - Success screen: grid-template-columns 20%/20%/20%/40% → 1fr/1fr/1fr/2fr (fixes right-padding overflow with gap)
   - Success screen: stats "i" info overlay on hero cell (HI, Net Score, FIR, GIR, PEN, UD, X-UD, PUTTS)
   v9.26 — May 2 2026
@@ -302,7 +302,7 @@
   .hole-stat-label { font-size: 16px; font-weight: 600; color: white; line-height: 1; letter-spacing: 0.5px; }
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-    flex: 1 1 auto;
+    flex: 1 0 auto;  /* flex-shrink: 0 — stage never shrinks on any screen */
     min-height: 0;
     overflow-y: auto;
     background: #fff;
@@ -423,8 +423,8 @@
   /* NAV BUTTONS — fixed position, all screens */
   .hole-actions { padding: 8px 24px 16px; display: flex; gap: 12px; flex-shrink: 0; }
   /* Hole screen: score counter never collapses; show scrollbar instead of crushing stage */
-  /* Stage never shrinks and never scrolls internally — prevents nav button shift and mobile touch-scroll */
-  #screen-hole .score-section { flex-shrink: 0; overflow: hidden; }
+  /* Hole screen score-section must not be a touch-scroll surface */
+  #screen-hole .score-section { overflow: hidden; }
   /* Scroll only on desktop (mouse) if viewport too short; mobile never needs this */
   @media (hover: hover) and (pointer: fine) {
     #screen-hole { overflow-y: auto; }
