@@ -1,2 +1,1 @@
-# golf-scores
-My golf score app
+# Golf PWA — Kamloops BC
