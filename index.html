@@ -4,7 +4,7 @@
   Built with Claude AI
   CHANGELOG
   v9.25 — May 1 2026
-  - GolfCourseAPI.com integration: cache layer (getCourseById, searchCourses,
+  - Course data: local courses.json seed (seedCourseCache). API removed v9.26.
     localStorage.courseCache) + Course Select screen (search → results → tee
     picker → Use Course). activeCourseData drives startRound/courseHandicap/
     submitRound. Mt. Paul remains default; Change Course link on Setup.
@@ -661,7 +661,6 @@
       <span class="player-input player-name-display" id="player-name">Paul</span>
     </div>
     <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
-    <p style="color:red;font-size:18px;text-align:center;margin-top:12px">v9.25 TEST — Lorem ipsum dolor sit amet</p>
   </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
@@ -1276,8 +1275,6 @@ function showScreen(name){
   updateAllWeather();
 }
 // ── GOLFCOURSEAPI CACHE LAYER ─────────────────────────
-const GCAPI_KEY  = 'K5MCOZPT4S2SLPODUOK4JAEWTI';
-const GCAPI_BASE = 'https://api.golfcourseapi.com';
 
 // In-session state
 let _searchResults    = [];
@@ -1296,29 +1293,8 @@ function saveCourseToCache(course) {
   localStorage.setItem('courseCache', JSON.stringify(c));
 }
 
-// API calls
-async function searchCourses(query) {
-  const r = await fetch(
-    GCAPI_BASE + '/v1/search?search_query=' + encodeURIComponent(query),
-    { headers: { 'Authorization': 'Key ' + GCAPI_KEY } }
-  );
-  if (!r.ok) throw new Error('Search failed ' + r.status);
-  const d = await r.json();
-  return d.courses || [];
-}
-async function getCourseById(id) {
-  const cached = getCachedCourse(id);
-  if (cached) return cached;
-  const r = await fetch(
-    GCAPI_BASE + '/v1/courses/' + id,
-    { headers: { 'Authorization': 'Key ' + GCAPI_KEY } }
-  );
-  if (!r.ok) throw new Error('Course fetch failed ' + r.status);
-  const d = await r.json();
-  // API wraps in {course:...} but handle direct too
-  const course = (d && d.course) ? d.course : d;
-  saveCourseToCache(course);
-  return course;
+function getCourseById(id) {
+  return getCachedCourse(id);
 }
 
 // Normalize API course+tee into the shape startRound() needs
@@ -1378,7 +1354,16 @@ function setUseCourseEnabled(on) {
   btn.style.pointerEvents = on ? 'auto' : 'none';
 }
 
-async function doSearch() {
+function searchCache(query) {
+  const q = query.toLowerCase();
+  return Object.values(_getCache()).filter(c => {
+    const name = ((c.club_name || '') + ' ' + (c.course_name || '')).toLowerCase();
+    const city = ((c.location || {}).city || '').toLowerCase();
+    return name.includes(q) || city.includes(q);
+  });
+}
+
+function doSearch() {
   const input  = document.getElementById('course-search-input');
   const query  = input ? input.value.trim() : '';
   if (!query) return;
@@ -1389,27 +1374,25 @@ async function doSearch() {
   const ts = document.getElementById('tee-section');
   ts.classList.add('hidden'); ts.innerHTML = ''; delete ts._teeList;
   setUseCourseEnabled(false);
-  try {
-    _searchResults = await searchCourses(query);
-    if (!_searchResults.length) {
-      status.textContent = 'No courses found — try a different search.';
-      return;
-    }
-    status.textContent = _searchResults.length + ' result' + (_searchResults.length !== 1 ? 's' : '');
-    results.innerHTML = _searchResults.map((c, i) => {
-      const loc = c.location || {};
-      const locParts = [loc.city, loc.state, loc.country].filter(Boolean).join(', ');
-      const sub = (c.course_name && c.course_name !== c.club_name)
-        ? esc(c.course_name) + ' · ' + esc(locParts)
-        : esc(locParts);
-      return '<div class="course-result-item" id="cr-' + i + '" onclick="selectSearchResult(' + i + ')">'
-           + '<div class="course-result-name">' + esc(c.club_name) + '</div>'
-           + '<div class="course-result-sub">'  + sub + '</div>'
-           + '</div>';
-    }).join('');
-  } catch(e) {
-    status.textContent = 'Search unavailable — check your connection.';
+
+  // Search local cache (courses.json seed)
+  _searchResults = searchCache(query);
+  if (!_searchResults.length) {
+    status.textContent = 'No courses found — try a different search.';
+    return;
   }
+  status.textContent = _searchResults.length + ' result' + (_searchResults.length !== 1 ? 's' : '');
+  results.innerHTML = _searchResults.map((c, i) => {
+    const loc = c.location || {};
+    const locParts = [loc.city, loc.state, loc.country].filter(Boolean).join(', ');
+    const sub = (c.course_name && c.course_name !== c.club_name)
+      ? esc(c.course_name) + ' · ' + esc(locParts)
+      : esc(locParts);
+    return '<div class="course-result-item" id="cr-' + i + '" onclick="selectSearchResult(' + i + ')">'
+         + '<div class="course-result-name">' + esc(c.club_name) + '</div>'
+         + '<div class="course-result-sub">'  + sub + '</div>'
+         + '</div>';
+  }).join('');
 }
 
 async function selectSearchResult(i) {
@@ -1421,12 +1404,12 @@ async function selectSearchResult(i) {
   const ts = document.getElementById('tee-section');
   ts.innerHTML = '<div class="tee-section-label">Loading tees…</div>';
   ts.classList.remove('hidden');
-  try {
-    const full = await getCourseById(_searchResults[i].id);
+  const full = getCourseById(_searchResults[i].id);
+  if (full) {
     _selectedApiCourse = full;
     renderTeePicker(full);
-  } catch(e) {
-    ts.innerHTML = '<div class="course-status">Could not load tee data — try again.</div>';
+  } else {
+    ts.innerHTML = '<div class="course-status">Course data not found.</div>';
   }
 }
 
@@ -1490,6 +1473,26 @@ function updateCourseNameDisplay() {
     : 'Change Course';
 }
 
+// ── REGIONAL COURSE SEED (from courses.json) ─────────
+// On first launch (cache < 5 courses), fetches courses.json from GitHub Pages
+// and seeds localStorage courseCache — zero API sessions consumed.
+const COURSES_JSON_URL = 'https://kamloopspaul-a11y.github.io/golf-scores/courses.json';
+
+async function seedCourseCache() {
+  const cache = _getCache();
+  if (Object.keys(cache).length >= 5) return; // already seeded
+  try {
+    const res = await fetch(COURSES_JSON_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    for (const [key, course] of Object.entries(data)) {
+      if (key === '_meta') continue;
+      if (!getCachedCourse(course.id)) saveCourseToCache(course);
+    }
+  } catch(e) { /* silent fail — offline is fine */ }
+}
+
+
 // ── INIT ──────────────────────────────────────────────
 const today=new Date().toISOString().split('T')[0];
 state.date=today; state.players=["Paul"];
@@ -1500,6 +1503,7 @@ if(savedStart){
   durationTimer = setInterval(updateAllWeather, 30000);
 }
 loadActiveCourse();
+seedCourseCache(); // silent background cache seed
 fetchWeather();
 </script>
 </body>
