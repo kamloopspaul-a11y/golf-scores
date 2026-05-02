@@ -422,6 +422,9 @@
   .dot.scored { background: var(--green); opacity: 0.45; }
   /* NAV BUTTONS — fixed position, all screens */
   .hole-actions { padding: 8px 24px 16px; display: flex; gap: 12px; flex-shrink: 0; }
+  /* Hole screen: score counter never collapses; show scrollbar instead of crushing stage */
+  #screen-hole { overflow-y: auto; }
+  #screen-hole .score-section { min-height: 140px; }
   .nav-btn { flex: 1; padding: 15px; }
   .start-btn { padding: 15px; margin-top: 0; }
   /* ── SCORECARD ─────────────────────────────────────── */
