@@ -4,12 +4,12 @@
 
 ## Status
 
-**Version:** v9.24 — April 30, 2026
+**Version:** v9.25 — May 1, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Golf`
 **Service Worker:** v26 (network-first for HTML, cache-first for assets)
-**Stage:** GUI polish / pre-release
+**Stage:** Multi-course integration / pre-release
 
 ## Core Spec
 
@@ -242,6 +242,58 @@ See `~/Documents/Studio/Dashboard/PROJECT.md`. Per-player stat trends (FIR, GIR,
 ## Business / Marketability
 
 See `BUSINESS.md` for the full white-label-SaaS / golf-academy thread.
+
+## Market Considerations
+
+*Fixes and decisions required before any open-market release.*
+
+### API & Data Strategy
+- **300 API sessions** on the free GolfCourseAPI.com tier are shared across all users of the same embedded key. A handful of real users will exhaust this quickly. Options: paid tier, per-user key, or abandon the API entirely.
+- **courses.json seed file is Kamloops-specific.** On an open market, this regional pre-load makes no sense. For a generic release, users search their own local courses — no seed file.
+- **Kamloops fork option:** cleave this project as a standalone "Kamloops Courses" app with all local courses hardcoded, no API, no seed file complexity. Simple and honest about its scope.
+
+### Course Data Accuracy
+- **Kamloops GC tee data** from the API is incomplete/inaccurate: Burgundy renamed to Red (done), but male tee count needs verification against a physical scorecard. Female tee count also unverified.
+- **All seeded courses** should be verified against physical scorecards before publishing. API data is user-contributed and may have errors.
+
+### Architecture Decisions for Open Market
+- Remove regional seed file; replace with user-driven search
+- Player Profile needs proper onboarding (name, home tees, HI) — currently stubbed
+- Privacy policy required before broader OAuth distribution
+- Consider whether Google Sheets backend scales (one Sheet per user = setup friction)
+
+### Strategic Fork Decision (open)
+Once all Kamloops-area courses are entered, decide:
+- **Option A:** Kamloops Courses App — regional, hardcoded, no API, simple
+- **Option B:** Generic Golf Tracker — user searches any course, paid API tier, broader market
+- These are different products. Option A ships sooner. Option B needs a backend rethink.
+
+---
+
+## Session Resume Notes
+
+**Last worked:** May 2, 2026
+
+### What was completed this session
+- `courses.json` expanded to 12 courses: added Bighorn G&CC, Meadow Creek Golf Club (Logan Lake), Pineridge Golf Course
+- Bighorn: 5 tees (Black/Blue/White/Green/Red), full 18-hole data, CR/SR, phone — sourced from scorecard image
+- Meadow Creek: sourced from GolfCourseAPI (ID 9206), 2 tee sets (White/Blue, Red/Gold), 9-hole loop × 2
+- Pineridge: 2 tees (Blue/Red), 9-hole loop × 2 with different back-9 tee boxes, phone 250-573-4333
+- GolfCourseAPI removed entirely: `GCAPI_KEY`, `GCAPI_BASE`, `searchCourses()` deleted; `getCourseById()` and `doSearch()` simplified to local cache only
+- `courses.json` IDs renumbered 1–12 alphabetically — no longer API-dependent
+- `index.html.bak` deleted
+
+### Files pushed (v9.26)
+- `courses.json`
+- `index.html`
+
+### Resume here next session
+1. Test course search on live URL — search "bighorn", "pineridge", "meadow" should return results from cache
+2. Test: fresh device (clear all site data) — seedCourseCache should populate all 12 courses on first load
+3. Remaining open items: Record Stats toggle, Player Profile screen, Title swap ("Round Saved"), offline queue/outbox, touch-target review, remove Discard Round button, app icons
+4. Meadow Creek phone confirmed: 250-523-6666
+5. Kamloops GC — verify tee data against physical scorecard when available
+6. Strategic decision: Kamloops fork vs. generic app (see Market Considerations above)
 
 ## Technical Notes
 
