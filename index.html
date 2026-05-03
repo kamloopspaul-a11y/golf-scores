@@ -285,7 +285,7 @@
     text-align: right; white-space: nowrap;
   }
   /* Lower Header — 2-row strip, identical structure on every screen */
-  .header-lower      { display: flex; flex-direction: column; }
+  .header-lower      { display: flex; flex-direction: column; position: relative; }
   .header-lower-top  { min-height: 86px; display: flex; align-items: flex-end; }
   .header-lower-bot  { min-height: 38px; display: flex; align-items: center;
                        justify-content: space-between; }
@@ -499,6 +499,7 @@
   }
   .success-icon { width: 80px; height: 80px; background: var(--green-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; }
   .success-body h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 14px; }
+  .success-title-error { font-size: 15px !important; font-weight: 400 !important; letter-spacing: 0 !important; white-space: nowrap; }
   .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
   /* Round summary on Save Round screen — 4x2 grid, col 4 hero spans both rows */
   .success-summary {
@@ -558,6 +559,33 @@
     line-height: 1; padding: 0;
   }
   .stats-help-close:active { background: var(--green-pale); }
+  .masthead-info-btn {
+    display: none; position: absolute; top: 6px; right: 6px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--green); cursor: pointer;
+    font-size: 14px; font-weight: 700; color: var(--green);
+    align-items: center; justify-content: center;
+    line-height: 1; padding: 0;
+  }
+  .masthead-info-btn.visible { display: flex; }
+  .masthead-info-btn:active { background: var(--green-pale); }
+  .masthead-info-overlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.97); border-radius: 10px;
+    padding: 10px 36px 10px 12px; z-index: 10; overflow-y: auto;
+  }
+  .masthead-info-overlay.open { display: block; }
+  .mio-heading {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--green); margin: 0 0 6px;
+  }
+  .mio-dt {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.4px; color: var(--text-primary); margin: 6px 0 2px;
+  }
+  .mio-dd {
+    font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.45;
+  }
   .new-round-btn   { padding: 17px 48px; }
   .footer {
     background: transparent;
@@ -897,6 +925,15 @@
     <div class="header-lower">
       <div class="header-lower-top"><div class="header-lower-title">Save Round</div></div>
       <div class="header-lower-bot"></div>
+      <button class="masthead-info-btn" id="masthead-info-btn" onclick="toggleMastheadInfo(event)" aria-label="Offline info">i</button>
+      <div class="masthead-info-overlay" id="masthead-info-overlay">
+        <button class="stats-help-close" onclick="toggleMastheadInfo(event)" aria-label="Close">&#x2715;</button>
+        <div class="mio-heading">No Internet Service</div>
+        <div class="mio-dt">Round Saved</div>
+        <div class="mio-dd">We saved your round to your phone. It will be there when you are ready to post your score.</div>
+        <div class="mio-dt">Posting Your Score</div>
+        <div class="mio-dd">Internet service is required to post your Score and Stats to your data source.</div>
+      </div>
     </div>
   </div>
   <div class="success-body">
@@ -1335,18 +1372,24 @@ async function submitRound(){
   const title=document.getElementById('success-title');
   // Move to success screen immediately, showing spinner + "Posting…"
   if(spinner) spinner.classList.remove('hidden');
-  if(title) title.textContent='Posting…';
+  if(title){ title.textContent='Posting…'; title.classList.remove('success-title-error'); }
+  const mhTitle = document.querySelector('#screen-success .header-lower-title');
+  if(mhTitle) mhTitle.textContent='Save Round';
+  const infoBtn = document.getElementById('masthead-info-btn');
+  const infoOverlay = document.getElementById('masthead-info-overlay');
+  if(infoBtn) infoBtn.classList.remove('visible');
+  if(infoOverlay) infoOverlay.classList.remove('open');
   showScreen('success');
-  if(SHEETS_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
-    if(spinner) spinner.classList.add('hidden');
-    if(title) title.textContent='Posted';
-    return;
-  }
   try {
     await fetch(SHEETS_URL,{method:"POST",body:JSON.stringify(payload)});
     if(title) title.textContent='Posted';
+    const mhTitle = document.querySelector('#screen-success .header-lower-title');
+    if(mhTitle) mhTitle.textContent='Round Saved';
   } catch(e){
-    if(title) title.textContent='Saved locally';
+    if(title){ title.textContent='No Internet service. Try again later.'; title.classList.add('success-title-error'); }
+    const mhTitleErr = document.querySelector('#screen-success .header-lower-title');
+    if(mhTitleErr) mhTitleErr.textContent='Round Saved';
+    if(infoBtn) infoBtn.classList.add('visible');
   }
   if(spinner) spinner.classList.add('hidden');
 }
@@ -1637,6 +1680,19 @@ document.addEventListener('click', function(e) {
   const overlay = document.getElementById('stats-help-overlay');
   if (!overlay) return;
   if (overlay.classList.contains('open') && !overlay.closest('.ss-hero').contains(e.target)) {
+    overlay.classList.remove('open');
+  }
+});
+function toggleMastheadInfo(e) {
+  e.stopPropagation();
+  const overlay = document.getElementById('masthead-info-overlay');
+  overlay.classList.toggle('open');
+}
+// Close masthead info overlay if user taps outside header-lower
+document.addEventListener('click', function(e) {
+  const overlay = document.getElementById('masthead-info-overlay');
+  if (!overlay) return;
+  if (overlay.classList.contains('open') && !overlay.closest('.header-lower').contains(e.target)) {
     overlay.classList.remove('open');
   }
 });
