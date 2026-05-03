@@ -571,7 +571,7 @@
   .masthead-info-btn:active { background: var(--green-pale); }
   .masthead-info-overlay {
     display: none; position: absolute; inset: 0;
-    background: rgba(255,255,255,0.97); border-radius: 10px;
+    background: var(--green-pale); border-radius: 10px;
     padding: 10px 36px 10px 12px; z-index: 10; overflow-y: auto;
   }
   .masthead-info-overlay.open { display: block; }
@@ -757,6 +757,7 @@
     <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
     <!-- DEV ONLY — remove before release -->
     <button class="dev-shortcut" onclick="devPostScreen()">⚙ Dev: Jump to Post Screen</button>
+    <button class="dev-shortcut" onclick="devSimulateFailure()">⚙ Dev: Simulate Failure</button>
     <!-- end dev -->
   </div>
   <div class="hole-actions">
@@ -1386,7 +1387,7 @@ async function submitRound(){
     const mhTitle = document.querySelector('#screen-success .header-lower-title');
     if(mhTitle) mhTitle.textContent='Round Saved';
   } catch(e){
-    if(title){ title.textContent='No Internet service. Try again later.'; title.classList.add('success-title-error'); }
+    if(title){ title.textContent='Unable to Post'; title.classList.remove('success-title-error'); }
     const mhTitleErr = document.querySelector('#screen-success .header-lower-title');
     if(mhTitleErr) mhTitleErr.textContent='Round Saved';
     if(infoBtn) infoBtn.classList.add('visible');
@@ -1668,6 +1669,17 @@ function devPostScreen() {
   document.getElementById('success-date-display').textContent = new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});
   document.getElementById('success-duration').textContent = '3h 42m';
   showScreen('success');
+}
+function devSimulateFailure() {
+  devPostScreen();
+  const title = document.getElementById('success-title');
+  const mhTitle = document.querySelector('#screen-success .header-lower-title');
+  const infoBtn = document.getElementById('masthead-info-btn');
+  const infoOverlay = document.getElementById('masthead-info-overlay');
+  if(title){ title.textContent='Unable to Post'; title.classList.remove('success-title-error'); }
+  if(mhTitle) mhTitle.textContent='Round Saved';
+  if(infoBtn) infoBtn.classList.add('visible');
+  if(infoOverlay) infoOverlay.classList.remove('open');
 }
 // ── end dev ───────────────────────────────────────────────────────────────────
 function toggleStatsHelp(e) {
