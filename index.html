@@ -621,6 +621,13 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── COURSE SELECT ──────────────────────────────────── */
+  /* ── DEV ONLY — remove before release ── */
+  .dev-shortcut {
+    display: block; margin-top: 10px;
+    font-size: 11px; color: #e55; text-decoration: underline;
+    background: none; border: none; cursor: pointer; padding: 0;
+  }
+  /* ── end dev ── */
   .change-course-link {
     display: block; margin-top: 14px;
     font-size: 13px; color: var(--green); text-align: center;
@@ -720,6 +727,9 @@
       <span class="player-input player-name-display" id="player-name">Paul</span>
     </div>
     <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
+    <!-- DEV ONLY — remove before release -->
+    <button class="dev-shortcut" onclick="devPostScreen()">⚙ Dev: Jump to Post Screen</button>
+    <!-- end dev -->
   </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
@@ -1589,6 +1599,34 @@ seedCourseCache(); // silent background cache seed
 fetchWeather();
 
 // Stats help overlay toggle
+// ── DEV ONLY — remove before release ─────────────────────────────────────────
+function devPostScreen() {
+  // Fake course
+  document.getElementById('success-course-name').textContent = 'Kamloops Golf & Country Club';
+  // Fake stats summary
+  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('ss-fir',    '9/14');
+  set('ss-gir',    '7/18');
+  set('ss-pen',    '2');
+  set('ss-ud',     '4');
+  set('ss-xud',    '3');
+  set('ss-putts',  '31');
+  set('ss-actual', '84');
+  set('ss-hi',     'HI: 20');
+  set('ss-net',    'Net Score: 72');
+  // Show summary, hide spinner, reset title
+  const spinner = document.getElementById('success-spinner');
+  const title   = document.getElementById('success-title');
+  const summary = document.getElementById('success-summary');
+  if(spinner) spinner.classList.add('hidden');
+  if(title)   title.textContent = 'Posted';
+  if(summary) summary.style.display = '';
+  // Fake date/duration
+  document.getElementById('success-date-display').textContent = new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('success-duration').textContent = '3h 42m';
+  showScreen('success');
+}
+// ── end dev ───────────────────────────────────────────────────────────────────
 function toggleStatsHelp(e) {
   e.stopPropagation();
   const overlay = document.getElementById('stats-help-overlay');
