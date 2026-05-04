@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v9.25 — May 1, 2026
+**Version:** v9.30 — May 4, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
@@ -151,7 +151,7 @@
 
 - [x] **Stats summary on Save Round screen** — SHIPPED v9.23. 4-col × 2-row grid, col 4 hero spans both rows. Columns 15% / 15% / 15% / 55%. Row 1: FIR · GIR · PEN. Row 2: UD · X-UD · PUTTS. Hero (rowspan 2): Actual Score (gross) at 56px with fine-print sub-line `HI: 20 | Net Score: 70`. Net = Gross − round(HI × SR/113 + (CR − Par)) using `COURSE.ratings`. HI + tee set are hardcoded for now (TODO: Settings lookup once onboarding is wired).
 - [ ] **Title swap on Save Round screen** — replace `<h2>Posted!</h2>` with title-bar swap: "Save Round" → **"Round Saved"** (yellow `var(--yellow)`) on success, failure copy in white. Pairs with the failure-screen 'i' overlay below.
-- [ ] **Offline-queue / outbox for unposted rounds** — replace the misleading "Saved locally" label. On post failure, write the full payload to `localStorage.pendingRounds[]` (queue, not overwrite — losing a round is worse than the extra code). On app boot, if the queue is non-empty show a banner on Setup: "Unposted round from <date> — [Repost] [Discard]". Successful repost shifts the queue. iOS Safari has no Background Sync support, so manual repost is the realistic path. KISS v1: queue + boot-banner + repost button. ~30–60 min.
+- [x] **Offline-queue / outbox for unposted rounds** — replace the misleading "Saved locally" label. On post failure, write the full payload to `localStorage.pendingRounds[]` (queue, not overwrite — losing a round is worse than the extra code). On app boot, if the queue is non-empty show a banner on Setup: "Unposted round from <date> — [Repost] [Discard]". Successful repost shifts the queue. iOS Safari has no Background Sync support, so manual repost is the realistic path. KISS v1: queue + boot-banner + repost button. ~30–60 min.
 - [x] **Failure screen — 'i' info overlay pattern** — SHIPPED v9.27m. ⓘ button top-right of `header-lower` (absolute, failure state only). Overlay fills `header-lower` (pale green bg, inset 0). Message: NO INTERNET SERVICE / ROUND SAVED / POSTING YOUR SCORE. Outside-click dismissal. Dev: Simulate Failure button on Home screen for testing.
 - [ ] **Tee selector** — Mt. Paul Blue + Red, one-time pick stored in Settings tab. Restructure `COURSE.holes` to `{par, blue, red}`. Future courses may add white/gold/black.
 - [ ] **Touch-target review** — `.putts-btn` (26×26) and `.switch` (53×26) below Apple's 44×44 minimum.
@@ -330,6 +330,7 @@ Links must point to cached or locally-computed content only. No live internet re
 - **Pro Tips library** — small JSON, cache once, serve forever
 - **Penalty Rules** — quick-reference, highly cacheable
 - **R&A Quick Reference** — not the full rulebook (too large), but a curated 15–20 rules for casual play
+- **Game Formats** — rules of play for Match Play, Best Ball, Wolf, and other common formats; cacheable reference, useful mid-round
 - **Diagnostics / Analytics** — jump to Dashboard (local data, pre-computed)
 
 ### Contextual Message Area (Stage — Home screen)
