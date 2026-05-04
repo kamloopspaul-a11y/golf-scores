@@ -213,7 +213,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Golf Scores">
 <link rel="manifest" href="manifest.json">
-<title>My Golf Scores</title>
+<title>Score Card</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -246,7 +246,7 @@
     overflow-x: hidden;
   }
   @media (min-width: 600px) {
-    body { max-width: 430px; box-shadow: 0 0 40px rgba(0,0,0,0.3); }
+    body { max-width: 320px; box-shadow: 0 0 40px rgba(0,0,0,0.3); }
   }
   .screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
   .screen.active { display: flex; }
@@ -746,7 +746,7 @@
       <div class="hu-duration"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title">My Golf Scores</div></div>
+      <div class="header-lower-top"><div class="header-lower-title">Score Card</div></div>
       <div class="header-lower-bot"></div>
     </div>
   </div>
@@ -847,7 +847,7 @@
       <div class="hu-duration" id="midround-duration"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title">Front 9 Score</div></div>
+      <div class="header-lower-top"><div class="header-lower-title">Front 9</div></div>
       <div class="header-lower-bot"></div>
     </div>
   </div>
@@ -885,7 +885,7 @@
       <div class="hu-duration" id="card-duration"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title" id="card-title">Final Score</div></div>
+      <div class="header-lower-top"><div class="header-lower-title" id="card-title">Back 9</div></div>
       <div class="header-lower-bot"></div>
     </div>
   </div>
@@ -1007,7 +1007,7 @@
       <div class="hu-duration"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title">Select Course</div></div>
+      <div class="header-lower-top"><div class="header-lower-title">Score Card</div></div>
       <div class="header-lower-bot"></div>
     </div>
   </div>
@@ -1385,11 +1385,11 @@ async function submitRound(){
     await fetch(SHEETS_URL,{method:"POST",body:JSON.stringify(payload)});
     if(title) title.textContent='Posted';
     const mhTitle = document.querySelector('#screen-success .header-lower-title');
-    if(mhTitle) mhTitle.textContent='Round Saved';
+    if(mhTitle) mhTitle.textContent='Save Round';
   } catch(e){
     if(title){ title.textContent='Unable to Post'; title.classList.remove('success-title-error'); }
     const mhTitleErr = document.querySelector('#screen-success .header-lower-title');
-    if(mhTitleErr) mhTitleErr.textContent='Round Saved';
+    if(mhTitleErr) mhTitleErr.textContent='Save Round';
     if(infoBtn) infoBtn.classList.add('visible');
   }
   if(spinner) spinner.classList.add('hidden');
@@ -1677,7 +1677,7 @@ function devSimulateFailure() {
   const infoBtn = document.getElementById('masthead-info-btn');
   const infoOverlay = document.getElementById('masthead-info-overlay');
   if(title){ title.textContent='Unable to Post'; title.classList.remove('success-title-error'); }
-  if(mhTitle) mhTitle.textContent='Round Saved';
+  if(mhTitle) mhTitle.textContent='Save Round';
   if(infoBtn) infoBtn.classList.add('visible');
   if(infoOverlay) infoOverlay.classList.remove('open');
 }
