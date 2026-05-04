@@ -7,7 +7,7 @@
 **Version:** v9.25 — May 1, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
-**Local folder:** `~/Documents/Studio/Golf`
+**Local folder:** `~/Documents/Studio/Projects/Golf`
 **Service Worker:** v26 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
@@ -152,7 +152,7 @@
 - [x] **Stats summary on Save Round screen** — SHIPPED v9.23. 4-col × 2-row grid, col 4 hero spans both rows. Columns 15% / 15% / 15% / 55%. Row 1: FIR · GIR · PEN. Row 2: UD · X-UD · PUTTS. Hero (rowspan 2): Actual Score (gross) at 56px with fine-print sub-line `HI: 20 | Net Score: 70`. Net = Gross − round(HI × SR/113 + (CR − Par)) using `COURSE.ratings`. HI + tee set are hardcoded for now (TODO: Settings lookup once onboarding is wired).
 - [ ] **Title swap on Save Round screen** — replace `<h2>Posted!</h2>` with title-bar swap: "Save Round" → **"Round Saved"** (yellow `var(--yellow)`) on success, failure copy in white. Pairs with the failure-screen 'i' overlay below.
 - [ ] **Offline-queue / outbox for unposted rounds** — replace the misleading "Saved locally" label. On post failure, write the full payload to `localStorage.pendingRounds[]` (queue, not overwrite — losing a round is worse than the extra code). On app boot, if the queue is non-empty show a banner on Setup: "Unposted round from <date> — [Repost] [Discard]". Successful repost shifts the queue. iOS Safari has no Background Sync support, so manual repost is the realistic path. KISS v1: queue + boot-banner + repost button. ~30–60 min.
-- [ ] **Failure screen — 'i' info overlay pattern** — small circular "i" icon on the failure screen opens a layered information message (e.g., "No Internet — your round is safe and queued; repost when back online"). First-time users get the explanation; returning users who recognize the situation can dismiss without wading through it. Wording + visual layout TBD.
+- [x] **Failure screen — 'i' info overlay pattern** — SHIPPED v9.27m. ⓘ button top-right of `header-lower` (absolute, failure state only). Overlay fills `header-lower` (pale green bg, inset 0). Message: NO INTERNET SERVICE / ROUND SAVED / POSTING YOUR SCORE. Outside-click dismissal. Dev: Simulate Failure button on Home screen for testing.
 - [ ] **Tee selector** — Mt. Paul Blue + Red, one-time pick stored in Settings tab. Restructure `COURSE.holes` to `{par, blue, red}`. Future courses may add white/gold/black.
 - [ ] **Touch-target review** — `.putts-btn` (26×26) and `.switch` (53×26) below Apple's 44×44 minimum.
 - [ ] **Settings `Home Course` value** — currently seeded `Kamloops G&CC`, should be `Mt. Paul`.
@@ -272,28 +272,22 @@ Once all Kamloops-area courses are entered, decide:
 
 ## Session Resume Notes
 
-**Last worked:** May 2, 2026
+**Last worked:** May 3, 2026
 
 ### What was completed this session
-- `courses.json` expanded to 12 courses: added Bighorn G&CC, Meadow Creek Golf Club (Logan Lake), Pineridge Golf Course
-- Bighorn: 5 tees (Black/Blue/White/Green/Red), full 18-hole data, CR/SR, phone — sourced from scorecard image
-- Meadow Creek: sourced from GolfCourseAPI (ID 9206), 2 tee sets (White/Blue, Red/Gold), 9-hole loop × 2
-- Pineridge: 2 tees (Blue/Red), 9-hole loop × 2 with different back-9 tee boxes, phone 250-573-4333
-- GolfCourseAPI removed entirely: `GCAPI_KEY`, `GCAPI_BASE`, `searchCourses()` deleted; `getCourseById()` and `doSearch()` simplified to local cache only
-- `courses.json` IDs renumbered 1–12 alphabetically — no longer API-dependent
-- `index.html.bak` deleted
+- Post Screen failure state: ⓘ info button shipped (see SESSION-2026-05-02.md for full detail)
+- `position: relative` on `.header-lower` globally
+- `.masthead-info-btn` / `.masthead-info-overlay` — pale green bg, structured message overlay
+- Dev: Simulate Failure button added to Home screen for offline testing
 
-### Files pushed (v9.26)
-- `courses.json`
+### Files pushed (v9.27m)
 - `index.html`
 
 ### Resume here next session
-1. Test course search on live URL — search "bighorn", "pineridge", "meadow" should return results from cache
-2. Test: fresh device (clear all site data) — seedCourseCache should populate all 12 courses on first load
-3. Remaining open items: Record Stats toggle, Player Profile screen, Title swap ("Round Saved"), offline queue/outbox, touch-target review, remove Discard Round button, app icons
-4. Meadow Creek phone confirmed: 250-523-6666
-5. Kamloops GC — verify tee data against physical scorecard when available
-6. Strategic decision: Kamloops fork vs. generic app (see Market Considerations above)
+1. Offline queue — `pendingRounds[]` in localStorage (design agreed in session notes)
+2. Post Screen exit flow — Done → Home (discuss options before coding)
+3. Remaining: Record Stats toggle, Player Profile screen, touch-target review, app icons
+4. Dev buttons (Jump to Post Screen, Simulate Failure) — delete before release
 
 ## Technical Notes
 
@@ -311,3 +305,47 @@ Once all Kamloops-area courses are entered, decide:
 - **Stats tab header changes** only take effect when Stats is empty. To migrate the header, delete the Stats tab and post a fresh round so it gets recreated.
 - **Live URL fetch:** sandbox is firewalled from `kamloopspaul-a11y.github.io` and `raw.githubusercontent.com`. Use Chrome MCP (Paul's browser) or ask Paul for screenshots when verifying live deploys.
 - **Don't re-litigate:** Sheets schema, date format, year-column, 1/null flags, single-player-per-sheet, leaderboard removal, layout architecture.
+
+## End-of-Session Housekeeping (standing rule)
+
+Before closing any Golf session, update the **Active Project Resume** entry in `~/Documents/Studio/TODO_LIST.md`:
+
+1. **Resume at** — one line describing exactly where to pick up next session.
+2. **Version** — current `index.html` version + sw.js version.
+3. **Detail** — point to the most recent `Golf/SESSION-YYYY-MM-DD.md`.
+
+This is the last step of every session. It costs two minutes and means the next session starts in the right place without hunting through notes.
+
+---
+
+## Footer Nav & Contextual Content System
+
+**Decided 2026-05-04.**
+
+### Concept
+Replace the placeholder stats sliders in the Home screen footer with a utility nav zone. Extend this footer pattern to all non-Hole screens (Front 9, Back 9, Save Round). Hole screens keep their stats-only footer — no nav links mid-round.
+
+### Footer Nav Links (cached resources only)
+Links must point to cached or locally-computed content only. No live internet required. Candidates:
+- **Pro Tips library** — small JSON, cache once, serve forever
+- **Penalty Rules** — quick-reference, highly cacheable
+- **R&A Quick Reference** — not the full rulebook (too large), but a curated 15–20 rules for casual play
+- **Diagnostics / Analytics** — jump to Dashboard (local data, pre-computed)
+
+### Contextual Message Area (Stage — Home screen)
+Player name at top. Below it: a dynamic message slot fed by cached or localStorage content. One pattern, multiple content types:
+- Pending round notices ("You have an unposted round from May 3 — Repost | Discard")
+- Randomly surfaced analytics ("Good job — you've been hitting more GIR this month")
+- Pro tip of the day
+- Seasonal or motivational messages
+
+### Why cached-only matters
+PWA is offline-first. Tapping a footer link mid-session risks navigating away from an active round. Cached-only resources load instantly with no network dependency and no risk of losing round state. Once the offline queue is built (round state persisted to localStorage), navigation away from non-Hole screens becomes safe regardless.
+
+### Build order
+1. Offline queue first — makes localStorage the safety net for round state
+2. Footer nav framework — Home screen first, then extend to non-Hole screens
+3. Content population — Pro Tips JSON, Penalty Rules, analytics snippets
+
+### Relationship to offline queue
+The contextual message area and the offline queue are the same slot on the Home screen Stage. The queue notice is just one content type. Build them together.
