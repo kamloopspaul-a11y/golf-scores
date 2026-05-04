@@ -516,6 +516,12 @@
   }
   .pending-btn-repost { background: var(--green, #377f09); color: #fff; }
   .pending-btn-discard { background: rgba(0,0,0,0.12); color: #1a1a1a; }
+  .pending-quiet {
+    margin: 10px 16px 0; padding: 10px 14px;
+    background: rgba(255,255,255,0.15); border-radius: 10px;
+    font-size: 13px; color: rgba(255,255,255,0.75); text-align: center;
+  }
+  .pending-quiet.hidden { display: none; }
 
   .success-summary {
     width: 100%;
@@ -772,10 +778,11 @@
     <div id="pending-banner" class="pending-banner hidden">
       <span id="pending-banner-msg"></span>
       <div class="pending-banner-btns">
-        <button class="pending-btn pending-btn-repost" onclick="repostPending()">Repost</button>
-        <button class="pending-btn pending-btn-discard" onclick="discardPending()">Discard</button>
+        <button class="pending-btn pending-btn-repost" id="pending-post-btn" onclick="repostPending()">Post</button>
+        <button class="pending-btn pending-btn-discard" onclick="ignorePending()">Ignore</button>
       </div>
     </div>
+    <div id="pending-quiet" class="pending-quiet hidden">Post when internet is available.</div>
     <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
     <!-- DEV ONLY — remove before release -->
     <button class="dev-shortcut" onclick="devPostScreen()">⚙ Dev: Jump to Post Screen</button>
@@ -1424,37 +1431,50 @@ async function submitRound(){
 function checkPendingQueue() {
   const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
   const banner = document.getElementById('pending-banner');
-  const msg = document.getElementById('pending-banner-msg');
+  const quiet  = document.getElementById('pending-quiet');
+  const msg    = document.getElementById('pending-banner-msg');
+  const btn    = document.getElementById('pending-post-btn');
   if (!banner) return;
+  quiet.classList.add('hidden');
   if (queue.length === 0) { banner.classList.add('hidden'); return; }
-  const oldest = queue[0];
-  const dateStr = oldest.savedAt ? formatDate(oldest.savedAt.split('T')[0]) : 'a previous round';
-  msg.textContent = 'Unposted round from ' + dateStr + '.';
+  const count = queue.length;
+  const word  = count === 1 ? 'round needs' : 'rounds need';
+  msg.textContent = 'You have ' + count + ' ' + word + ' posting.';
+  btn.textContent = count === 1 ? 'Post' : 'Post All';
   banner.classList.remove('hidden');
 }
 async function repostPending() {
-  const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
-  if (!queue.length) return;
-  const payload = queue[0];
-  const banner = document.getElementById('pending-banner');
+  const btn = document.getElementById('pending-post-btn');
   const msg = document.getElementById('pending-banner-msg');
-  if (msg) msg.textContent = 'Posting…';
-  try {
-    await fetch(SHEETS_URL, {method:'POST', body: JSON.stringify(payload)});
-    queue.shift();
-    localStorage.setItem('pendingRounds', JSON.stringify(queue));
-    if (msg) msg.textContent = 'Posted!';
-    setTimeout(() => checkPendingQueue(), 1500);
-  } catch(e) {
-    if (msg) msg.textContent = 'Still no internet. Try again later.';
+  let queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
+  if (!queue.length) return;
+  if (btn) btn.disabled = true;
+  let posted = 0;
+  for (let i = 0; i < queue.length; i++) {
+    if (msg) msg.textContent = 'Posting ' + (i + 1) + ' of ' + queue.length + '…';
+    try {
+      await fetch(SHEETS_URL, {method:'POST', body: JSON.stringify(queue[i])});
+      posted++;
+    } catch(e) {
+      // Stop on first failure, leave remaining in queue
+      queue = queue.slice(i);
+      localStorage.setItem('pendingRounds', JSON.stringify(queue));
+      if (msg) msg.textContent = 'Posted ' + posted + '. No internet for the rest — try again later.';
+      if (btn) btn.disabled = false;
+      setTimeout(() => checkPendingQueue(), 2500);
+      return;
+    }
   }
+  localStorage.setItem('pendingRounds', JSON.stringify([]));
+  if (btn) btn.disabled = false;
+  if (msg) msg.textContent = posted === 1 ? 'Posted!' : 'All ' + posted + ' rounds posted!';
+  setTimeout(() => checkPendingQueue(), 1500);
 }
-function discardPending() {
-  if (!confirm('Discard this unposted round? This cannot be undone.')) return;
-  const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
-  queue.shift();
-  localStorage.setItem('pendingRounds', JSON.stringify(queue));
-  checkPendingQueue();
+function ignorePending() {
+  const banner = document.getElementById('pending-banner');
+  const quiet  = document.getElementById('pending-quiet');
+  if (banner) banner.classList.add('hidden');
+  if (quiet)  quiet.classList.remove('hidden');
 }
 function discardRound(){ if(confirm("Discard this round? All scores will be lost.")) newRound(); }
 function newRound(){
