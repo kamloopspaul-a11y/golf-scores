@@ -502,6 +502,21 @@
   .success-title-error { font-size: 15px !important; font-weight: 400 !important; letter-spacing: 0 !important; white-space: nowrap; }
   .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
   /* Round summary on Save Round screen — 4x2 grid, col 4 hero spans both rows */
+  /* ── Pending rounds banner ── */
+  .pending-banner {
+    background: var(--yellow, #f5c518); color: #1a1a1a;
+    border-radius: 10px; padding: 12px 14px; margin: 12px 16px 0;
+    font-size: 14px; font-weight: 500; line-height: 1.4;
+  }
+  .pending-banner.hidden { display: none; }
+  .pending-banner-btns { display: flex; gap: 10px; margin-top: 10px; }
+  .pending-btn {
+    flex: 1; padding: 8px 0; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .pending-btn-repost { background: var(--green, #377f09); color: #fff; }
+  .pending-btn-discard { background: rgba(0,0,0,0.12); color: #1a1a1a; }
+
   .success-summary {
     width: 100%;
     display: grid;
@@ -753,6 +768,13 @@
   <div class="setup-body">
     <div class="player-row">
       <span class="player-input player-name-display" id="player-name">Paul</span>
+    </div>
+    <div id="pending-banner" class="pending-banner hidden">
+      <span id="pending-banner-msg"></span>
+      <div class="pending-banner-btns">
+        <button class="pending-btn pending-btn-repost" onclick="repostPending()">Repost</button>
+        <button class="pending-btn pending-btn-discard" onclick="discardPending()">Discard</button>
+      </div>
     </div>
     <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
     <!-- DEV ONLY — remove before release -->
@@ -1391,8 +1413,48 @@ async function submitRound(){
     const mhTitleErr = document.querySelector('#screen-success .header-lower-title');
     if(mhTitleErr) mhTitleErr.textContent='Save Round';
     if(infoBtn) infoBtn.classList.add('visible');
+    // Save to offline queue
+    const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
+    queue.push({...payload, savedAt: new Date().toISOString()});
+    localStorage.setItem('pendingRounds', JSON.stringify(queue));
   }
   if(spinner) spinner.classList.add('hidden');
+}
+// ── OFFLINE QUEUE ─────────────────────────────────────
+function checkPendingQueue() {
+  const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
+  const banner = document.getElementById('pending-banner');
+  const msg = document.getElementById('pending-banner-msg');
+  if (!banner) return;
+  if (queue.length === 0) { banner.classList.add('hidden'); return; }
+  const oldest = queue[0];
+  const dateStr = oldest.savedAt ? formatDate(oldest.savedAt.split('T')[0]) : 'a previous round';
+  msg.textContent = 'Unposted round from ' + dateStr + '.';
+  banner.classList.remove('hidden');
+}
+async function repostPending() {
+  const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
+  if (!queue.length) return;
+  const payload = queue[0];
+  const banner = document.getElementById('pending-banner');
+  const msg = document.getElementById('pending-banner-msg');
+  if (msg) msg.textContent = 'Posting…';
+  try {
+    await fetch(SHEETS_URL, {method:'POST', body: JSON.stringify(payload)});
+    queue.shift();
+    localStorage.setItem('pendingRounds', JSON.stringify(queue));
+    if (msg) msg.textContent = 'Posted!';
+    setTimeout(() => checkPendingQueue(), 1500);
+  } catch(e) {
+    if (msg) msg.textContent = 'Still no internet. Try again later.';
+  }
+}
+function discardPending() {
+  if (!confirm('Discard this unposted round? This cannot be undone.')) return;
+  const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
+  queue.shift();
+  localStorage.setItem('pendingRounds', JSON.stringify(queue));
+  checkPendingQueue();
 }
 function discardRound(){ if(confirm("Discard this round? All scores will be lost.")) newRound(); }
 function newRound(){
@@ -1408,6 +1470,7 @@ function newRound(){
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
+  if (name === 'setup') checkPendingQueue();
   updateAllWeather();
 }
 // ── GOLFCOURSEAPI CACHE LAYER ─────────────────────────
