@@ -1743,6 +1743,10 @@ function devSimulateFailure() {
   if(mhTitle) mhTitle.textContent='Save Round';
   if(infoBtn) infoBtn.classList.add('visible');
   if(infoOverlay) infoOverlay.classList.remove('open');
+  // Write a fake round to the queue so the banner can be tested
+  const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
+  queue.push({date: new Date().toISOString().split('T')[0], player:'Paul', course:'Mt. Paul', tees:'Blue', roundType:'18', holes:[], par:64, pars:[], stats:[], savedAt: new Date().toISOString()});
+  localStorage.setItem('pendingRounds', JSON.stringify(queue));
 }
 // ── end dev ───────────────────────────────────────────────────────────────────
 function toggleStatsHelp(e) {
