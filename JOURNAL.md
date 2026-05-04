@@ -4,6 +4,113 @@
 
 ---
 
+## 2026-05-04 — v9.28–v9.30: Title cleanup, 320px width, offline queue
+
+**Did:**
+- **Title cleanup (v9.28):** Renamed all screen titles for clarity and width — "My Golf Scores" → "Score Card" (Home + `<title>`), "Front 9 Score" → "Front 9", "Final Score" → "Back 9", "Round Saved" masthead → "Save Round" (consistent across success + failure paths), "Select Course" → "Score Card". Body max-width 430px → 320px.
+- **Offline queue shipped (v9.29):** On post failure, full round payload now written to `localStorage.pendingRounds[]` with `savedAt` timestamp. On `showScreen('setup')`, `checkPendingQueue()` runs automatically. Dev: Simulate Failure button updated to also write a fake round to the queue for testing.
+- **Queue UX refined (v9.30):** Yellow banner in Stage area shows count-based message — "You have N round(s) that need posting." Button label switches: **Post** (1 round) or **Post All** (2+ rounds). Post All loops queue sequentially, posts oldest first, updates progress live ("Posting 2 of 3…"), stops and reports on first failure. **Ignore** dismisses yellow banner and replaces with a quiet pale strip: "Post when internet is available." Discard removed from banner — too destructive for a casual tap.
+- **Footer nav + contextual content system designed and logged in PROJECT.md.** Offline queue, footer nav links (Pro Tips, Penalty Rules, R&A Quick Reference, Game Formats, Diagnostics), and Home Stage message area established as a unified content slot pattern.
+
+**Decided:**
+- "Discard" renamed "Ignore" — less alarming at the first tee, data is never lost on tap.
+- Post All is conditional: only shown when queue has 2+ rounds. Single round shows "Post".
+- Footer links must be cached-only resources — no live internet required, safe for mid-round reference.
+- Hole screens keep stats-only footer — no nav links mid-round to prevent accidental navigation away from active round.
+- Quiet reminder strip replaces yellow banner after Ignore — low urgency, right tone for standing on the first tee.
+
+**Next:**
+- Delete dev buttons before any public sharing
+- Record Stats toggle on Setup
+- Player Profile screen (name, home tees, HI)
+- Post Screen exit flow — Done → Home
+- App icons — icon-192.png, icon-512.png
+- Footer nav framework build
+
+---
+
+## 2026-05-04 — Housekeeping: Golf moved into Projects/
+
+**Did:**
+- Reviewed all path/repo references before moving the folder.
+- Moved `Studio/Golf/` → `Studio/Projects/Golf/` via Terminal `mv`.
+- Updated `CLAUDE.md` (cd path + folder structure diagram).
+- Updated `TODO_LIST.md` (3 Golf path references).
+- Updated `PROJECT.md` local folder path.
+- GitHub repo, GitHub Pages URL, and all app code unaffected.
+
+---
+
+## 2026-05-03 — v9.27m: Failure state ⓘ info button shipped
+
+**Did:**
+- Removed placeholder guard from `submitRound()` (dead code from early dev).
+- Success path: masthead title swaps "Save Round" → "Round Saved"; h2 shows "Posted".
+- Failure path: masthead swaps to "Round Saved"; h2 shows "No Internet service. Try again later." (smaller, unbolded, `.success-title-error` class). Both paths reset cleanly on re-trigger.
+- **Shipped ⓘ info button on failure state (v9.27m):** `position: relative` on `.header-lower` globally. `.masthead-info-btn` — 24px circle, white bg, green border, hidden by default, shown on failure. `.masthead-info-overlay` fills `header-lower` via `inset: 0`, pale green bg. Overlay message: NO INTERNET SERVICE / ROUND SAVED / POSTING YOUR SCORE. Outside-click dismissal via `toggleMastheadInfo()`. ✕ close button reuses `.stats-help-close` style.
+- Dev button added to Home screen: "⚙ Dev: Simulate Failure" — triggers failure UI directly. DEL before release.
+- Pushed to GitHub Pages ✅
+
+**Decided:**
+- Failure title: "Saved locally" → "No Internet service. Try again later." — honest, plain language.
+- ⓘ button lives in the masthead (header-lower), absolute top-right, failure state only.
+
+**Next:**
+- Offline queue — `pendingRounds[]` in localStorage (design agreed, code not written).
+- Post Screen exit flow — Done → Home (discuss options before coding).
+- Record Stats toggle, Player Profile screen, touch-target review, app icons.
+- Delete dev buttons before release.
+
+---
+
+## 2026-05-02 — v9.27: BC courses added, GolfCourseAPI removed, UI polish
+
+**Did:**
+- Added 3 BC courses to `courses.json`: Bighorn, Meadow Creek (9-hole loop), Pineridge.
+- `courses.json` sorted A–Z, IDs renumbered 1–12.
+- **Removed GolfCourseAPI entirely** — app is now fully local-data-only. No API key needed, no 300-session limit concern.
+- Success screen: stats "i" info overlay added (HI, Net Score, FIR, GIR, PEN, UD, X-UD, PUTTS). i + ✕ buttons: 24px circle, white bg, green border, bold green text.
+- Hero cell wider: grid ratio 1fr/1fr/1fr/3fr.
+- App max-width 430px on desktop, full-width on phones.
+- Masthead height: 248px main / 170px small-screen — fixes PAR/YDS clipping.
+- Browser layout fixes: `flex: 1 0 auto` on all stage elements, hole screen overflow rules.
+- Discard Round button removed from Home screen ✅
+- Dev shortcut added: "⚙ Dev: Jump to Post Screen" with fake data. DEL before release.
+
+**Decided:**
+- GolfCourseAPI dropped — local courses.json is the data source. Simpler, no external dependency.
+
+**Learned:**
+- Removing the API simplifies the whole architecture. 12 BC courses hardcoded covers Paul's real use case.
+
+**Next:**
+- Failure state ⓘ button (shipped next session, v9.27m).
+- Offline queue design (agreed, not yet built).
+
+---
+
+## 2026-05-01 — Multi-course architecture design + GolfCourseAPI.com research
+
+**Did:**
+- Reviewed full project status at v9.24 post-ship.
+- Researched GolfCourseAPI.com: free tier, ~30K courses, 300 session limit. API schema reviewed — hole-level data per tee set, CR/SR, GPS coords, male/female tee separation.
+- Designed local cache schema (`localStorage.courseCache`): keyed by course ID, fetch once, cache permanently. Export/Import JSON as backup against Safari cache wipe.
+- GPS gap workaround decided: build search-by-name first (Option B), GPS auto-detect later.
+- 27/36-hole variations: `TeeBox.number_of_holes` detects multi-loop courses; app slices correct 18 holes.
+- Agreed build sequence: API key → cache layer → Course Select screen → combination picker → wire CR/SR into Net Score math → GPS later.
+
+**Decided:**
+- Local-first, API fallback, manual entry as last resort. GPS deferred.
+
+**Learned:**
+- 300 free API sessions is not a real constraint with local-first caching. (Note: API subsequently removed entirely in May 2 session — fully local approach is cleaner.)
+
+**Next:**
+- Add BC courses to courses.json, remove API dependency (shipped May 2).
+
+---
+
+
 ## 2026-04-30 — v9.24: iPhone polish + Setup redesign + multi-course architecture
 
 **Did:**
