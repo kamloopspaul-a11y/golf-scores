@@ -1071,12 +1071,12 @@ const COURSE = {
     ladiesRed:  { cr: 58.6, sr: 88 }
   },
   holes: [
-    {par:4,yards:275},{par:3,yards:137},{par:3,yards:179},
-    {par:4,yards:300},{par:3,yards:95 },{par:4,yards:345},
-    {par:3,yards:135},{par:4,yards:251},{par:4,yards:270}
+    {par:4,yards:275,index:5 },{par:3,yards:137,index:13},{par:3,yards:179,index:11},
+    {par:4,yards:300,index:3 },{par:3,yards:95, index:17},{par:4,yards:345,index:1 },
+    {par:3,yards:135,index:15},{par:4,yards:251,index:7 },{par:4,yards:270,index:9 }
   ]
 };
-const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbzYOZI0wy2H5CQNf8TLInatEwZKDAX4SA5ij0Z5RcX4Bv81MscF_aRlSDW08KwbS1Ud5w/exec";
+const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbzsVYnjoqZ_ogM4ARzPMdn_v1RxweifKEMGNoD-1iWDe9mJfxbTqles55TqIbeVkIyJ/exec";
 let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
   scores:[], holeList:[], totalHoles:18, weatherStr:"—",
@@ -1391,13 +1391,38 @@ function clearSuccessSummary(){
 // ── SUBMIT ────────────────────────────────────────────
 async function submitRound(){
   renderSuccessSummary();
-  const total    = state.scores[0].reduce((a,b)=>a+b,0);
-  const par      = activeCourseData ? activeCourseData.par      : COURSE.par;
-  const courseName = activeCourseData ? activeCourseData.name   : COURSE.name;
-  const teeName  = activeCourseData ? activeCourseData.teeName  : 'Blue';
-  const pars     = state.holeList.map(h => h.par);
-  const payload  = {date:state.date, player:state.players[0], course:courseName,
-    tees:teeName, roundType:'18', holes:state.scores[0], par, pars, stats:state.stats};
+  const courseName = activeCourseData ? activeCourseData.name    : COURSE.name;
+  const teeName    = activeCourseData ? activeCourseData.teeName : 'Blue';
+  const cr         = activeCourseData ? activeCourseData.cr      : COURSE.ratings.mensBlue.cr;
+  const sr         = activeCourseData ? activeCourseData.sr      : COURSE.ratings.mensBlue.sr;
+  const totalPar   = activeCourseData ? activeCourseData.par     : COURSE.par;
+
+  // Build per-hole array — one object per hole (vertical schema)
+  const holePayload = state.holeList.map((h, i) => {
+    const st = state.stats[i] || {};
+    return {
+      hole:        i + 1,
+      par:         h.par,
+      strokeIndex: h.index  || null,
+      score:       state.scores[0][i],
+      putts:       st.putts != null ? st.putts : null,
+      fir:         st.fir   != null ? st.fir   : null,
+      gir:         st.gir   != null ? st.gir   : null,
+      ud:          st.ud    != null ? st.ud    : null,
+      xud:         st.xud   != null ? st.xud   : null,
+      pen:         st.pen   != null ? st.pen   : null
+    };
+  });
+
+  const payload = {
+    date:         state.date,
+    course:       courseName,
+    tees:         teeName,
+    courseRating: cr,
+    slopeRating:  sr,
+    par:          totalPar,
+    holes:        holePayload
+  };
   const spinner=document.getElementById('success-spinner');
   const title=document.getElementById('success-title');
   // Move to success screen immediately, showing spinner + "Posting…"
@@ -1520,7 +1545,7 @@ function getCourseById(id) {
 function buildActiveCourseData(course, teeBox, gender) {
   const count = Math.min(teeBox.number_of_holes || 18, 18);
   const holes  = (teeBox.holes || []).slice(0, count)
-                   .map(h => ({ par: h.par, yards: h.yardage }));
+                   .map(h => ({ par: h.par, yards: h.yardage, index: h.index || null }));
   const label  = (!course.course_name || course.course_name === course.club_name)
     ? course.club_name
     : course.club_name + ' – ' + course.course_name;
