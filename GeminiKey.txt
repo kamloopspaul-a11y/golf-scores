@@ -1,0 +1,2 @@
+Property: GEMINI_API_KEY
+Value: AIzaSyD23jC5u10U5VwSdrR6QsELys7Kzb3eWbU
