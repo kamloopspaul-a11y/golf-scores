@@ -3,6 +3,9 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.32 — May 4 2026
+  - Gemini AI query screen ("Ask Gemini") added
+  - apps-script.gs: doGet ?action=data, doPost action:query, callGemini_()
   v9.27m — May 2 2026
   - Success screen: grid-template-columns 20%/20%/20%/40% → 1fr/1fr/1fr/2fr (fixes right-padding overflow with gap)
   - Success screen: stats "i" info overlay on hero cell (HI, Net Score, FIR, GIR, PEN, UD, X-UD, PUTTS)
@@ -677,6 +680,58 @@
     background: none; border: none; cursor: pointer; padding: 0;
   }
   /* ── end dev ── */
+
+  /* ── Ask Gemini screen ── */
+  #screen-ask .footer-grid { display: none; }
+  .ask-body {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 16px; gap: 12px; overflow: hidden;
+  }
+  .ask-log {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+    gap: 10px; padding-bottom: 4px;
+  }
+  .ask-bubble {
+    max-width: 88%; padding: 10px 14px; border-radius: 16px;
+    font-size: 14px; line-height: 1.45; word-wrap: break-word;
+  }
+  .ask-bubble.user {
+    align-self: flex-end;
+    background: var(--green); color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .ask-bubble.bot {
+    align-self: flex-start;
+    background: var(--card); color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .ask-bubble.thinking {
+    align-self: flex-start;
+    background: var(--card); color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    font-style: italic;
+  }
+  .ask-input-row {
+    display: flex; gap: 8px; align-items: flex-end;
+  }
+  .ask-input {
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px 14px; resize: none;
+    font-family: inherit; font-size: 14px; color: var(--text-primary);
+    outline: none; min-height: 42px; max-height: 120px; overflow-y: auto;
+    line-height: 1.4;
+  }
+  .ask-input:focus { border-color: var(--green); }
+  .ask-send-btn {
+    background: var(--green); color: #fff; border: none;
+    border-radius: 12px; padding: 10px 18px; font-size: 14px;
+    font-family: inherit; font-weight: 600; cursor: pointer;
+    white-space: nowrap; align-self: flex-end; height: 42px;
+  }
+  .ask-send-btn:disabled { opacity: 0.45; cursor: default; }
+
   .change-course-link {
     display: block; margin-top: 14px;
     font-size: 13px; color: var(--green); text-align: center;
@@ -784,6 +839,7 @@
     </div>
     <div id="pending-quiet" class="pending-quiet hidden">Post when internet is available.</div>
     <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
+    <button class="change-course-link" onclick="showScreen('ask')" id="setup-ask-link">Ask Gemini</button>
     <!-- DEV ONLY — remove before release -->
     <button class="dev-shortcut" onclick="devPostScreen()">⚙ Dev: Jump to Post Screen</button>
     <button class="dev-shortcut" onclick="devSimulateFailure()">⚙ Dev: Simulate Failure</button>
@@ -1058,6 +1114,36 @@
   </div>
   <div class="footer"><div class="footer-grid"></div></div>
 </div>
+<!-- ══════════════ ASK GEMINI ══════════════ -->
+<div class="screen" id="screen-ask">
+  <div class="masthead">
+    <div class="header-upper">
+      <div class="hu-course" id="ask-course-name"></div>
+      <div class="hu-weather" id="weather-ask">—</div>
+      <div class="hu-date" id="ask-date-display"></div>
+      <div class="hu-duration"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">Ask Gemini</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+  <div class="ask-body">
+    <div class="ask-log" id="ask-log">
+      <div class="ask-bubble bot">Hi Paul! Ask me anything about your golf stats — best round, putting average, scoring trends…</div>
+    </div>
+    <div class="ask-input-row">
+      <textarea class="ask-input" id="ask-input" rows="1"
+        placeholder="Ask about your game…"
+        onkeydown="askKeydown(event)"></textarea>
+      <button class="ask-send-btn" id="ask-send-btn" onclick="sendAskMessage()">Send</button>
+    </div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" onclick="showScreen('setup')">Back</button>
+  </div>
+  <div class="footer"><div class="footer-grid"></div></div>
+</div>
 <audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
 <script>
 // ── COURSE (variable for future multi-course support) ──
@@ -1095,7 +1181,7 @@ async function fetchWeather() {
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function updateAllWeather() {
-  ["weather-setup","weather-hole","weather-midround","weather-card","weather-success"].forEach(id=>{
+  ["weather-setup","weather-hole","weather-midround","weather-card","weather-success","weather-ask"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=state.weatherStr;
   });
   updateCourseNameDisplay();
@@ -1833,5 +1919,52 @@ document.addEventListener('click', function(e) {
   }
 });
 </script>
+
+// ── ASK GEMINI ────────────────────────────────────────────────────────────
+function askKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAskMessage(); }
+}
+
+async function sendAskMessage() {
+  const input = document.getElementById('ask-input');
+  const q = input.value.trim();
+  if (!q) return;
+
+  const log = document.getElementById('ask-log');
+  const btn = document.getElementById('ask-send-btn');
+
+  // Show user bubble
+  const uBubble = document.createElement('div');
+  uBubble.className = 'ask-bubble user';
+  uBubble.textContent = q;
+  log.appendChild(uBubble);
+
+  input.value = '';
+  btn.disabled = true;
+
+  // Show thinking bubble
+  const tBubble = document.createElement('div');
+  tBubble.className = 'ask-bubble thinking';
+  tBubble.textContent = 'Thinking…';
+  log.appendChild(tBubble);
+  log.scrollTop = log.scrollHeight;
+
+  try {
+    const res = await fetch(SHEETS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'query', question: q })
+    });
+    const data = await res.json();
+    tBubble.className = 'ask-bubble bot';
+    tBubble.textContent = data.ok ? data.answer : ('Error: ' + (data.error || 'Unknown error'));
+  } catch (err) {
+    tBubble.className = 'ask-bubble bot';
+    tBubble.textContent = 'Could not reach the server. Check your connection and try again.';
+  }
+
+  btn.disabled = false;
+  log.scrollTop = log.scrollHeight;
+}
+
 </body>
 </html>
