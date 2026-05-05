@@ -73,10 +73,20 @@ function doPost(e) {
     ensureSheet_(ss, ROUNDS,   roundsHeader_());
     ensureSheet_(ss, SETTINGS, ['Key', 'Value']);
 
-    const roundId = Utilities.getUuid();
+    // Use client-supplied Round_ID (enables idempotency on retry)
+    const roundId = p.roundId || Utilities.getUuid();
     const date    = p.date   || '';
     const course  = p.course || '';
     const tees    = p.tees   || '';
+
+    // Duplicate prevention — if this Round_ID already exists, return ok without writing
+    const roundsSh = ss.getSheetByName(ROUNDS);
+    if (roundsSh.getLastRow() > 1) {
+      const existing = roundsSh.createTextFinder(roundId).matchEntireCell(true).findAll();
+      if (existing.length > 0) {
+        return json_({ ok: true, roundId: roundId, duplicate: true });
+      }
+    }
 
     // Handicap from Settings (server is the source of truth)
     const settingsSh = ss.getSheetByName(SETTINGS);
@@ -91,9 +101,8 @@ function doPost(e) {
       ? Math.round(hi * (sr / 113) + (cr - par))
       : Math.round(hi);   // fallback if ratings not supplied
 
-    const holes    = Array.isArray(p.holes) ? p.holes : [];
-    const roundsSh = ss.getSheetByName(ROUNDS);
-    const rows     = [];
+    const holes = Array.isArray(p.holes) ? p.holes : [];
+    const rows  = [];
 
     for (let i = 0; i < holes.length; i++) {
       const h   = holes[i];
