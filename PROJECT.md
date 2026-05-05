@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v9.30 — May 4, 2026
+**Version:** v9.31 — May 4, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
@@ -50,19 +50,22 @@
 - `table-layout: fixed` — name col 52px, data cols 28px each
 - Scrolls horizontally on mobile
 
-## Data Schema (locked, post v9.10)
+## Data Schema (v2 — vertical, post v9.31)
 
-**Scorecard tab:** `Round ID | Date | Year | Course | Tees | H1…H18 | Front | Back | Total | Notes`
-
-**Stats tab:** `Round ID | Date | Hole | FIR | GIR | PEN | UD | X-UD | PUTTS | Score`
+**Rounds tab** (one row per hole per round — 18 rows per round):
+`Round_ID | Date | Course | Tees | Hole | Par | Stroke_Index | Score | Putts | FIR | GIR | UD | X_UD | Penalties | Net_Score`
 
 **Settings tab:** `Key | Value`
+- `Home Course` — e.g. Mt. Paul
+- `Handicap_Index` — seeded at 20; server recomputes after each round (future)
 
+**Schema notes:**
 - Date format: YYYY-MM-DD
-- Year column derived from Date
-- FIR / GIR / PEN / UD / X-UD: 1 or null (not 0)
+- FIR / GIR / UD / X_UD / Penalties: 1 or null
 - PUTTS: integer 0–9, default 2
-- Score: server-derived = strokes − putts
+- Stroke_Index: 1–18 difficulty rank for the hole (from courses.json)
+- Net_Score: computed server-side per hole using WHS stroke allowance (strokeIndex ≤ courseHandicap)
+- Legacy Scorecard + Stats tabs removed; data was cannon fodder — fresh start 2026-05-04
 - Single-player-per-sheet (Player column dropped)
 
 ## Named Components
@@ -109,7 +112,7 @@
 
 ## Locked Decisions (do not revisit)
 
-- **Sheets schema** — Scorecard / Stats / Settings tabs as defined above. Date YYYY-MM-DD. Year derived from Date. Single-player-per-sheet.
+- **Sheets schema** — Single `Rounds` tab (vertical, one row per hole) + `Settings` tab. Migrated to v2 on 2026-05-04. No going back to horizontal layout.
 - **Stats values** — 1/null for flags. Integer for PUTTS. Score derived server-side.
 - **Layout** — masthead fixed / stage elastic / footer content-sized + min-height.
 - **White-stage architecture** — body green, transparent chrome, white content stage.
@@ -272,22 +275,26 @@ Once all Kamloops-area courses are entered, decide:
 
 ## Session Resume Notes
 
-**Last worked:** May 3, 2026
+**Last worked:** May 4, 2026
 
 ### What was completed this session
-- Post Screen failure state: ⓘ info button shipped (see SESSION-2026-05-02.md for full detail)
-- `position: relative` on `.header-lower` globally
-- `.masthead-info-btn` / `.masthead-info-overlay` — pale green bg, structured message overlay
-- Dev: Simulate Failure button added to Home screen for offline testing
+- Schema migration to v2 vertical (one row per hole): `Rounds` tab replaces Scorecard + Stats
+- `apps-script.gs` rewritten: new `doPost` sends 18 rows per round, computes Net_Score per hole
+- `index.html` v9.31: `submitRound()` now sends per-hole array payload with strokeIndex, courseRating, slopeRating
+- `courses.json`: stroke_index added to all Mt. Paul holes; all course names simplified (Bighorn, Chinook Cove, Eaglepoint, etc.); `index: null` placeholder on other courses
+- Google Sheet: blow out old data — paste new `apps-script.gs`, run `setup()`, redeploy as new version
 
-### Files pushed (v9.27m)
+### Files changed (v9.31)
 - `index.html`
+- `apps-script.gs`
+- `courses.json`
 
 ### Resume here next session
-1. Offline queue — `pendingRounds[]` in localStorage (design agreed in session notes)
-2. Post Screen exit flow — Done → Home (discuss options before coding)
+1. **Redeploy Apps Script** — paste `apps-script.gs` into Sheet → run `setup()` → Deploy new version → confirm URL unchanged
+2. **Test a round post** — verify 18 rows appear in Rounds tab with correct Net_Score
 3. Remaining: Record Stats toggle, Player Profile screen, touch-target review, app icons
-4. Dev buttons (Jump to Post Screen, Simulate Failure) — delete before release
+4. Dave's data import — wait for CSV/XLS sample, then write transform script
+5. Dev buttons (Jump to Post Screen, Simulate Failure) — delete before release
 
 ## Technical Notes
 
@@ -302,9 +309,9 @@ Once all Kamloops-area courses are entered, decide:
 - **Authoritative source:** if `index.html` and any other doc disagree, `index.html` wins.
 - **Cache-bust pattern for testing:** append `?v=N` to the live URL, bump N each test. Pre-launch, switch to filename-based cache-busting (`index-v912.html`) to silence iOS tracking-protection banners (`?v=N` looks like a tracking parameter).
 - **iOS Safari cache stickiness:** SW is now network-first for HTML (since v9.12 / SW v13+). Deploys reach iPhones on next page load. Don't recommend "clear website data" anymore.
-- **Stats tab header changes** only take effect when Stats is empty. To migrate the header, delete the Stats tab and post a fresh round so it gets recreated.
+- **Schema v2 (vertical):** Scorecard and Stats tabs are gone. Single `Rounds` tab. Apps Script `setup()` must be re-run once on the Sheet after pasting new code.
 - **Live URL fetch:** sandbox is firewalled from `kamloopspaul-a11y.github.io` and `raw.githubusercontent.com`. Use Chrome MCP (Paul's browser) or ask Paul for screenshots when verifying live deploys.
-- **Don't re-litigate:** Sheets schema, date format, year-column, 1/null flags, single-player-per-sheet, leaderboard removal, layout architecture.
+- **Don't re-litigate:** Sheets schema (now v2 vertical — decided 2026-05-04), 1/null flags, single-player-per-sheet, leaderboard removal, layout architecture.
 
 ## End-of-Session Housekeeping (standing rule)
 
