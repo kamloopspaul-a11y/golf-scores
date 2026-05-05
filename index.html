@@ -1414,7 +1414,13 @@ async function submitRound(){
     };
   });
 
+  // Round_ID generated client-side so retries send the same ID (duplicate prevention)
+  const roundId = (crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Date.now().toString(36) + Math.random().toString(36).slice(2);
+
   const payload = {
+    roundId:      roundId,
     date:         state.date,
     course:       courseName,
     tees:         teeName,
@@ -1436,7 +1442,9 @@ async function submitRound(){
   if(infoOverlay) infoOverlay.classList.remove('open');
   showScreen('success');
   try {
-    await fetch(SHEETS_URL,{method:"POST",body:JSON.stringify(payload)});
+    const res  = await fetch(SHEETS_URL,{method:"POST",body:JSON.stringify(payload)});
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'Server rejected post');
     if(title) title.textContent='Posted';
     const mhTitle = document.querySelector('#screen-success .header-lower-title');
     if(mhTitle) mhTitle.textContent='Save Round';
@@ -1445,10 +1453,12 @@ async function submitRound(){
     const mhTitleErr = document.querySelector('#screen-success .header-lower-title');
     if(mhTitleErr) mhTitleErr.textContent='Save Round';
     if(infoBtn) infoBtn.classList.add('visible');
-    // Save to offline queue
+    // Save to offline queue — payload keeps its roundId so retry is idempotent
     const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
-    queue.push({...payload, savedAt: new Date().toISOString()});
-    localStorage.setItem('pendingRounds', JSON.stringify(queue));
+    if(!queue.find(q => q.roundId === payload.roundId)) {
+      queue.push({...payload, savedAt: new Date().toISOString()});
+      localStorage.setItem('pendingRounds', JSON.stringify(queue));
+    }
   }
   if(spinner) spinner.classList.add('hidden');
 }
@@ -1478,7 +1488,9 @@ async function repostPending() {
   for (let i = 0; i < queue.length; i++) {
     if (msg) msg.textContent = 'Posting ' + (i + 1) + ' of ' + queue.length + '…';
     try {
-      await fetch(SHEETS_URL, {method:'POST', body: JSON.stringify(queue[i])});
+      const res  = await fetch(SHEETS_URL, {method:'POST', body: JSON.stringify(queue[i])});
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || 'Server rejected post');
       posted++;
     } catch(e) {
       // Stop on first failure, leave remaining in queue
