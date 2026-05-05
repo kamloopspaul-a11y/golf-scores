@@ -1,0 +1,63 @@
+
+Sample Sheet
+https://docs.google.com/spreadsheets/d/1K7gIZw4jccsMlN5be4OEbIxfsmMW-tSO4y7D98y6Ckc/edit?gid=308137834#gid=308137834
+
+1. The New "Pro-Schema" Layout for Google Sheets
+We are moving away from the traditional "Horizontal" scorecard layout to a "Long-Form" Vertical Schema. This is the secret to high-level analytics.
+
+Structure: Each row represents one hole, not one round. A single 18-hole round will now occupy 18 rows.
+
+The Benefits:
+
+Granular Analysis: Allows for hole-by-hole diagnostics (e.g., "Why do I always double-bogey Hole 6?").
+
+AI Compatibility: Gemini and Claude can "read" vertical data much more reliably to spot trends.
+
+Scale: You can track 20 years of data in one sheet without hitting column limits.
+
+Key Columns: Round_ID, Date, Hole_Number, Par, Score, Putts, FIR (Hit/Miss-L/Miss-R), GIR (True/False), Up_and_Down, Penalties, Stroke_Index, and Net_Score.
+
+2. Files to be Modified
+To implement this, three core components of your PWA need an update:
+
+course_seed.json: Update this to include the stroke_index (1-18 difficulty) for all 18 holes. This allows the app to calculate the Net Score on the fly. (See the Mt. Paul update below).
+
+The POST Function: Your JavaScript needs to be adjusted to send an array of 18 hole objects rather than one single summary object.
+
+Google Apps Script (code.gs): The script bound to your Google Sheet must be updated to iterate through those 18 objects and append them as individual rows.
+
+3. Free Plugins & Connectors for Visuals
+For the "Contemplative" sessions and clubhouse "WOW" factor, these tools are the best free options:
+
+Connectors (The Data Bridge)
+Google Sheets API: The native way to pull your data into the PWA.
+
+Google Looker Studio: Best for your laptop. Connect it to your Sheet for a "PGA Dashboard" look with zero coding.
+
+Visualization Libraries (The Eye Candy)
+Chart.js: The #1 choice for PWAs. Lightweight and looks amazing on iPhones.
+
+Google Charts: Specifically for the "Gauge Chart"—perfect for a "Putt-O-Meter" that looks like a car speedometer.
+
+ApexCharts: Great for "Sparklines" (miniature trend lines) that show if Player's score is trending up or down over his last 5 rounds.
+
+4. The "Claude-Ready" JSON Seed (Mt. Paul Example)
+Claude can use this as a template to build the rest of your course library.
+
+JSON
+{
+  "id": 6,
+  "club_name": "Mt. Paul Golf Course",
+  "note": "Hole 5 pending update to 135yds.",
+  "holes": [
+    { "num": 1, "par": 4, "index": 5 }, { "num": 2, "par": 3, "index": 13 },
+    { "num": 3, "par": 3, "index": 11 }, { "num": 4, "par": 4, "index": 3 },
+    { "num": 5, "par": 3, "index": 17 }, { "num": 6, "par": 4, "index": 1 },
+    { "num": 7, "par": 3, "index": 15 }, { "num": 8, "par": 4, "index": 7 },
+    { "num": 9, "par": 4, "index": 9 }, { "num": 10, "par": 4, "index": 6 },
+    { "num": 11, "par": 3, "index": 14 }, { "num": 12, "par": 3, "index": 12 },
+    { "num": 13, "par": 4, "index": 4 }, { "num": 14, "par": 3, "index": 18 },
+    { "num": 15, "par": 4, "index": 2 }, { "num": 16, "par": 3, "index": 16 },
+    { "num": 17, "par": 4, "index": 8 }, { "num": 18, "par": 4, "index": 10 }
+  ]
+}

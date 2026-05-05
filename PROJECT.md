@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v9.32 — May 4, 2026
+**Version:** v9.33 — May 5, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
@@ -273,31 +273,77 @@ Once all Kamloops-area courses are entered, decide:
 
 ---
 
+## Advanced Diagnostics & Email Reporting (v2.1)
+
+**Decided 2026-05-05.** No paid API required. Apps Script + Gmail only.
+
+### Diagnostics Tab
+`apps-script.gs` now maintains a `Diagnostics` sheet — one row per round — rebuilt after every `doPost`. Columns:
+
+`Round_ID | Date | Course | Score | FIR | GIR | UD | Putts | Penalties | BallStrikingGap | ShortGameOpp | MissedOpp | ShortGameEff | PuttsPerGIR | DiagnosticScore | BSCost | SGCost | PuttingCost | TotalStrokesLost`
+
+All values computed server-side from the vertical `Rounds` tab (18 rows per round aggregated into 1). Conditional formatting colours GIR, Putts, Short Game Efficiency, and Total Strokes Lost green/amber/red.
+
+### Strokes Lost Model
+| Column | Formula | What it means |
+|--------|---------|---------------|
+| BSCost | (18 − GIR) × 0.5 | Strokes lost from missed greens |
+| SGCost | MissedOpp × 0.7 | Strokes lost from failed up-and-downs |
+| PuttingCost | Putts − 36 | Strokes lost on the greens (benchmark 36) |
+| TotalStrokesLost | BSCost + SGCost + PuttingCost + Penalties | Overall performance indicator |
+
+### Email Reports
+`sendReport()` sends a rich HTML email covering the last N rounds (default 5). Triggered automatically after every 5th round posted AND optionally on a weekly schedule.
+
+**Two trigger options:**
+1. **Auto after 5 rounds** — fires inside `doPost` when `totalRounds % 5 === 0`. No setup needed.
+2. **Weekly Sunday 8am** — run `setupWeeklyTrigger()` once from Apps Script Editor. Removes/replaces itself safely if re-run.
+
+**Functions added to `apps-script.gs`:**
+- `buildDiagnostics_(ss)` — aggregates Rounds → Diagnostics, applies colour coding
+- `rebuildDiagnostics()` — manual rebuild from Script Editor menu
+- `sendReport()` — manual send from Script Editor menu
+- `sendReport_(ss, n)` — internal, called after every nth round
+- `setupWeeklyTrigger()` — registers Sunday 8am time trigger
+- `removeWeeklyTrigger()` — removes the weekly trigger
+
+### Setup Steps (one time after pasting new code)
+1. Paste updated `apps-script.gs` into Extensions → Apps Script
+2. Run → `setup()` (creates Diagnostics tab, styles it)
+3. Run → `rebuildDiagnostics()` to populate from existing Rounds data
+4. Optional: Run → `setupWeeklyTrigger()` for weekly Sunday reports
+5. Deploy → Manage deployments → edit → New version (keep same URL)
+
 ## Session Resume Notes
 
-**Last worked:** May 4, 2026
+**Last worked:** May 5, 2026
 
 ### What was completed this session
-- Schema migration to v2 vertical (one row per hole): `Rounds` tab replaces Scorecard + Stats
-- `apps-script.gs` rewritten: new `doPost` sends 18 rows per round, computes Net_Score per hole
-- `index.html` v9.31: `submitRound()` now sends per-hole array payload with strokeIndex, courseRating, slopeRating
-- `courses.json`: stroke_index added to all Mt. Paul holes; all course names simplified (Bighorn, Chinook Cove, Eaglepoint, etc.); `index: null` placeholder on other courses
-- Google Sheet: blow out old data — paste new `apps-script.gs`, run `setup()`, redeploy as new version
+- **Advanced Diagnostics tab** — `apps-script.gs` v2.1: `buildDiagnostics_()` aggregates Rounds data into one row per round with 19 columns of computed stats
+- **Email reports** — `sendReport_()` sends rich HTML email with round-by-round table, averages, strokes-lost breakdown, colour-coded thresholds, and top 2 focus-area insights
+- **Auto triggers** — report fires after every 5th round; `setupWeeklyTrigger()` adds optional Sunday 8am weekly report
+- **PROJECT.md** — updated with Diagnostics schema, strokes-lost model, setup steps
 
-### Files changed (v9.32)
-- `index.html` — "Ask Gemini" screen added; link on Setup screen; `sendAskMessage()` JS; weather-ask added
-- `apps-script.gs` — `doGet ?action=data` returns rounds JSON; `doPost action:query` proxies to Gemini; `callGemini_()` helper uses Script Properties key
-
-### Files changed (v9.31)
-- `index.html`
-- `apps-script.gs`
-- `courses.json`
+### Files changed (v9.33)
+- `apps-script.gs` — Diagnostics tab builder, email reporter, weekly trigger setup, `isTruthy_()` + `formatDate_()` + `countRounds_()` helpers
 
 ### Resume here next session
-1. **Paste updated apps-script.gs** into Sheet → Deploy → Manage deployments → edit → New version (URL stays same)
-2. **Test Ask Gemini** from phone — tap Ask Gemini on Setup screen, type a question
-3. Remaining pre-release: Record Stats toggle, Player Profile screen, touch-target review, app icons, remove Dev buttons
-4. Dave's data import — wait for CSV/XLS sample, then write transform script
+
+**After pasting new apps-script.gs:** run `setup()`, then `rebuildDiagnostics()`, redeploy as new version.
+
+
+#### Gemini API billing (resolved May 5)
+- Ask Gemini screen still in `index.html` — currently only functional with a paid Gemini key
+- **Resolved:** Diagnostics + email reports replace the AI query use case for free, using Apps Script + Gmail quotas
+- Gemini query route stays in `apps-script.gs` for future use if key is ever activated
+
+#### Other pre-release tasks
+1. Record Stats toggle (FIR/GIR/etc. on Setup screen)
+2. Player Profile screen
+3. Touch-target review for mobile
+4. App icons
+5. Remove Dev buttons (Jump to Post Screen, Simulate Failure)
+6. Dave's data import — wait for CSV/XLS sample, write transform script
 
 ## Technical Notes
 
