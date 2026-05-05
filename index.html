@@ -1920,6 +1920,7 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+<script>
 // ── ASK GEMINI ────────────────────────────────────────────────────────────
 function askKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAskMessage(); }
@@ -1965,6 +1966,7 @@ async function sendAskMessage() {
   btn.disabled = false;
   log.scrollTop = log.scrollHeight;
 }
+</script>
 
 </body>
 </html>
