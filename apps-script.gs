@@ -13,6 +13,8 @@
  *
  * To update later: paste new code → Deploy → Manage deployments →
  * edit → New version. URL stays the same.
+ *
+ * Gemini key: Project Settings → Script Properties → GEMINI_API_KEY
  */
 
 const ROUNDS   = 'Rounds';
@@ -62,12 +64,49 @@ function setup() {
   if (sh1 && sh1.getLastRow() === 0) ss.deleteSheet(sh1);
 }
 
-// ── Webhook ────────────────────────────────────────────────────────────────
+// ── GET — returns rounds data or health check ──────────────────────────────
+
+function doGet(e) {
+  const action = e && e.parameter && e.parameter.action;
+
+  if (action === 'data') {
+    // Return all rounds data as JSON for Gemini context
+    try {
+      const ss      = SpreadsheetApp.getActive();
+      const sh      = ss.getSheetByName(ROUNDS);
+      if (!sh || sh.getLastRow() < 2) {
+        return json_({ ok: true, rounds: [] });
+      }
+      const headers = roundsHeader_();
+      const raw     = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
+      const rounds  = raw.map(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i]; });
+        return obj;
+      });
+      return json_({ ok: true, rounds: rounds });
+    } catch (err) {
+      return json_({ ok: false, error: String(err) });
+    }
+  }
+
+  // Default: health check
+  return ContentService.createTextOutput('Golf webhook live. POST only.');
+}
+
+// ── POST — score submission or Gemini query ────────────────────────────────
 
 function doPost(e) {
   try {
     const p  = JSON.parse(e.postData.contents);
     const ss = SpreadsheetApp.getActive();
+
+    // ── Gemini query branch ──────────────────────────────────────────────
+    if (p.action === 'query') {
+      return handleGeminiQuery_(ss, p.question);
+    }
+
+    // ── Score submission branch ──────────────────────────────────────────
 
     // Self-heal: ensure tabs exist
     ensureSheet_(ss, ROUNDS,   roundsHeader_());
@@ -145,8 +184,105 @@ function doPost(e) {
   }
 }
 
-function doGet() {
-  return ContentService.createTextOutput('Golf webhook live. POST only.');
+// ── Gemini Query Handler ────────────────────────────────────────────────────
+
+function handleGeminiQuery_(ss, question) {
+  if (!question) return json_({ ok: false, error: 'No question provided.' });
+
+  // Pull rounds data from the sheet
+  const sh = ss.getSheetByName(ROUNDS);
+  let context = 'No rounds have been recorded yet.';
+
+  if (sh && sh.getLastRow() >= 2) {
+    const headers = roundsHeader_();
+    const raw     = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
+
+    // Summarise by round (group 18 rows into one round object)
+    const byRound = {};
+    raw.forEach(row => {
+      const id = row[0];
+      if (!byRound[id]) {
+        byRound[id] = {
+          Round_ID: id,
+          Date:     row[1],
+          Course:   row[2],
+          Tees:     row[3],
+          holes:    []
+        };
+      }
+      byRound[id].holes.push({
+        Hole:         row[4],
+        Par:          row[5],
+        Stroke_Index: row[6],
+        Score:        row[7],
+        Putts:        row[8],
+        FIR:          row[9],
+        GIR:          row[10],
+        UD:           row[11],
+        X_UD:         row[12],
+        Penalties:    row[13],
+        Net_Score:    row[14]
+      });
+    });
+
+    // Build a compact text summary for Gemini
+    const lines = [];
+    Object.values(byRound).forEach(r => {
+      const total  = r.holes.reduce((s,h) => s + (Number(h.Score) || 0), 0);
+      const net    = r.holes.reduce((s,h) => s + (Number(h.Net_Score) || 0), 0);
+      const putts  = r.holes.reduce((s,h) => s + (Number(h.Putts) || 0), 0);
+      const firs   = r.holes.filter(h => h.FIR === true || h.FIR === 'TRUE' || h.FIR === 1).length;
+      const girs   = r.holes.filter(h => h.GIR === true || h.GIR === 'TRUE' || h.GIR === 1).length;
+      const pens   = r.holes.reduce((s,h) => s + (Number(h.Penalties) || 0), 0);
+      lines.push(
+        `Round ${r.Date} at ${r.Course} (${r.Tees}): ` +
+        `Gross ${total}, Net ${net}, Putts ${putts}, FIR ${firs}/18, GIR ${girs}/18, Penalties ${pens}`
+      );
+    });
+    context = lines.join('\n');
+  }
+
+  // Retrieve API key from Script Properties
+  const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  if (!apiKey) return json_({ ok: false, error: 'Gemini API key not configured in Script Properties.' });
+
+  // Call Gemini 1.5 Flash
+  const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
+  const prompt   = [
+    'You are a friendly golf statistics assistant. The player is Paul, a 67-year-old recreational golfer.',
+    'Here is his round data:\n' + context,
+    '\nAnswer this question in plain, conversational English (2–4 sentences max): ' + question
+  ].join('\n');
+
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: 256 }
+  };
+
+  const resp = UrlFetchApp.fetch(endpoint, {
+    method:      'post',
+    contentType: 'application/json',
+    payload:     JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  const code = resp.getResponseCode();
+  const body = JSON.parse(resp.getContentText());
+
+  if (code !== 200) {
+    return json_({ ok: false, error: body.error ? body.error.message : 'Gemini error ' + code });
+  }
+
+  const answer = body.candidates &&
+                 body.candidates[0] &&
+                 body.candidates[0].content &&
+                 body.candidates[0].content.parts &&
+                 body.candidates[0].content.parts[0] &&
+                 body.candidates[0].content.parts[0].text
+                   ? body.candidates[0].content.parts[0].text.trim()
+                   : 'No answer returned.';
+
+  return json_({ ok: true, answer: answer });
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v9.31 — May 4, 2026
+**Version:** v9.32 — May 4, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
@@ -284,17 +284,20 @@ Once all Kamloops-area courses are entered, decide:
 - `courses.json`: stroke_index added to all Mt. Paul holes; all course names simplified (Bighorn, Chinook Cove, Eaglepoint, etc.); `index: null` placeholder on other courses
 - Google Sheet: blow out old data — paste new `apps-script.gs`, run `setup()`, redeploy as new version
 
+### Files changed (v9.32)
+- `index.html` — "Ask Gemini" screen added; link on Setup screen; `sendAskMessage()` JS; weather-ask added
+- `apps-script.gs` — `doGet ?action=data` returns rounds JSON; `doPost action:query` proxies to Gemini; `callGemini_()` helper uses Script Properties key
+
 ### Files changed (v9.31)
 - `index.html`
 - `apps-script.gs`
 - `courses.json`
 
 ### Resume here next session
-1. **Redeploy Apps Script** — paste `apps-script.gs` into Sheet → run `setup()` → Deploy new version → confirm URL unchanged
-2. **Test a round post** — verify 18 rows appear in Rounds tab with correct Net_Score
-3. Remaining: Record Stats toggle, Player Profile screen, touch-target review, app icons
+1. **Paste updated apps-script.gs** into Sheet → Deploy → Manage deployments → edit → New version (URL stays same)
+2. **Test Ask Gemini** from phone — tap Ask Gemini on Setup screen, type a question
+3. Remaining pre-release: Record Stats toggle, Player Profile screen, touch-target review, app icons, remove Dev buttons
 4. Dave's data import — wait for CSV/XLS sample, then write transform script
-5. Dev buttons (Jump to Post Screen, Simulate Failure) — delete before release
 
 ## Technical Notes
 
