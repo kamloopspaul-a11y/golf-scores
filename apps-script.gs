@@ -415,9 +415,12 @@ function sendReport_(ss, n) {
 
   // ── Round-by-round rows ────────────────────────────────────────────────────
   const roundRows = rounds.map((r, i) => {
-    const rowBg = i % 2 === 1 ? ' style="background:#f5f9f0"' : '';
+    const isAway = String(r.Course).trim() !== homeCourse;
+    const rowStyle = isAway
+      ? ` style="background:#fef3cd" title="${r.Course}"`
+      : (i % 2 === 1 ? ' style="background:#f5f9f0"' : '');
     return `
-    <tr${rowBg}>
+    <tr${rowStyle}>
       <td style="text-align:center;font-weight:bold;white-space:nowrap">${r.Score}</td>
       <td style="text-align:center">${fInt(r.FIR)}</td>
       <td style="text-align:center">${fInt(r.GIR)}</td>
@@ -437,12 +440,15 @@ function sendReport_(ss, n) {
     { lbl: 'UD',    val: f1(avgUD),    col: effColour(avgUD, 4, 2),        note: `${fInt(avgSGOpp)} opportunities to get up and down`                                                                   },
     { lbl: 'X-UD',  val: f1(avgXUD),  col: scoreColour(avgXUD, 3, 7),     note: 'Failed up & downs — fewer is better'                                                                                  },
     { lbl: 'PUTTS', val: f1(avgPutts), col: scoreColour(avgPutts, 34, 38), note: avgPutts <= 34 ? 'Strong on greens'          : avgPutts <= 36 ? 'Near benchmark of 36'    : 'Work on lag putting'      }
-  ].map(r => `
-    <tr${rowBg}>
+  ].map((r, i) => {
+    const bg = i % 2 === 1 ? ' style="background:#f5f9f0"' : '';
+    return `
+    <tr${bg}>
       <td style="width:22%;font-weight:600">${r.lbl}</td>
       <td style="width:13%;text-align:center;color:${r.col};font-weight:500">${r.val}</td>
-      <td style="width:65%;color:${r.col}">${r.note}</td>
-    </tr>`).join('');
+      <td style="width:65%;text-align:left;color:${r.col}">${r.note}</td>
+    </tr>`;
+  }).join('');
 
   // ── HTML ───────────────────────────────────────────────────────────────────
   const html = `
@@ -464,13 +470,13 @@ function sendReport_(ss, n) {
   .ss-card { background: #e8f3de; border-radius: 8px; padding: 10px 4px; text-align: center; }
   .ss-val  { font-size: 22px; font-weight: bold; color: #377f09; }
   .ss-lbl  { font-size: 10px; color: #555; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
-  .ss-hero { background: #e8f3de; border-radius: 8px; padding: 14px 8px; text-align: center; }
+  .ss-hero { background: #e8f3de; border-radius: 8px; padding: 14px 8px; text-align: center; vertical-align: middle; }
   .ss-big  { font-size: 34px; font-weight: bold; color: #377f09; line-height: 1; }
   .ss-sub  { font-size: 11px; color: #666; margin-top: 5px; }
   /* Collapsible sections */
-  details  { margin: 12px 0 0; }
-  summary  { cursor: pointer; color: #377f09; font-size: 14px; font-weight: bold;
-             padding: 6px 2px 4px; border-bottom: 1px solid #e0e8d8;
+  details  { margin: 24px 0 0; }
+  summary  { cursor: pointer; color: #377f09; font-size: 10px; font-weight: bold;
+             padding: 6px 2px 6px; border-bottom: 1px solid #e0e8d8;
              list-style: none; user-select: none; }
   summary::-webkit-details-marker { display: none; }
   summary::before      { content: '▶ '; font-size: 10px; vertical-align: middle; }
@@ -484,8 +490,9 @@ function sendReport_(ss, n) {
   td       { padding: 5px 3px; border-bottom: 1px solid #f0f0f0; text-align: center; }
   td:first-child { text-align: left; padding-left: 4px; }
   tr:last-child td { border-bottom: none; }
-  .insight { background: #fffbe6; border-left: 4px solid #e07b00; padding: 10px 12px;
-             border-radius: 0 6px 6px 0; font-size: 13px; margin-bottom: 8px; }
+  .stat-tbl td:nth-child(3) { text-align: left; }
+  .insight { background: #fffbe6; padding: 10px 12px;
+             border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
   .footer  { background: #f4f7f0; padding: 10px 14px; font-size: 11px; color: #888;
              text-align: center; border-top: 1px solid #e0e8d8; margin-top: 14px; }
 </style>
@@ -494,8 +501,8 @@ function sendReport_(ss, n) {
 <div class="wrap">
 
   <div class="hdr">
-    <h1>Golf Performance Report</h1>
-    <p>${dateRange} · ${count} round${count > 1 ? 's' : ''}</p>
+    <h1>Golf Performance Index Report</h1>
+    <p>Average of last ${count} rounds</p>
   </div>
 
   <div class="body">
@@ -507,7 +514,7 @@ function sendReport_(ss, n) {
           <td style="width:18%"><div class="ss-card"><div class="ss-val">${fInt(avgFIR)}</div><div class="ss-lbl">FIR</div></div></td>
           <td style="width:18%"><div class="ss-card"><div class="ss-val">${fInt(avgGIR)}</div><div class="ss-lbl">GIR</div></div></td>
           <td style="width:18%"><div class="ss-card"><div class="ss-val">${f1(avgPen)}</div><div class="ss-lbl">PEN</div></div></td>
-          <td rowspan="2" style="width:46%"><div class="ss-hero"><div class="ss-big">${f1(avgScore)}</div><div class="ss-sub">HI: ${hi} | Net: ${netAvg}</div></div></td>
+          <td rowspan="2" class="ss-hero" style="width:46%"><div class="ss-big">${f1(avgScore)}</div><div class="ss-sub">HI: ${hi} | Net: ${netAvg}</div></td>
         </tr>
         <tr>
           <td><div class="ss-card"><div class="ss-val">${f1(avgUD)}</div><div class="ss-lbl">UD</div></div></td>
@@ -518,11 +525,11 @@ function sendReport_(ss, n) {
     </div>
 
     <!-- Round by Round -->
-    <details open style="margin-top:20px">
-      <summary>ROUND BY ROUND</summary>
+    <div style="margin-top:28px">
+      <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">ROUND BY ROUND</div>
       <table>
         <thead>
-          <tr${rowBg}>
+          <tr>
             <th>Score</th>
             <th>FIR</th><th>GIR</th><th>PEN</th>
             <th>UD</th><th>X-UD</th><th>PUTTS</th>
@@ -534,14 +541,14 @@ function sendReport_(ss, n) {
         </thead>
         <tbody>${roundRows}</tbody>
       </table>
-    </details>
+    </div>
 
     <!-- N Round Average -->
-    <details open style="margin-top:20px">
-      <summary>${count} ROUND AVERAGE</summary>
-      <table>
+    <div style="margin-top:28px">
+      <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">${count} ROUND AVERAGE</div>
+      <table class="stat-tbl">
         <thead>
-          <tr${rowBg}>
+          <tr>
             <th style="text-align:left;width:22%">Stat</th>
             <th style="width:13%">Avg</th>
             <th style="text-align:left;width:65%">Reading</th>
@@ -549,52 +556,52 @@ function sendReport_(ss, n) {
         </thead>
         <tbody>${avgTableRows}</tbody>
       </table>
-    </details>
+    </div>
 
     <!-- Cost Breakdown -->
-    <details style="margin-top:20px">
-      <summary>COST BREAKDOWN</summary>
-      <table>
+    <div style="margin-top:28px">
+      <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">COST BREAKDOWN</div>
+      <table class="stat-tbl">
         <thead>
-          <tr${rowBg}>
+          <tr>
             <th style="text-align:left;width:22%">Category</th>
             <th style="width:13%">Avg</th>
             <th style="text-align:left;width:65%">What it means</th>
           </tr>
         </thead>
         <tbody>
-          <tr${rowBg}>
+          <tr>
             <td style="font-weight:600">Ball Striking</td>
             <td style="text-align:center;color:${scoreColour(avgBSCost,4,7)};font-weight:500">${f1(avgBSCost)}</td>
-            <td>Missed greens × 0.5 — each green missed costs half a stroke on average</td>
+            <td style="text-align:left">Missed greens × 0.5 — each green missed costs half a stroke on average</td>
           </tr>
-          <tr${rowBg}>
+          <tr style="background:#f5f9f0">
             <td style="font-weight:600">Short Game</td>
             <td style="text-align:center;color:${scoreColour(avgSGCost,3,6)};font-weight:500">${f1(avgSGCost)}</td>
-            <td>Failed up &amp; downs × 0.7 — each X-UD costs about 0.7 strokes</td>
+            <td style="text-align:left">Failed up &amp; downs × 0.7 — each X-UD costs about 0.7 strokes</td>
           </tr>
-          <tr${rowBg}>
+          <tr>
             <td style="font-weight:600">Putting</td>
             <td style="text-align:center;color:${scoreColour(avgPuttCost,0,4)};font-weight:500">${avgPuttCost > 0 ? '+' + f1(avgPuttCost) : f1(avgPuttCost)}</td>
-            <td>${avgPuttCost < 0 ? 'Saving strokes — below the 36-putt benchmark' : avgPuttCost === 0 ? 'At the 36-putt benchmark' : 'Above the 36-putt benchmark'}</td>
+            <td style="text-align:left">${avgPuttCost < 0 ? 'Saving strokes — below the 36-putt benchmark' : avgPuttCost === 0 ? 'At the 36-putt benchmark' : 'Above the 36-putt benchmark'}</td>
           </tr>
-          <tr${rowBg}>
+          <tr style="background:#f5f9f0">
             <td style="font-weight:600">Penalties</td>
             <td style="text-align:center;color:${scoreColour(avgPen,0.5,2)};font-weight:500">${f1(avgPen)}</td>
-            <td>Direct stroke cost — each penalty adds one stroke</td>
+            <td style="text-align:left">Direct stroke cost — each penalty adds one stroke</td>
           </tr>
-          <tr style="background:#f4f7f0">
-            <td style="font-weight:700">Total</td>
-            <td style="text-align:center;color:${scoreColour(avgTSL,8,15)};font-weight:700;font-size:14px">${f1(avgTSL)}</td>
-            <td>Sum of all four categories — lower is better, target below 10</td>
+          <tr>
+            <td style="font-weight:700">GPI Rating</td>
+            <td style="text-align:center;color:${scoreColour(avgTSL,8,15)};font-weight:700">${f1(avgTSL)}</td>
+            <td style="text-align:left">Your GPI Rating is the estimated strokes lost per round based on the metrics above. The lower your GPI, the better.</td>
           </tr>
         </tbody>
       </table>
-    </details>
+    </div>
 
     <!-- Focus Areas -->
     <div style="margin-top:14px">
-      <div style="color:#377f09;font-size:14px;font-weight:bold;padding:6px 2px 4px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">FOCUS AREAS</div>
+      <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">FOCUS AREAS</div>
       ${buildInsights_(avgBSCost, avgSGCost, avgPuttCost, avgPen)}
     </div>
 

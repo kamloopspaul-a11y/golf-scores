@@ -389,3 +389,31 @@ Rewrote `sendReport_()` in `apps-script.gs` to address May 6 feedback. All chang
 **Files changed:** `apps-script.gs` (sendReport_, buildInsights_)
 
 **Next:** Paste updated `apps-script.gs` into Apps Script editor → Deploy → New version → test via `sendReport()`.
+
+---
+
+## 2026-05-07 — Email Report polish + GPI naming
+
+**Did:**
+- Fixed `<details>/<summary>` → plain `<div>` headings (Gmail strips interactive elements)
+- All section titles: consistent 12px green bold with rule line, 28px spacing above each section
+- Scoring Summary: light green stat cards on white background, hero td fills full rowspan height, no ghost border
+- Away rounds: light amber `#fef3cd` background + hover tooltip with course name
+- Section titles all caps; Focus Areas 12px matches other headings
+- Alternating row colours fixed in N Round Average and Cost Breakdown (index-based)
+- Left-aligned text in 1st and 3rd columns of stat tables (inline styles for Gmail compatibility)
+- Renamed TSL → COST; added explanatory sub-row below column headings
+- Named the composite strokes-lost metric **GPI Rating** (Golf Performance Index)
+- Subject line, masthead title → "Golf Performance Index Report"
+- Masthead subtext → "Average of last (x) rounds"
+- GPI_RULES.md created as reference backup
+
+**Decided:**
+- GPI is an informal personal metric — does not conflict with PGA Tour (Strokes Gained), WHS (Handicap Index), or Golf Canada terminology
+- "Rating" preferred over "Score" — implies a standing, not just a tally
+- Focus Areas left border removed; border-radius rounded all sides
+- Cost Breakdown GPI Rating row follows alternating row pattern, no special background
+
+**Files changed:** `apps-script.gs`, `GPI_RULES.md`, `PROJECT.md`, `JOURNAL.md`
+
+**Next session:** Review GPI metric family — are multipliers calibrated for a ~20 HI player? HI-scaled benchmarks. Making Focus Areas advice data-driven.

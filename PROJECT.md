@@ -316,46 +316,37 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 5–6, 2026
+**Last worked:** May 7, 2026
 
 ### What was completed this session
-- **Advanced Diagnostics tab** — `apps-script.gs` v2.1: `buildDiagnostics_()` aggregates Rounds data into one row per round with 19 columns of computed stats
-- **Email reports** — `sendReport_()` sends rich HTML email with round-by-round table, averages, strokes-lost breakdown, colour-coded thresholds, and top 2 focus-area insights
-- **Auto triggers** — report fires after every 5th round; `setupWeeklyTrigger()` adds optional Sunday 8am weekly report
-- **PROJECT.md** — updated with Diagnostics schema, strokes-lost model, setup steps
+- **Email report full design pass** — section titles, spacing, fonts, rule lines, alternating rows, Away round amber highlight, left-aligned text columns
+- **GPI Rating named** — Golf Performance Index. Composite strokes-lost metric. Subject line, masthead, and Cost Breakdown all aligned to GPI theme
+- **`<details>/<summary>` replaced** — Gmail strips these; converted to plain `<div>` headings. All styling now renders reliably
+- **GPI_RULES.md created** — reference backup for the metric family, formulas, and open questions
+- **Git lock file cleared** — removed `.git/HEAD.lock` and `.git/objects/maintenance.lock`
 
-### Files changed (v9.33)
-- `apps-script.gs` — Diagnostics tab builder, email reporter, weekly trigger setup, helpers
-- `apps-script.gs` bug fix — replaced all `getUi().alert()` calls with `Logger.log()` (was causing 6-min timeout in Script Editor)
-- `index.html` — Ask Gemini screen removed
+### Files changed
+- `apps-script.gs` — email report HTML/CSS overhaul, GPI naming, Away round logic restored
+- `GPI_RULES.md` — new file
+- `PROJECT.md`, `JOURNAL.md` — updated
 
 ### Resume here next session
 
-### Resume here next session
-
-**Email report design is settled** — preview in Context panel (golf-report-preview artifact). All visual decisions made, ready to wire into apps-script.gs sendReport_() function.
+**Email report is visually complete and deployed.** Next priorities:
 
 **Build queue (in order):**
-1. Wire email report HTML to match preview (scoring grid, collapsible sections, away row, Cost click-reveal, revised text)
-2. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab — Player controls delivery from Sheet
-3. Player Profile screen in PWA — name, HI, email, Track Stats toggle, Stat Reports toggle + delivery settings
-4. HI-scaled benchmarks for colour coding (brackets: 0–9, 10–18, 19–28, 29+)
+1. Review GPI metric family — calibrate cost multipliers for ~20 HI player, HI-scaled benchmarks (brackets: 0–9, 10–18, 19–28, 29+)
+2. Make Focus Areas advice data-driven — current suggestions (e.g. "10–30 yard shots") not grounded in captured data
+3. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab
+4. Player Profile screen in PWA — name, HI, email, Track Stats toggle, Stat Reports toggle
 5. Player goal field (target HI + timeframe) → report framing shifts to progress narrative
-
-**Settings tab fix DONE:** Home Course updated to Mt. Paul manually.
-
-#### Gemini API billing (resolved May 5)
-- Ask Gemini screen still in `index.html` — currently only functional with a paid Gemini key
-- **Resolved:** Diagnostics + email reports replace the AI query use case for free, using Apps Script + Gmail quotas
-- Gemini query route stays in `apps-script.gs` for future use if key is ever activated
 
 #### Other pre-release tasks
 1. Record Stats toggle (FIR/GIR/etc. on Setup screen)
-2. Player Profile screen
-3. Touch-target review for mobile
-4. App icons
-5. Remove Dev buttons (Jump to Post Screen, Simulate Failure)
-6. Dave's data import — wait for CSV/XLS sample, write transform script
+2. Touch-target review for mobile
+3. App icons
+4. Remove Dev buttons (Jump to Post Screen, Simulate Failure)
+5. Dave's data import — wait for CSV/XLS sample, write transform script
 
 ## Technical Notes
 
