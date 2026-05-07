@@ -414,15 +414,9 @@ function sendReport_(ss, n) {
     : formatDate_(rounds[0].Date);
 
   // ── Round-by-round rows ────────────────────────────────────────────────────
-  // Away rows: light blue background, tooltip shows course name via title attr
   const roundRows = rounds.map(r => {
-    const isAway  = String(r.Course).trim() !== homeCourse;
-    const rowStyle = isAway ? ' style="background:#daeaff"' : '';
-    const titleAttr = isAway ? ` title="${r.Course}"` : '';
     return `
-    <tr${rowStyle}${titleAttr}>
-      <td>${formatDate_(r.Date)}</td>
-      <td style="max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.Course}</td>
+    <tr>
       <td style="text-align:center;font-weight:bold;white-space:nowrap">${r.Score}</td>
       <td style="text-align:center">${fInt(r.FIR)}</td>
       <td style="text-align:center">${fInt(r.GIR)}</td>
@@ -527,8 +521,6 @@ function sendReport_(ss, n) {
       <table>
         <thead>
           <tr>
-            <th style="text-align:left">Date</th>
-            <th style="text-align:left">Course</th>
             <th>Score</th>
             <th>FIR</th><th>GIR</th><th>PEN</th>
             <th>UD</th><th>X-UD</th><th>PUTTS</th>
