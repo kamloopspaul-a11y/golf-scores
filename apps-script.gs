@@ -414,9 +414,10 @@ function sendReport_(ss, n) {
     : formatDate_(rounds[0].Date);
 
   // ── Round-by-round rows ────────────────────────────────────────────────────
-  const roundRows = rounds.map(r => {
+  const roundRows = rounds.map((r, i) => {
+    const rowBg = i % 2 === 1 ? ' style="background:#f5f9f0"' : '';
     return `
-    <tr>
+    <tr${rowBg}>
       <td style="text-align:center;font-weight:bold;white-space:nowrap">${r.Score}</td>
       <td style="text-align:center">${fInt(r.FIR)}</td>
       <td style="text-align:center">${fInt(r.GIR)}</td>
@@ -437,7 +438,7 @@ function sendReport_(ss, n) {
     { lbl: 'X-UD',  val: f1(avgXUD),  col: scoreColour(avgXUD, 3, 7),     note: 'Failed up & downs — fewer is better'                                                                                  },
     { lbl: 'PUTTS', val: f1(avgPutts), col: scoreColour(avgPutts, 34, 38), note: avgPutts <= 34 ? 'Strong on greens'          : avgPutts <= 36 ? 'Near benchmark of 36'    : 'Work on lag putting'      }
   ].map(r => `
-    <tr>
+    <tr${rowBg}>
       <td style="width:22%;font-weight:600">${r.lbl}</td>
       <td style="width:13%;text-align:center;color:${r.col};font-weight:500">${r.val}</td>
       <td style="width:65%;color:${r.col}">${r.note}</td>
@@ -491,7 +492,7 @@ function sendReport_(ss, n) {
 <div class="wrap">
 
   <div class="hdr">
-    <h1>⛳ Golf Performance Report</h1>
+    <h1>Golf Performance Report</h1>
     <p>${dateRange} · ${count} round${count > 1 ? 's' : ''}</p>
   </div>
 
@@ -499,7 +500,7 @@ function sendReport_(ss, n) {
 
     <!-- Scoring Summary: 2-row × 4-col grid matching App layout -->
     <table class="ss">
-      <tr>
+      <tr${rowBg}>
         <td><div class="ss-val" style="color:${effColour(avgFIR,7,4)}">${fInt(avgFIR)}</div><div class="ss-lbl">FIR</div></td>
         <td><div class="ss-val" style="color:${effColour(avgGIR,5,3)}">${fInt(avgGIR)}</div><div class="ss-lbl">GIR</div></td>
         <td><div class="ss-val" style="color:${scoreColour(avgPen,0.5,2)}">${f1(avgPen)}</div><div class="ss-lbl">PEN</div></td>
@@ -508,7 +509,7 @@ function sendReport_(ss, n) {
           <div class="ss-sub">HI: ${hi} | Net: ${netAvg}</div>
         </td>
       </tr>
-      <tr>
+      <tr${rowBg}>
         <td><div class="ss-val" style="color:${effColour(avgUD,4,2)}">${f1(avgUD)}</div><div class="ss-lbl">UD</div></td>
         <td><div class="ss-val" style="color:${scoreColour(avgXUD,3,7)}">${f1(avgXUD)}</div><div class="ss-lbl">X-UD</div></td>
         <td><div class="ss-val" style="color:${scoreColour(avgPutts,34,38)}">${f1(avgPutts)}</div><div class="ss-lbl">PUTTS</div></td>
@@ -516,11 +517,11 @@ function sendReport_(ss, n) {
     </table>
 
     <!-- Round by Round -->
-    <details open>
+    <details open style="margin-top:20px">
       <summary>Round by Round</summary>
       <table>
         <thead>
-          <tr>
+          <tr${rowBg}>
             <th>Score</th>
             <th>FIR</th><th>GIR</th><th>PEN</th>
             <th>UD</th><th>X-UD</th><th>PUTTS</th>
@@ -532,11 +533,11 @@ function sendReport_(ss, n) {
     </details>
 
     <!-- N Round Average -->
-    <details open>
+    <details open style="margin-top:20px">
       <summary>${count} Round Average</summary>
       <table>
         <thead>
-          <tr>
+          <tr${rowBg}>
             <th style="text-align:left;width:22%">Stat</th>
             <th style="width:13%">Avg</th>
             <th style="text-align:left;width:65%">Reading</th>
@@ -547,33 +548,33 @@ function sendReport_(ss, n) {
     </details>
 
     <!-- Cost Breakdown -->
-    <details>
+    <details style="margin-top:20px">
       <summary>Cost Breakdown</summary>
       <table>
         <thead>
-          <tr>
+          <tr${rowBg}>
             <th style="text-align:left;width:22%">Category</th>
             <th style="width:13%">Avg</th>
             <th style="text-align:left;width:65%">What it means</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr${rowBg}>
             <td style="font-weight:600">Ball Striking</td>
             <td style="text-align:center;color:${scoreColour(avgBSCost,4,7)};font-weight:500">${f1(avgBSCost)}</td>
             <td>Missed greens × 0.5 — each green missed costs half a stroke on average</td>
           </tr>
-          <tr>
+          <tr${rowBg}>
             <td style="font-weight:600">Short Game</td>
             <td style="text-align:center;color:${scoreColour(avgSGCost,3,6)};font-weight:500">${f1(avgSGCost)}</td>
             <td>Failed up &amp; downs × 0.7 — each X-UD costs about 0.7 strokes</td>
           </tr>
-          <tr>
+          <tr${rowBg}>
             <td style="font-weight:600">Putting</td>
             <td style="text-align:center;color:${scoreColour(avgPuttCost,0,4)};font-weight:500">${avgPuttCost > 0 ? '+' + f1(avgPuttCost) : f1(avgPuttCost)}</td>
             <td>${avgPuttCost < 0 ? 'Saving strokes — below the 36-putt benchmark' : avgPuttCost === 0 ? 'At the 36-putt benchmark' : 'Above the 36-putt benchmark'}</td>
           </tr>
-          <tr>
+          <tr${rowBg}>
             <td style="font-weight:600">Penalties</td>
             <td style="text-align:center;color:${scoreColour(avgPen,0.5,2)};font-weight:500">${f1(avgPen)}</td>
             <td>Direct stroke cost — each penalty adds one stroke</td>
@@ -595,14 +596,14 @@ function sendReport_(ss, n) {
   </div>
 
   <div class="footer">
-    My Golf Scores · ${new Date().toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+    My Golf Scores · ${new Date().toLocaleDateString('en-CA')}
   </div>
 
 </div>
 </body>
 </html>`;
 
-  const subject = `⛳ Golf Report — Last ${count} Rounds (avg ${f1(avgScore)})`;
+  const subject = `Golf Report — Last ${count} Rounds (avg ${f1(avgScore)})`;
   GmailApp.sendEmail(REPORT_EMAIL, subject, 'Your golf report (HTML email)', { htmlBody: html });
 }
 
