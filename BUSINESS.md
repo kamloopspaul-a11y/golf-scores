@@ -159,3 +159,101 @@ It's positioned as a retention + CRM tool, not a "get you more students" tool.
 - This is a last-minute idea from April 20, 2026 — not validated, not committed
 - Worth blending with `PROJECT.md` roadmap in future sessions once more thinking is done
 - Don't let this derail current app-finishing work; it's a parallel thread, not a pivot
+
+---
+
+## Player Profile — Design Notes (May 5, 2026)
+
+### Confirmed Direction
+- **Solo app only** — one copy per player, not one copy per foursome
+- Multi-player removed deliberately: turns user into scorekeeper, complicates stats ownership
+- Marketing upside: each golfer buys/installs their own copy
+
+### Player Profile — Lite Version (build next)
+Core fields only:
+- Player Name
+- Home Course
+- Handicap Index
+- Email (for reports)
+- Track Stats toggle (Footer Stats on/off)
+- Stat Reports toggle + delivery settings (every N rounds OR weekly calendar)
+
+Profile accessible by tapping player name in Stage (available on most screens).
+
+### Player Profile — Deferred Ideas (build later)
+- **Newsletter / retention mailer** — hide the UI hook now, build the backend later. Likely requires connector to a mailer service (Mailchimp, etc.). Good client-retention feature for a future paid tier.
+- **Training schedule** — structured practice plan based on Diagnostics weak areas
+- **Calendar integration** — log upcoming rounds, track frequency
+- **Multi-player option** — each player has their own copy; shared leaderboard is a separate future product
+
+### Report Trigger (replace hardcoded constants)
+Move `REPORT_EVERY_N_ROUNDS` and `REPORT_LAST_N_ROUNDS` out of code and into Settings tab.
+Player Profile writes: Player_Name, Player_Email, Track_Stats, Stat_Reports, Report_Trigger (rounds/weekly), Report_Every_N.
+Apps Script reads Settings on every doPost — no redeployment needed when player changes preferences.
+
+---
+
+## Email Report — Design Improvements (May 5, 2026)
+
+### UD Row Fix
+Rewrite "of 12.4 opp." to "1.2 of 12.4 (10%)" with full colour treatment (green/amber/red) matching all other rows. Benchmark: HI-scaled thresholds (see below).
+
+### HI-Scaled Benchmarks (Option B — recommended)
+Replace fixed tour-average thresholds with HI-bracket-scaled thresholds. Four brackets: 0–9, 10–18, 19–28, 29+. Small lookup table in Apps Script. Every stat row gets a colour based on what's realistic for the player's handicap level, not tour standards. Meaningful from round one — no personal history needed.
+
+Example brackets for Short Game Efficiency:
+| HI Bracket | Green (good) | Amber (watch) | Red (needs work) |
+|------------|-------------|---------------|-----------------|
+| 0–9        | ≥50%        | 30–50%        | <30%            |
+| 10–18      | ≥35%        | 20–35%        | <20%            |
+| 19–28      | ≥25%        | 12–25%        | <12%            |
+| 29+        | ≥15%        | 8–15%         | <8%             |
+
+Apply same bracket logic to: FIR, GIR, UD%, PuttsPerGIR, TotalStrokesLost.
+
+---
+
+## Player Goal & Improvement Philosophy (May 5, 2026)
+
+### Concept
+Player states a goal in their Profile: "I'm a 20 HI, I want to reach 10 HI within 2 years." This becomes the engine behind stat reports — every report is framed around progress toward that goal, not just raw performance.
+
+### Methodology
+- Goal stored in Settings tab: `Goal_Target_HI`, `Goal_Timeframe_Months`
+- Report calculates: current trajectory vs. required improvement rate
+- Each focus area recommendation is weighted toward what moves the needle most for HI reduction (GIR improvement has the highest leverage for most handicaps)
+- Nudges change as the player improves — early reports focus on biggest leaks, later reports celebrate milestones and refine targets
+
+### Philosophy of Stat Delivery
+Not "here's what's wrong" — instead "here's where you are, here's where you're going, here's what to work on this week." Progress tracker first, diagnostic tool second. Matches the Dashboard purpose already defined in PROJECT.md.
+
+### Milestone Triggers (future)
+- First round posted → welcome report, baseline established
+- HI drops 2 points → celebration nudge in next report
+- Halfway to goal → progress summary
+- Goal achieved → special report + new goal prompt
+
+### Connects to
+- Player Profile (stores goal)
+- HI-scaled benchmarks (performance judged relative to current HI, not target)
+- Dashboard (visual trend toward goal)
+- Newsletter/retention feature (deferred) — goal progress is natural content for a mailer
+
+
+---
+
+## "Cost" Metric & Strokes Gained (May 5, 2026)
+
+### Naming Decision
+- Renamed "Lost" → **"Cost"** in all report UI
+- "Strokes Gained" is the official PGA Tour term — avoid repurposing it for our simplified model as it has a specific technical meaning golfers may know
+- Current model uses fixed benchmarks (not personal averages) — more accurately described as "estimated stroke cost of your stat pattern"
+- Future upgrade (20+ rounds): replace fixed benchmarks with player's own rolling averages → genuine personal Strokes Gained equivalent
+- **Tooltip idea (deferred):** add ⓘ icon next to "Cost" column header with plain-English explanation: "An estimate of strokes given away based on your stat pattern. Lower is better. Becomes more meaningful as your personal baseline builds up."
+
+### Plain Language Options Considered
+- "Strokes Lost" — too close to official term, implies comparison to something specific
+- "Cost" — clean, neutral, directionally clear
+- "Given Away" — conversational, considered but wordier
+- "Efficiency Score" — too corporate
+

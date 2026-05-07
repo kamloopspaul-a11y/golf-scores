@@ -322,10 +322,10 @@ function buildDiagnostics_(ss) {
   }
 }
 
-// Rebuild manually from the menu — handy if the tab gets out of sync
+// Rebuild manually from the Script Editor — handy if the tab gets out of sync
 function rebuildDiagnostics() {
   buildDiagnostics_(SpreadsheetApp.getActive());
-  SpreadsheetApp.getUi().alert('Diagnostics tab rebuilt.');
+  Logger.log('Diagnostics tab rebuilt successfully.');
 }
 
 // ── Email Report ───────────────────────────────────────────────────────────
@@ -337,7 +337,7 @@ function rebuildDiagnostics() {
  */
 function sendReport() {
   sendReport_(SpreadsheetApp.getActive(), REPORT_LAST_N_ROUNDS);
-  SpreadsheetApp.getUi().alert('Report sent to ' + REPORT_EMAIL);
+  Logger.log('Report sent to ' + REPORT_EMAIL);
 }
 
 function sendReport_(ss, n) {
@@ -361,37 +361,49 @@ function sendReport_(ss, n) {
   const count = rounds.length;
   if (count === 0) return;
 
-  // Compute averages
+  // Read settings
+  const settingsSh = ss.getSheetByName(SETTINGS);
+  const settings   = getSettings_(settingsSh);
+  const hi         = parseFloat(settings['Handicap_Index'] || 20);
+  const homeCourse = String(settings['Home Course'] || 'Mt. Paul').trim();
+
+  // Course Handicap — Mt. Paul Mens Blue (update when tee selector is wired)
+  const teeRatings = { cr: 59.0, sr: 86, par: 64 };
+  const ch = Math.round(hi * (teeRatings.sr / 113) + (teeRatings.cr - teeRatings.par));
+
+  // Compute averages (raw floats — formatted on output)
   const avg = key => {
     const vals = rounds.map(r => Number(r[key]) || 0);
-    return parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
   };
 
   const avgScore    = avg('Score');
   const avgFIR      = avg('FIR');
   const avgGIR      = avg('GIR');
   const avgUD       = avg('UD');
+  const avgXUD      = avg('MissedOpp');      // Failed Up & Downs (X-UD)
   const avgPutts    = avg('Putts');
   const avgPen      = avg('Penalties');
-  const avgBSGap    = avg('BallStrikingGap');
-  const avgMissed   = avg('MissedOpp');
-  const avgSGEff    = avg('ShortGameEff');
-  const avgPPGIR    = avg('PuttsPerGIR');
-  const avgDiag     = avg('DiagnosticScore');
+  const avgSGOpp    = avg('ShortGameOpp');
   const avgBSCost   = avg('BSCost');
   const avgSGCost   = avg('SGCost');
   const avgPuttCost = avg('PuttingCost');
   const avgTSL      = avg('TotalStrokesLost');
 
-  // Colour helpers — green = good, amber = watch it, red = needs work
+  const netAvg = (avgScore - ch).toFixed(1);
+
+  // Format helpers
+  const f1   = v  => parseFloat(v.toFixed(1));    // 1 decimal
+  const fInt = v  => Math.round(v);               // integer
+  const fPc  = v  => Math.round(v * 100);         // percent (0–100)
+
+  // Colour helpers — green = good, amber = watch, red = needs work
   function scoreColour(val, low, high) {
-    // low = good threshold, high = needs-work threshold (higher = worse)
-    if (val <= low)  return '#2d7a09';  // green
-    if (val <= high) return '#e07b00';  // amber
-    return '#c0392b';                   // red
+    if (val <= low)  return '#2d7a09';
+    if (val <= high) return '#e07b00';
+    return '#c0392b';
   }
   function effColour(val, high, low) {
-    // high = good threshold (higher = better)
     if (val >= high) return '#2d7a09';
     if (val >= low)  return '#e07b00';
     return '#c0392b';
@@ -401,182 +413,215 @@ function sendReport_(ss, n) {
     ? formatDate_(rounds[0].Date) + ' – ' + formatDate_(rounds[count - 1].Date)
     : formatDate_(rounds[0].Date);
 
-  const courseList = [...new Set(rounds.map(r => r.Course))].join(', ');
-
-  // Build round-by-round table rows
-  const roundRows = rounds.map(r => `
-    <tr>
+  // ── Round-by-round rows ────────────────────────────────────────────────────
+  // Away rows: light blue background, tooltip shows course name via title attr
+  const roundRows = rounds.map(r => {
+    const isAway  = String(r.Course).trim() !== homeCourse;
+    const rowStyle = isAway ? ' style="background:#daeaff"' : '';
+    const titleAttr = isAway ? ` title="${r.Course}"` : '';
+    return `
+    <tr${rowStyle}${titleAttr}>
       <td>${formatDate_(r.Date)}</td>
-      <td>${r.Course}</td>
-      <td style="text-align:center;font-weight:bold">${r.Score}</td>
-      <td style="text-align:center">${r.FIR}/18</td>
-      <td style="text-align:center">${r.GIR}/18</td>
-      <td style="text-align:center">${r.UD}</td>
-      <td style="text-align:center">${r.Putts}</td>
-      <td style="text-align:center">${r.Penalties || 0}</td>
-      <td style="text-align:center;color:${scoreColour(r.TotalStrokesLost, 8, 15)};font-weight:bold">${r.TotalStrokesLost}</td>
+      <td style="max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.Course}</td>
+      <td style="text-align:center;font-weight:bold;white-space:nowrap">${r.Score}</td>
+      <td style="text-align:center">${fInt(r.FIR)}</td>
+      <td style="text-align:center">${fInt(r.GIR)}</td>
+      <td style="text-align:center">${fInt(r.Penalties || 0)}</td>
+      <td style="text-align:center">${fInt(r.UD)}</td>
+      <td style="text-align:center">${fInt(r.MissedOpp || 0)}</td>
+      <td style="text-align:center">${fInt(r.Putts)}</td>
+      <td style="text-align:center;color:${scoreColour(r.TotalStrokesLost, 8, 15)};font-weight:bold">${f1(r.TotalStrokesLost)}</td>
+    </tr>`;
+  }).join('');
+
+  // ── N Round Average rows — order: FIR, GIR, PEN, UD, X-UD, PUTTS ──────────
+  const avgTableRows = [
+    { lbl: 'FIR',   val: f1(avgFIR),   col: effColour(avgFIR, 7, 4),       note: avgFIR >= 7  ? 'Solid tee play'           : avgFIR >= 4  ? 'Serviceable'              : 'Focus on tee ball'         },
+    { lbl: 'GIR',   val: f1(avgGIR),   col: effColour(avgGIR, 5, 3),       note: avgGIR >= 5  ? 'Good ball striking'        : avgGIR >= 3  ? 'Room to improve'           : 'Iron play needs work'      },
+    { lbl: 'PEN',   val: f1(avgPen),   col: scoreColour(avgPen, 0.5, 2),   note: avgPen <= 0.5 ? 'Clean rounds'              : avgPen <= 2  ? 'Some costly holes'         : 'Course management priority'},
+    { lbl: 'UD',    val: f1(avgUD),    col: effColour(avgUD, 4, 2),        note: `${fInt(avgSGOpp)} opportunities to get up and down`                                                                   },
+    { lbl: 'X-UD',  val: f1(avgXUD),  col: scoreColour(avgXUD, 3, 7),     note: 'Failed up & downs — fewer is better'                                                                                  },
+    { lbl: 'PUTTS', val: f1(avgPutts), col: scoreColour(avgPutts, 34, 38), note: avgPutts <= 34 ? 'Strong on greens'          : avgPutts <= 36 ? 'Near benchmark of 36'    : 'Work on lag putting'      }
+  ].map(r => `
+    <tr>
+      <td style="width:22%;font-weight:600">${r.lbl}</td>
+      <td style="width:13%;text-align:center;color:${r.col};font-weight:500">${r.val}</td>
+      <td style="width:65%;color:${r.col}">${r.note}</td>
     </tr>`).join('');
 
+  // ── HTML ───────────────────────────────────────────────────────────────────
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>
-  body      { font-family: Arial, sans-serif; color: #222; background: #f4f7f0; margin: 0; padding: 20px; }
-  .wrap     { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
-  .header   { background: #377f09; color: #fff; padding: 24px 28px 18px; }
-  .header h1{ margin: 0; font-size: 22px; }
-  .header p { margin: 6px 0 0; font-size: 13px; opacity: .85; }
-  .body     { padding: 24px 28px; }
-  h2        { color: #377f09; font-size: 15px; margin: 24px 0 10px; border-bottom: 1px solid #e0e8d8; padding-bottom: 4px; }
-  table     { border-collapse: collapse; width: 100%; font-size: 13px; margin-bottom: 16px; }
-  th        { background: #e8f3de; color: #2a5a06; text-align: left; padding: 7px 8px; font-size: 12px; }
-  td        { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; }
+  body     { font-family: Arial, sans-serif; color: #222; background: #f4f7f0; margin: 0; padding: 16px; }
+  .wrap    { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  .hdr     { background: #377f09; color: #fff; padding: 18px 16px 14px; }
+  .hdr h1  { margin: 0; font-size: 20px; }
+  .hdr p   { margin: 4px 0 0; font-size: 12px; opacity: .85; }
+  .body    { padding: 14px 12px; }
+  /* Scoring summary grid */
+  .ss      { width: 100%; border-collapse: collapse; background: #e8f3de; margin-bottom: 14px; }
+  .ss td   { padding: 10px 6px; text-align: center; width: 20%; vertical-align: middle; }
+  .ss-val  { font-size: 22px; font-weight: bold; }
+  .ss-lbl  { font-size: 10px; color: #555; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
+  .ss-hero { background: #fff; border-left: 2px solid #c8e0b0; width: 40%; vertical-align: middle; }
+  .ss-big  { font-size: 34px; font-weight: bold; color: #377f09; line-height: 1; }
+  .ss-sub  { font-size: 11px; color: #666; margin-top: 5px; }
+  /* Collapsible sections */
+  details  { margin: 12px 0 0; }
+  summary  { cursor: pointer; color: #377f09; font-size: 14px; font-weight: bold;
+             padding: 6px 2px 4px; border-bottom: 1px solid #e0e8d8;
+             list-style: none; user-select: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before      { content: '▶ '; font-size: 10px; vertical-align: middle; }
+  details[open] summary::before { content: '▼ '; }
+  details > *:not(summary) { margin-top: 8px; }
+  /* Tables */
+  table    { border-collapse: collapse; width: 100%; font-size: 12px; }
+  th       { background: #e8f3de; color: #2a5a06; text-align: center; padding: 5px 3px;
+             font-size: 11px; white-space: nowrap; }
+  th:first-child { text-align: left; padding-left: 4px; }
+  td       { padding: 5px 3px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+  td:first-child { text-align: left; padding-left: 4px; }
   tr:last-child td { border-bottom: none; }
-  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .kpi      { background: #f4f7f0; border-radius: 6px; padding: 12px; text-align: center; }
-  .kpi-val  { font-size: 24px; font-weight: bold; color: #377f09; }
-  .kpi-lbl  { font-size: 11px; color: #666; margin-top: 2px; }
-  .insight  { background: #fffbe6; border-left: 4px solid #e07b00; padding: 12px 14px; border-radius: 0 6px 6px 0; font-size: 13px; margin-bottom: 10px; }
-  .good     { color: #2d7a09; font-weight: bold; }
-  .warn     { color: #e07b00; font-weight: bold; }
-  .poor     { color: #c0392b; font-weight: bold; }
-  .footer   { background: #f4f7f0; padding: 14px 28px; font-size: 11px; color: #888; text-align: center; }
+  .insight { background: #fffbe6; border-left: 4px solid #e07b00; padding: 10px 12px;
+             border-radius: 0 6px 6px 0; font-size: 13px; margin-bottom: 8px; }
+  .footer  { background: #f4f7f0; padding: 10px 14px; font-size: 11px; color: #888;
+             text-align: center; border-top: 1px solid #e0e8d8; margin-top: 14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="header">
+  <div class="hdr">
     <h1>⛳ Golf Performance Report</h1>
-    <p>Last ${count} round${count > 1 ? 's' : ''} · ${dateRange}</p>
-    <p>${courseList}</p>
+    <p>${dateRange} · ${count} round${count > 1 ? 's' : ''}</p>
   </div>
 
   <div class="body">
 
-    <h2>Scoring Summary</h2>
-    <div class="kpi-grid">
-      <div class="kpi">
-        <div class="kpi-val">${avgScore}</div>
-        <div class="kpi-lbl">Avg Score</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val" style="color:${effColour(avgGIR, 5, 3)}">${avgGIR}</div>
-        <div class="kpi-lbl">Avg GIR / 18</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val" style="color:${scoreColour(avgPutts, 34, 38)}">${avgPutts}</div>
-        <div class="kpi-lbl">Avg Putts</div>
-      </div>
+    <!-- Scoring Summary: 2-row × 4-col grid matching App layout -->
+    <table class="ss">
+      <tr>
+        <td><div class="ss-val" style="color:${effColour(avgFIR,7,4)}">${fInt(avgFIR)}</div><div class="ss-lbl">FIR</div></td>
+        <td><div class="ss-val" style="color:${effColour(avgGIR,5,3)}">${fInt(avgGIR)}</div><div class="ss-lbl">GIR</div></td>
+        <td><div class="ss-val" style="color:${scoreColour(avgPen,0.5,2)}">${f1(avgPen)}</div><div class="ss-lbl">PEN</div></td>
+        <td class="ss-hero" rowspan="2">
+          <div class="ss-big">${f1(avgScore)}</div>
+          <div class="ss-sub">HI: ${hi} | Net: ${netAvg}</div>
+        </td>
+      </tr>
+      <tr>
+        <td><div class="ss-val" style="color:${effColour(avgUD,4,2)}">${f1(avgUD)}</div><div class="ss-lbl">UD</div></td>
+        <td><div class="ss-val" style="color:${scoreColour(avgXUD,3,7)}">${f1(avgXUD)}</div><div class="ss-lbl">X-UD</div></td>
+        <td><div class="ss-val" style="color:${scoreColour(avgPutts,34,38)}">${f1(avgPutts)}</div><div class="ss-lbl">PUTTS</div></td>
+      </tr>
+    </table>
+
+    <!-- Round by Round -->
+    <details open>
+      <summary>Round by Round</summary>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">Date</th>
+            <th style="text-align:left">Course</th>
+            <th>Score</th>
+            <th>FIR</th><th>GIR</th><th>PEN</th>
+            <th>UD</th><th>X-UD</th><th>PUTTS</th>
+            <th>TSL</th>
+          </tr>
+        </thead>
+        <tbody>${roundRows}</tbody>
+      </table>
+    </details>
+
+    <!-- N Round Average -->
+    <details open>
+      <summary>${count} Round Average</summary>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;width:22%">Stat</th>
+            <th style="width:13%">Avg</th>
+            <th style="text-align:left;width:65%">Reading</th>
+          </tr>
+        </thead>
+        <tbody>${avgTableRows}</tbody>
+      </table>
+    </details>
+
+    <!-- Cost Breakdown -->
+    <details>
+      <summary>Cost Breakdown</summary>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;width:22%">Category</th>
+            <th style="width:13%">Avg</th>
+            <th style="text-align:left;width:65%">What it means</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600">Ball Striking</td>
+            <td style="text-align:center;color:${scoreColour(avgBSCost,4,7)};font-weight:500">${f1(avgBSCost)}</td>
+            <td>Missed greens × 0.5 — each green missed costs half a stroke on average</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">Short Game</td>
+            <td style="text-align:center;color:${scoreColour(avgSGCost,3,6)};font-weight:500">${f1(avgSGCost)}</td>
+            <td>Failed up &amp; downs × 0.7 — each X-UD costs about 0.7 strokes</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">Putting</td>
+            <td style="text-align:center;color:${scoreColour(avgPuttCost,0,4)};font-weight:500">${avgPuttCost > 0 ? '+' + f1(avgPuttCost) : f1(avgPuttCost)}</td>
+            <td>${avgPuttCost < 0 ? 'Saving strokes — below the 36-putt benchmark' : avgPuttCost === 0 ? 'At the 36-putt benchmark' : 'Above the 36-putt benchmark'}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">Penalties</td>
+            <td style="text-align:center;color:${scoreColour(avgPen,0.5,2)};font-weight:500">${f1(avgPen)}</td>
+            <td>Direct stroke cost — each penalty adds one stroke</td>
+          </tr>
+          <tr style="background:#f4f7f0">
+            <td style="font-weight:700">Total</td>
+            <td style="text-align:center;color:${scoreColour(avgTSL,8,15)};font-weight:700;font-size:14px">${f1(avgTSL)}</td>
+            <td>Sum of all four categories — lower is better, target below 10</td>
+          </tr>
+        </tbody>
+      </table>
+    </details>
+
+    <!-- Focus Areas -->
+    <div style="margin-top:14px">
+      ${buildInsights_(avgBSCost, avgSGCost, avgPuttCost, avgPen)}
     </div>
-
-    <h2>Round by Round</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>Course</th><th>Score</th>
-          <th>FIR</th><th>GIR</th><th>UD</th>
-          <th>Putts</th><th>Pen</th><th>Strokes Lost</th>
-        </tr>
-      </thead>
-      <tbody>${roundRows}</tbody>
-    </table>
-
-    <h2>Averages — Last ${count} Rounds</h2>
-    <table>
-      <thead>
-        <tr><th>Stat</th><th>Value</th><th>Interpretation</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Fairways in Regulation (FIR)</td>
-          <td style="text-align:center">${avgFIR}/18</td>
-          <td style="color:${effColour(avgFIR, 7, 4)}">${avgFIR >= 7 ? '✓ Solid tee play' : avgFIR >= 4 ? '▲ Serviceable' : '✗ Focus on tee ball'}</td>
-        </tr>
-        <tr>
-          <td>Greens in Regulation (GIR)</td>
-          <td style="text-align:center">${avgGIR}/18</td>
-          <td style="color:${effColour(avgGIR, 5, 3)}">${avgGIR >= 5 ? '✓ Good ball-striking' : avgGIR >= 3 ? '▲ Room to improve' : '✗ Iron play needs work'}</td>
-        </tr>
-        <tr>
-          <td>Up &amp; Downs (UD)</td>
-          <td style="text-align:center">${avgUD}</td>
-          <td>of ${Math.round(avgBSGap)} opportunities</td>
-        </tr>
-        <tr>
-          <td>Short Game Efficiency</td>
-          <td style="text-align:center">${Math.round(avgSGEff * 100)}%</td>
-          <td style="color:${effColour(avgSGEff, 0.4, 0.25)}">${avgSGEff >= 0.4 ? '✓ Solid short game' : avgSGEff >= 0.25 ? '▲ Developing' : '✗ Priority area'}</td>
-        </tr>
-        <tr>
-          <td>Putts per GIR</td>
-          <td style="text-align:center">${avgPPGIR}</td>
-          <td style="color:${scoreColour(avgPPGIR, 1.8, 2.2)}">${avgPPGIR <= 1.8 ? '✓ Strong on the greens' : avgPPGIR <= 2.2 ? '▲ Average putting' : '✗ Work on lag putting'}</td>
-        </tr>
-        <tr>
-          <td>Penalties</td>
-          <td style="text-align:center">${avgPen}</td>
-          <td style="color:${scoreColour(avgPen, 0.5, 2)}">${avgPen <= 0.5 ? '✓ Clean rounds' : avgPen <= 2 ? '▲ Some costly holes' : '✗ Course management'}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>Strokes Lost Breakdown</h2>
-    <table>
-      <thead>
-        <tr><th>Category</th><th>Avg Cost</th><th>What it means</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Ball Striking Cost</td>
-          <td style="text-align:center;color:${scoreColour(avgBSCost, 4, 7)};font-weight:bold">${avgBSCost}</td>
-          <td>Strokes lost from missed greens — focus: iron play</td>
-        </tr>
-        <tr>
-          <td>Short Game Cost</td>
-          <td style="text-align:center;color:${scoreColour(avgSGCost, 3, 6)};font-weight:bold">${avgSGCost}</td>
-          <td>Strokes lost from failed up-&amp;-downs — focus: chipping</td>
-        </tr>
-        <tr>
-          <td>Putting Cost</td>
-          <td style="text-align:center;color:${scoreColour(avgPuttCost, 0, 4)};font-weight:bold">${avgPuttCost > 0 ? '+' + avgPuttCost : avgPuttCost}</td>
-          <td>${avgPuttCost < 0 ? '✓ Putting is saving you strokes' : avgPuttCost === 0 ? '✓ Benchmark putting' : '▲ Above benchmark (36 putts)'}</td>
-        </tr>
-        <tr style="background:#f4f7f0;">
-          <td><strong>Total Strokes Lost</strong></td>
-          <td style="text-align:center;font-weight:bold;font-size:15px;color:${scoreColour(avgTSL, 8, 15)}">${avgTSL}</td>
-          <td>Lower is better — target under 10 for your handicap</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>Focus Area</h2>
-    ${buildInsights_(avgBSCost, avgSGCost, avgPuttCost, avgPen)}
 
   </div>
 
   <div class="footer">
-    Generated by My Golf Scores · ${new Date().toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+    My Golf Scores · ${new Date().toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
   </div>
+
 </div>
 </body>
 </html>`;
 
-  const subject = `⛳ Golf Report — Last ${count} Rounds (avg ${avgScore})`;
+  const subject = `⛳ Golf Report — Last ${count} Rounds (avg ${f1(avgScore)})`;
   GmailApp.sendEmail(REPORT_EMAIL, subject, 'Your golf report (HTML email)', { htmlBody: html });
 }
 
 // ── Insights builder ───────────────────────────────────────────────────────
 
 function buildInsights_(bsCost, sgCost, puttCost, pen) {
-  // Rank the cost areas and surface the top 1–2 insights
   const areas = [
-    { name: 'Iron Play / Ball Striking', cost: bsCost,  tip: 'Work on mid-iron approach shots — getting more GIR will cascade into lower scores across the board.' },
-    { name: 'Short Game',                cost: sgCost,  tip: 'More up-and-downs from off the green. Practice chips and pitches from 10–30 yards, varying the lie.' },
-    { name: 'Putting',                   cost: Math.max(0, puttCost), tip: 'Lag putting is the high-return skill — focus on speed control from 20–40 feet to avoid 3-putts.' },
-    { name: 'Penalty Management',        cost: pen,    tip: 'Course management off the tee — play for the fat part of the fairway when the trouble is tight.' }
+    { name: 'Ball Striking',      cost: bsCost,              tip: 'Work on mid-iron approach shots — more GIR cascades into lower scores.' },
+    { name: 'Short Game',         cost: sgCost,              tip: 'Chips and pitches from 10–30 yards. Vary the lie. X-UD count drops fast with 20 min of practice.' },
+    { name: 'Putting',            cost: Math.max(0,puttCost), tip: 'Lag speed control from 20–40 ft is the highest-return putting skill.' },
+    { name: 'Penalty Management', cost: pen,                  tip: 'Play to the fat part of the fairway when trouble is tight. One safe shot beats two recovery shots.' }
   ];
 
   areas.sort((a, b) => b.cost - a.cost);
@@ -600,44 +645,35 @@ function styleDiagnosticsSheet_(sh) {
 function applyDiagnosticsColours_(sh, numDataRows) {
   if (numDataRows < 1) return;
 
-  // Colour coding for key columns (1-based)
-  // Col 4 = Score, 5=FIR, 6=GIR, 7=UD, 8=Putts, 13=ShortGameEff, 19=TotalStrokesLost
-  const rules = sh.getConditionalFormatRules ? sh.getConditionalFormatRules() : [];
-  // Keep any existing rules, add ours (simple approach: clear all and rebuild)
   sh.clearConditionalFormatRules();
 
   const dataRange = (col) => sh.getRange(2, col, numDataRows, 1);
-  const green  = SpreadsheetApp.newColor().setRgbColor('#c6efce').build();
-  const amber  = SpreadsheetApp.newColor().setRgbColor('#ffeb9c').build();
-  const red    = SpreadsheetApp.newColor().setRgbColor('#ffc7ce').build();
 
   const newRules = [];
 
-  function addGTE(col, threshold, colour) {
-    newRules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenNumberGreaterThanOrEqualTo(threshold)
-      .setBackground(colour)
-      .setRanges([dataRange(col)])
-      .build());
-  }
-  function addLTE(col, threshold, colour) {
-    newRules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenNumberLessThanOrEqualTo(threshold)
-      .setBackground(colour)
-      .setRanges([dataRange(col)])
-      .build());
+  function addRule(col, type, threshold, hex) {
+    const builder = SpreadsheetApp.newConditionalFormatRule()
+      .setBackground(hex)
+      .setRanges([dataRange(col)]);
+    if (type === 'gte') builder.whenNumberGreaterThanOrEqualTo(threshold);
+    else                builder.whenNumberLessThanOrEqualTo(threshold);
+    newRules.push(builder.build());
   }
 
   // GIR (col 6): ≥6 green, ≤2 red
-  addGTE(6, 6, green); addLTE(6, 2, red);
+  addRule(6, 'gte', 6,  '#c6efce');
+  addRule(6, 'lte', 2,  '#ffc7ce');
   // Putts (col 8): ≤34 green, ≥40 red
-  addLTE(8, 34, green); addGTE(8, 40, red);
+  addRule(8, 'lte', 34, '#c6efce');
+  addRule(8, 'gte', 40, '#ffc7ce');
   // Short Game Eff (col 13): ≥0.4 green, ≤0.2 red
-  addGTE(13, 0.4, green); addLTE(13, 0.2, red);
+  addRule(13, 'gte', 0.4, '#c6efce');
+  addRule(13, 'lte', 0.2, '#ffc7ce');
   // Total Strokes Lost (col 19): ≤8 green, ≥16 red
-  addLTE(19, 8, green); addGTE(19, 16, red);
+  addRule(19, 'lte', 8,  '#c6efce');
+  addRule(19, 'gte', 16, '#ffc7ce');
 
-  if (newRules.length > 0) sh.setConditionalFormatRules(newRules);
+  sh.setConditionalFormatRules(newRules);
 }
 
 // ── Weekly trigger setup ────────────────────────────────────────────────────
@@ -658,7 +694,7 @@ function setupWeeklyTrigger() {
     .atHour(8)
     .create();
 
-  SpreadsheetApp.getUi().alert('Weekly Sunday 8am report scheduled.');
+  Logger.log('Weekly Sunday 8am report scheduled.');
 }
 
 /**
@@ -668,7 +704,7 @@ function removeWeeklyTrigger() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'sendReport')
     .forEach(t => ScriptApp.deleteTrigger(t));
-  SpreadsheetApp.getUi().alert('Weekly trigger removed.');
+  Logger.log('Weekly trigger removed.');
 }
 
 // ── Gemini Query Handler ────────────────────────────────────────────────────

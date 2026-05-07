@@ -364,3 +364,28 @@
 **Next:** *(redesign shipped progressively over 2026-04-24 / 2026-04-25)*
 
 ---
+
+---
+
+## 2026-05-06 — Email report redesign v2.2 (feedback pass)
+
+**Did:**
+Rewrote `sendReport_()` in `apps-script.gs` to address May 6 feedback. All changes are in the HTML/CSS/data output only — no schema changes.
+
+**Changes:**
+- **Collapsible drawers** — `<details>/<summary>` on Round by Round, N Round Average, Strokes Lost. First two open by default; Strokes Lost collapsed. Focus Areas always visible.
+- **Reduced padding** — `.body` padding cut from `24px 28px` → `14px 12px`; table cell padding tightened to `5px 3px`. Tables fill more width.
+- **Scoring Summary** — replaced 3-col KPI strip with 2-row × 4-col grid matching App layout. Hero cell (col 4, rowspan 2): avg score at 34px green, sub-line `HI: 20 | Net: X`. Other cells: Row 1 = FIR | GIR | PEN, Row 2 = UD | X-UD | PUTTS. Light green background.
+- **Round by Round** — FIR and GIR now whole integers (not `/18` fractions). Added X-UD column (MissedOpp). Away-course rows highlighted `#daeaff`; no "Away" text; course name shown + `title` attr on `<tr>` for hover tooltip. All numeric columns center-justified. `white-space:nowrap` on Score header prevents wrapping. TSL column width unchanged, Score tightened.
+- **N Round Average** — renamed from "Averages — Last N Rounds". Order matches App: FIR, GIR, PEN, UD, X-UD, PUTTS. Short abbreviations only. Short Game Efficiency removed. Putts per GIR removed. All values 1 decimal. X-UD note: "Failed up & downs — fewer is better".
+- **Terminology fixes** — X-UD is "Failed up & downs" everywhere. Removed fractions (`/18`). Consistent 1-decimal formatting throughout.
+- **Net score** — reads HI from Settings tab, computes CH using Mt. Paul Mens Blue ratings (CR 59.0, SR 86, Par 64). `netAvg = avgScore − ch`.
+
+**Decided:**
+- `details[open]` default: Round by Round and N Round Average open on load; Strokes Lost collapsed (useful but not primary).
+- `<details>/<summary>` degrades gracefully in email clients that don't support it (all sections visible).
+- CH computed server-side from Settings HI; hardcoded to Mens Blue until tee selector is wired.
+
+**Files changed:** `apps-script.gs` (sendReport_, buildInsights_)
+
+**Next:** Paste updated `apps-script.gs` into Apps Script editor → Deploy → New version → test via `sendReport()`.

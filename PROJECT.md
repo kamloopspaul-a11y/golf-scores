@@ -316,7 +316,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 5, 2026
+**Last worked:** May 5–6, 2026
 
 ### What was completed this session
 - **Advanced Diagnostics tab** — `apps-script.gs` v2.1: `buildDiagnostics_()` aggregates Rounds data into one row per round with 19 columns of computed stats
@@ -325,12 +325,24 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 - **PROJECT.md** — updated with Diagnostics schema, strokes-lost model, setup steps
 
 ### Files changed (v9.33)
-- `apps-script.gs` — Diagnostics tab builder, email reporter, weekly trigger setup, `isTruthy_()` + `formatDate_()` + `countRounds_()` helpers
+- `apps-script.gs` — Diagnostics tab builder, email reporter, weekly trigger setup, helpers
+- `apps-script.gs` bug fix — replaced all `getUi().alert()` calls with `Logger.log()` (was causing 6-min timeout in Script Editor)
+- `index.html` — Ask Gemini screen removed
 
 ### Resume here next session
 
-**After pasting new apps-script.gs:** run `setup()`, then `rebuildDiagnostics()`, redeploy as new version.
+### Resume here next session
 
+**Email report design is settled** — preview in Context panel (golf-report-preview artifact). All visual decisions made, ready to wire into apps-script.gs sendReport_() function.
+
+**Build queue (in order):**
+1. Wire email report HTML to match preview (scoring grid, collapsible sections, away row, Cost click-reveal, revised text)
+2. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab — Player controls delivery from Sheet
+3. Player Profile screen in PWA — name, HI, email, Track Stats toggle, Stat Reports toggle + delivery settings
+4. HI-scaled benchmarks for colour coding (brackets: 0–9, 10–18, 19–28, 29+)
+5. Player goal field (target HI + timeframe) → report framing shifts to progress narrative
+
+**Settings tab fix DONE:** Home Course updated to Mt. Paul manually.
 
 #### Gemini API billing (resolved May 5)
 - Ask Gemini screen still in `index.html` — currently only functional with a paid Gemini key
@@ -406,3 +418,8 @@ PWA is offline-first. Tapping a footer link mid-session risks navigating away fr
 
 ### Relationship to offline queue
 The contextual message area and the offline queue are the same slot on the Home screen Stage. The queue notice is just one content type. Build them together.
+
+#### Security — GeminiKey.txt (resolved May 6, 2026)
+- GitGuardian flagged `GeminiKey.txt` in the public repo containing `AIzaSyD...eWbU`
+- **Resolved:** Key revoked in Google Cloud Console, file deleted from repo, git history scrubbed, local file deleted
+- `apps-script.gs` and `index.html` were never at risk — key was stored in Script Properties only
