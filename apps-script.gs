@@ -453,16 +453,18 @@ function sendReport_(ss, n) {
 <style>
   body     { font-family: Arial, sans-serif; color: #222; background: #f4f7f0; margin: 0; padding: 16px; }
   .wrap    { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
-  .hdr     { background: #377f09; color: #fff; padding: 18px 16px 14px; }
+  .hdr     { background: #377f09; color: #fff; padding: 18px 16px 30px; }
   .hdr h1  { margin: 0; font-size: 20px; }
   .hdr p   { margin: 4px 0 0; font-size: 12px; opacity: .85; }
   .body    { padding: 14px 12px; }
   /* Scoring summary grid */
-  .ss      { width: 100%; border-collapse: collapse; background: #e8f3de; margin-bottom: 14px; }
-  .ss td   { padding: 10px 6px; text-align: center; width: 20%; vertical-align: middle; }
-  .ss-val  { font-size: 22px; font-weight: bold; }
+  .ss-wrap { background: #fff; border-radius: 10px; padding: 5px; margin-bottom: 14px; }
+  .ss      { width: 100%; border-collapse: separate; border-spacing: 4px; }
+  .ss td   { padding: 0; vertical-align: middle; }
+  .ss-card { background: #e8f3de; border-radius: 8px; padding: 10px 4px; text-align: center; }
+  .ss-val  { font-size: 22px; font-weight: bold; color: #377f09; }
   .ss-lbl  { font-size: 10px; color: #555; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
-  .ss-hero { background: #fff; border-left: 2px solid #c8e0b0; width: 40%; vertical-align: middle; }
+  .ss-hero { background: #e8f3de; border-radius: 8px; padding: 14px 8px; text-align: center; }
   .ss-big  { font-size: 34px; font-weight: bold; color: #377f09; line-height: 1; }
   .ss-sub  { font-size: 11px; color: #666; margin-top: 5px; }
   /* Collapsible sections */
@@ -499,33 +501,35 @@ function sendReport_(ss, n) {
   <div class="body">
 
     <!-- Scoring Summary: 2-row × 4-col grid matching App layout -->
-    <table class="ss">
-      <tr${rowBg}>
-        <td><div class="ss-val" style="color:${effColour(avgFIR,7,4)}">${fInt(avgFIR)}</div><div class="ss-lbl">FIR</div></td>
-        <td><div class="ss-val" style="color:${effColour(avgGIR,5,3)}">${fInt(avgGIR)}</div><div class="ss-lbl">GIR</div></td>
-        <td><div class="ss-val" style="color:${scoreColour(avgPen,0.5,2)}">${f1(avgPen)}</div><div class="ss-lbl">PEN</div></td>
-        <td class="ss-hero" rowspan="2">
-          <div class="ss-big">${f1(avgScore)}</div>
-          <div class="ss-sub">HI: ${hi} | Net: ${netAvg}</div>
-        </td>
-      </tr>
-      <tr${rowBg}>
-        <td><div class="ss-val" style="color:${effColour(avgUD,4,2)}">${f1(avgUD)}</div><div class="ss-lbl">UD</div></td>
-        <td><div class="ss-val" style="color:${scoreColour(avgXUD,3,7)}">${f1(avgXUD)}</div><div class="ss-lbl">X-UD</div></td>
-        <td><div class="ss-val" style="color:${scoreColour(avgPutts,34,38)}">${f1(avgPutts)}</div><div class="ss-lbl">PUTTS</div></td>
-      </tr>
-    </table>
+    <div class="ss-wrap">
+      <table class="ss">
+        <tr>
+          <td style="width:18%"><div class="ss-card"><div class="ss-val">${fInt(avgFIR)}</div><div class="ss-lbl">FIR</div></div></td>
+          <td style="width:18%"><div class="ss-card"><div class="ss-val">${fInt(avgGIR)}</div><div class="ss-lbl">GIR</div></div></td>
+          <td style="width:18%"><div class="ss-card"><div class="ss-val">${f1(avgPen)}</div><div class="ss-lbl">PEN</div></div></td>
+          <td rowspan="2" style="width:46%"><div class="ss-hero"><div class="ss-big">${f1(avgScore)}</div><div class="ss-sub">HI: ${hi} | Net: ${netAvg}</div></div></td>
+        </tr>
+        <tr>
+          <td><div class="ss-card"><div class="ss-val">${f1(avgUD)}</div><div class="ss-lbl">UD</div></div></td>
+          <td><div class="ss-card"><div class="ss-val">${f1(avgXUD)}</div><div class="ss-lbl">X-UD</div></div></td>
+          <td><div class="ss-card"><div class="ss-val">${f1(avgPutts)}</div><div class="ss-lbl">PUTTS</div></div></td>
+        </tr>
+      </table>
+    </div>
 
     <!-- Round by Round -->
     <details open style="margin-top:20px">
-      <summary>Round by Round</summary>
+      <summary>ROUND BY ROUND</summary>
       <table>
         <thead>
           <tr${rowBg}>
             <th>Score</th>
             <th>FIR</th><th>GIR</th><th>PEN</th>
             <th>UD</th><th>X-UD</th><th>PUTTS</th>
-            <th>TSL</th>
+            <th>COST</th>
+          </tr>
+          <tr>
+            <td colspan="8" style="font-size:10px;color:#666;font-style:italic;text-align:left;padding:4px 4px 6px;border-bottom:1px solid #e0e8d8">Cost = estimated strokes lost to missed greens, failed up &amp; downs, putting above benchmark, and penalties. Lower is better.</td>
           </tr>
         </thead>
         <tbody>${roundRows}</tbody>
@@ -534,7 +538,7 @@ function sendReport_(ss, n) {
 
     <!-- N Round Average -->
     <details open style="margin-top:20px">
-      <summary>${count} Round Average</summary>
+      <summary>${count} ROUND AVERAGE</summary>
       <table>
         <thead>
           <tr${rowBg}>
@@ -549,7 +553,7 @@ function sendReport_(ss, n) {
 
     <!-- Cost Breakdown -->
     <details style="margin-top:20px">
-      <summary>Cost Breakdown</summary>
+      <summary>COST BREAKDOWN</summary>
       <table>
         <thead>
           <tr${rowBg}>
@@ -590,6 +594,7 @@ function sendReport_(ss, n) {
 
     <!-- Focus Areas -->
     <div style="margin-top:14px">
+      <div style="color:#377f09;font-size:14px;font-weight:bold;padding:6px 2px 4px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">FOCUS AREAS</div>
       ${buildInsights_(avgBSCost, avgSGCost, avgPuttCost, avgPen)}
     </div>
 
@@ -603,7 +608,7 @@ function sendReport_(ss, n) {
 </body>
 </html>`;
 
-  const subject = `Golf Report — Last ${count} Rounds (avg ${f1(avgScore)})`;
+  const subject = `Golf Performance Index Report`;
   GmailApp.sendEmail(REPORT_EMAIL, subject, 'Your golf report (HTML email)', { htmlBody: html });
 }
 
