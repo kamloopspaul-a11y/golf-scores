@@ -19,7 +19,6 @@
  * To update later: paste new code → Deploy → Manage deployments →
  * edit → New version. URL stays the same.
  *
- * Gemini key: Project Settings → Script Properties → GEMINI_API_KEY
  */
 
 const ROUNDS      = 'Rounds';
@@ -412,6 +411,7 @@ function sendReport_(ss, n) {
   const dateRange = count > 1
     ? formatDate_(rounds[0].Date) + ' – ' + formatDate_(rounds[count - 1].Date)
     : formatDate_(rounds[0].Date);
+  const rowBg = '';
 
   // ── Round-by-round rows ────────────────────────────────────────────────────
   const roundRows = rounds.map((r, i) => {
