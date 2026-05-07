@@ -1,0 +1,56 @@
+May 6, 2026
+Email Report Feedback
+
+Collapse Drawers feature is missing. 
+
+Table Width
+The Masthead width is fine, but the tables below have too much padding left and right. Reduce by 50% to increase table width. If padding is not the issue, then increase the table width to compensate. 
+
+Use Abbreviations to maintain consistency.
+Let's keep the order (and abbreviations) consistent so that it matches the App. The order is FIR, GIR, PEN, UD, X-UD, PUTTS.  
+
+Numbers in Columns
+Center justified, float numbers to the middle, not the left. 
+
+Scoring Summary
+This layout doesn't match our Golf App. This report shows each Stat in its own row. The app shows a 2 row, 4 column layout, (with a row span of 2 for the 4th column) The Hero Display should have HI: 20 | Net: 60.6 wrap beneath the larger green font showing 70.6 in the 4th column. It is also missing a background colour.
+
+Round by Round
+In the Column Headings, X-UD wraps. Decrease width for Score to allow X-UD not to wrap. Float all data below Column Headings to Center not left justified. For data in FIR and GIR, data is given in fractions; ie: 10/18, 9/18 etc. This is unnecessary. Simply post the actual whole number; ie: 10, 9, etc. For Away Courses, drop the wording "Away" as this causes the Score to wrap. The background color is the visual cue and we could introduce a tool tip on hover over the entire Row to display the Away Course. 
+
+Averages - 5 Rounds
+Change this section name to 5 Round Average, (5 is a variable of course, not hard coded)
+
+Stat Column
+In Stat Column, stick to the abbreviated terms; FIR, GIR, UD, X-UD, etc. Shorten Putts per GIR to Putts. Be consistent with the terms we use in the App. BTW, X-UD is not Extra Up & Downs. The term refers to Failed Up & Downs, (Less is better) This applies to UDs that did not result in saving Par. The attempt was made, but unsuccessful and resulted in a Bogey or higher. In other words, a failed up and down or X-UD. 
+
+What is Short Game Efficiency? Why is the Value expressed as a %?
+
+PEN (Penalties), was listed last, and is out of order. Let's keep the order (and abbreviations) consistent so that it matches the App. The order is FIR, GIR, PEN, UD, X-UD, PUTTS.   
+
+This makes the Stat column shorter in width. 
+
+Value Column (What does Value measure? What does it indicate?)
+Don't use fractions, only post whole numbers; ie: 6.4 instead of 6.4/18
+Explain Up & Downs, why 10% and why 1.2 of 12.4? What is 12.4?
+Why is Putts value shown with 2 decimal places, (4.81) Why not 4.8? Or, why aren't other values using 2 decimal places? Can we be consistent when expressing values?
+
+I'll stop here before continuing. 
+
+CONTINUE
+
+With shorter width columns for Stat and Value, I'm thinking it could be one column which could make the Reading Column wider for a more complete description. (Drop the Value heading) Something like this:
+
+<tr><td width=30%><float left>FIR</float><float right>6.4</float></td><td width=70%>Serviceable</td></tr>
+
+Let's drop the check marks, x's and triangle icons, text only please. We'll need to work on messages in another session to make them more meaningful, more helpful. And equal to benchmarks based on their handicap goals if possible. I don't know if "Reading" is an apt column heading, but until we think of something better, we'll use it in the interim. 
+
+Cost Breakdown (We may rename this to be more meaningful after some discussion)
+Category We have 3 metrics and a Total Cost in this column. Will this be a standard? Or will these topics change from report to report? It should be a consistent metric so that we show improvement, or a decline in a Player's performance. It looks like we could merge the first two columns here too, as above using float left and float right styling. I'm assuming that Avg Cost refers to Strokes gained or lost? As implied by the What it means column, that seems to be the metric. If this is the case, we could drop the column heading "Avg Cost"  We need to use a consistent decimal placement here to match the rest of the report and continue using this as a standard for all reports going forward. Is Total cost the sum of the 3 categories listed? Or does it indicate another metric? If it is a sum total, then float right, otherwise we'll follow the typical convention of centring numerals. 
+
+We may change "What it means" to something more descriptive. We'll keep it for now pending further discussion. 
+
+Focus Areas
+Seems straight forward enough. Good advice, if it matches the metrics. We aren't capturing stroke distance, so we don't know if their approach shots are from 120 yds or 30 yds. Is it accurate to advise practicing shots from 10-30 yds? It's still good advice, but is it the right advice, does it apply? We have 2 categories; Short game and Iron Play / ball striking. This is probably areas that most golfers benefit the most from if they want to shoot lower scores. The adage is to work from the green back to the tee box. We can't all hit the ball as far as the PGA players, but it is certainly achievable to putt just as well as them. The other metric we aren't capturing is dispersion, or recording if your shots go left, or to the right. And I don't think our average golfer will take the time to use an app to record this manually during the round. 
+
+Let's include these changes and push a new script, and run a test. 

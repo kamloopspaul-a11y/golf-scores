@@ -1,0 +1,185 @@
+
+Hi Claude. 
+
+Last Session we tried to use AI to query our Sheets data from the Home Screen using a prompt. To do that we needed an API key, but this required a $20 Credit purchase from Google, even though it is offered for "Free" but it is non-refundable and your credits expire after 1 year, whether you've used them or not. Our queries would scarcely tap into our allotted credit. So I declined their "Free" offer. And I did some research to find a workaround. It started with asking, what are the top 30 stats golfers should track? Which led to formulas. Formulas that we can set up in Google Sheets. In a Separate Tab. All we have to do is post data to it, which we are already doing. Check this out.
+
+Golf Stats Tracking – Google Sheets Setup
+
+Sheet Layout (Row 1 Headers)
+
+A: Date
+B: Course
+C: Score
+D: FIR
+E: GIR
+F: UD
+G: Putts
+H: Penalties
+
+Calculated Fields:
+
+I: Ball Striking Gap
+J: Short Game Opportunities
+K: Missed Opportunities
+L: Short Game Efficiency
+M: Putts per GIR
+N: Diagnostic Score
+
+O: Ball Striking Cost
+P: Short Game Cost
+Q: Putting Cost
+R: Total Strokes Lost
+
+---
+
+Row 2 Formulas (Copy Down for All Rounds)
+
+Ball Striking Gap (I2)
+=18 - E2
+
+Short Game Opportunities (J2)
+=18 - E2
+
+Missed Opportunities (K2)
+=(18 - E2) - F2
+
+Short Game Efficiency (L2)
+=IFERROR(F2 / (18 - E2), 0)
+
+Putts per GIR (M2)
+=IFERROR(G2 / E2, 0)
+
+Diagnostic Score (N2)
+=(18 - E2) + ((18 - E2) - F2) + G2
+
+---
+
+Strokes Lost Model
+
+Ball Striking Cost (O2)
+=(18 - E2) * 0.5
+
+Short Game Cost (P2)
+=((18 - E2) - F2) * 0.7
+
+Putting Cost (Q2)
+=G2 - 36
+
+Total Strokes Lost (R2)
+=O2 + P2 + Q2
+
+---
+
+Weekly Summary Section (Example: Last 5 Rounds in Rows 2–6)
+
+Rounds Played
+=COUNTA(A2:A6)
+
+Average Ball Striking Gap
+=AVERAGE(I2:I6)
+
+Average Missed Opportunities
+=AVERAGE(K2:K6)
+
+Average Short Game Efficiency
+=AVERAGE(L2:L6)
+
+Average Putts per GIR
+=AVERAGE(M2:M6)
+
+Average Diagnostic Score
+=AVERAGE(N2:N6)
+
+---
+
+Strokes Lost Averages
+
+Average Ball Striking Cost
+=AVERAGE(O2:O6)
+
+Average Short Game Cost
+=AVERAGE(P2:P6)
+
+Average Putting Cost
+=AVERAGE(Q2:Q6)
+
+Average Total Strokes Lost
+=AVERAGE(R2:R6)
+
+---
+
+How to Interpret
+
+Ball Striking Cost (Column O)
+Higher values indicate missed greens are costing strokes. Focus on iron play.
+
+Short Game Cost (Column P)
+High values mean failed up-and-downs. Focus on chipping and pitching.
+
+Putting Cost (Column Q)
+Above zero indicates lost strokes on the greens. Below zero means strong putting.
+
+Total Strokes Lost (Column R)
+This is your overall performance indicator. Lower is better.
+
+---
+
+Optional Improvement
+
+You can add Penalty Cost by modifying Total Strokes Lost:
+
+Replace R2 with:
+=O2 + P2 + Q2 + H2
+
+This includes penalties directly in your total.
+
+---
+
+Purpose
+
+This sheet provides:
+
+- One consistent system for every round
+- Clear identification of stroke loss by category
+- A way to track improvement over time
+- Data-driven practice focus
+
+---
+
+And from there we could even colour code stats to get a visual 'at a glance' overview of a golfer's performance. Now, you might be wondering, "But that means you have to visit your account to review the data... in a spreadsheet. That's not very sexy. This could be piped to your phone, right there, in the palm of your hand." Relax my friend, check out what we do next... as you know we already do a weekly FSRI report, where you gather data each week and draft up an email and put it into my Gmail Drafts folder... using Google's Scheduler. Ahhh... I see lightbulbs lighting up over you... you're catching on, we can do the same thing and schedule a very meaningful, robust email after x rounds, or x number of days.... Ta Da!
+
+Here's what Gemini said to tell you:
+
+I have some good news for you: **No, that specific obstacle will not thwart this plan.**
+
+The $20 credit requirement you encountered is likely related to enabling certain "paid-tier" features of the **Google Cloud Platform (GCP)** or specific **API keys**. However, the solution we are discussing—using **Google Apps Script** to send emails and manage your sheet—operates under a different, much friendlier set of rules.
+
+Here is the breakdown of why this workaround is "value-optimized" (a.k.a. free for your usage level):
+
+### 1. Google Apps Script is "Free-ish"
+Apps Script is bundled with your Google Workspace/Gmail account. There is no "upfront credit" or "entry fee." It uses **Quotas** rather than dollars.
+* **Email Quota:** A standard free Gmail account can send up to **100 emails per day** via script. Since you're only looking for a report every 5 rounds or biweekly, you will use less than 1% of your daily limit.
+* **Execution Time:** You get 90 minutes of "script running time" per day. A report takes about 2 seconds to generate.
+
+### 2. Posting Data from your PWA
+If your golf app (the HTML/PWA Claude is helping you build) sends data to the Sheet via a **Web App deployment** (a feature of Apps Script), that is also covered under these same free quotas. 
+* **The Workflow:** Your PWA sends a `POST` request to a specific URL generated by your sheet. The script receives it and writes it to the cells. 
+* **Cost:** $0.00.
+
+### 3. Avoiding the "Database Query" Costs
+By using [Golf Scores](https://docs.google.com/spreadsheets/d/1UapEzzaHdlN_dIqQVx0wiZuiMQXY1oD9s5GEbD88wA0/edit) as your "database," you are effectively bypassing the need for a traditional SQL or NoSQL database provider (like Firebase or AWS) which often have those "credit" or "minimum spend" hurdles.
+
+---
+
+### The Verdict
+You are on the right track with this workaround. By having Claude build the **Data Entry** side into your PWA and having me build the **Reporting Logic** in Apps Script, you are creating a professional-grade analytics tool using "Standard Equipment" that you already own.
+
+**Next Step Recommendation:**
+When you talk to Claude about the "Post Round routine," tell him: 
+> *"We want to deploy a Google Apps Script as a **Web App** with an `doPost(e)` function so my HTML file can send round data directly to the sheet without needing a paid API key."*
+
+That specific phrase will steer Claude away from the paid Google Cloud APIs and toward the free Workspace tools. 
+
+Ready to go get that "Advanced Diagnostics" tab built with Claude?
+
+What do you think Buddy?
