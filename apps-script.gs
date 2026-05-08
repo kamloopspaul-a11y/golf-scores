@@ -281,8 +281,9 @@ function buildDiagnostics_(ss) {
 
     // Strokes Lost model
     const bsCost  = parseFloat((bsGap * 0.5).toFixed(2));              // Ball Striking Cost
-    const sgCost  = parseFloat((missed * 0.7).toFixed(2));             // Short Game Cost
-    const puttCost = putts - 36;                                        // Putting Cost (>0 = strokes lost)
+    const sgCost  = parseFloat((missed * 0.6).toFixed(2));             // Short Game Cost (v1.1: 0.7→0.6, calibrated for mid-HI players)
+    const puttBenchmark = hi >= 29 ? 36 : hi >= 19 ? 34 : hi >= 10 ? 32 : 30; // HI-scaled putt benchmark (v1.1)
+    const puttCost = putts - puttBenchmark;                             // Putting Cost (>0 = strokes lost)
     const totalSL  = parseFloat((bsCost + sgCost + puttCost + pen).toFixed(2));
 
     return [
@@ -439,7 +440,7 @@ function sendReport_(ss, n) {
     { lbl: 'PEN',   val: f1(avgPen),   col: scoreColour(avgPen, 0.5, 2),   note: avgPen <= 0.5 ? 'Clean rounds'              : avgPen <= 2  ? 'Some costly holes'         : 'Course management priority'},
     { lbl: 'UD',    val: f1(avgUD),    col: effColour(avgUD, 4, 2),        note: `${fInt(avgSGOpp)} opportunities to get up and down`                                                                   },
     { lbl: 'X-UD',  val: f1(avgXUD),  col: scoreColour(avgXUD, 3, 7),     note: 'Failed up & downs — fewer is better'                                                                                  },
-    { lbl: 'PUTTS', val: f1(avgPutts), col: scoreColour(avgPutts, 34, 38), note: avgPutts <= 34 ? 'Strong on greens'          : avgPutts <= 36 ? 'Near benchmark of 36'    : 'Work on lag putting'      }
+    { lbl: 'PUTTS', val: f1(avgPutts), col: scoreColour(avgPutts, 32, 36), note: avgPutts <= 32 ? 'Strong on greens'          : avgPutts <= 34 ? 'Near benchmark'          : 'Work on lag putting'      }
   ].map((r, i) => {
     const bg = i % 2 === 1 ? ' style="background:#f5f9f0"' : '';
     return `
@@ -578,12 +579,12 @@ function sendReport_(ss, n) {
           <tr style="background:#f5f9f0">
             <td style="font-weight:600">Short Game</td>
             <td style="text-align:center;color:${scoreColour(avgSGCost,3,6)};font-weight:500">${f1(avgSGCost)}</td>
-            <td style="text-align:left">Failed up &amp; downs × 0.7 — each X-UD costs about 0.7 strokes</td>
+            <td style="text-align:left">Failed up &amp; downs × 0.6 — each X-UD costs about 0.6 strokes</td>
           </tr>
           <tr>
             <td style="font-weight:600">Putting</td>
             <td style="text-align:center;color:${scoreColour(avgPuttCost,0,4)};font-weight:500">${avgPuttCost > 0 ? '+' + f1(avgPuttCost) : f1(avgPuttCost)}</td>
-            <td style="text-align:left">${avgPuttCost < 0 ? 'Saving strokes — below the 36-putt benchmark' : avgPuttCost === 0 ? 'At the 36-putt benchmark' : 'Above the 36-putt benchmark'}</td>
+            <td style="text-align:left">${avgPuttCost < 0 ? 'Saving strokes — below benchmark' : avgPuttCost === 0 ? 'At benchmark' : 'Above benchmark'}</td>
           </tr>
           <tr style="background:#f5f9f0">
             <td style="font-weight:600">Penalties</td>
