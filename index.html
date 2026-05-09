@@ -1159,6 +1159,19 @@
 </div>
 <audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
 <script>
+// ── FIRST-RUN CHECK ───────────────────────────────────
+(function(){
+  try {
+    const p = JSON.parse(localStorage.getItem('profile') || '{}');
+    if (!p.setupComplete) window.location.replace('onboarding.html');
+  } catch(e) { window.location.replace('onboarding.html'); }
+})();
+
+// ── PROFILE (read once at startup) ───────────────────
+const PROFILE = (function(){
+  try { return JSON.parse(localStorage.getItem('profile') || '{}'); } catch(e) { return {}; }
+})();
+
 // ── COURSE (variable for future multi-course support) ──
 const COURSE = {
   name: "Mt. Paul",
@@ -1175,7 +1188,7 @@ const COURSE = {
     {par:3,yards:135,index:15},{par:4,yards:251,index:7 },{par:4,yards:270,index:9 }
   ]
 };
-const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbySPqhl4-gdbq2yykCaUKh3shzQGDY0xjz--0WV5GX0Tkad2huG9IA3_blQVFBKloSpUg/exec";
+const SHEETS_URL  = PROFILE.sheetsUrl || "https://script.google.com/macros/s/AKfycbySPqhl4-gdbq2yykCaUKh3shzQGDY0xjz--0WV5GX0Tkad2huG9IA3_blQVFBKloSpUg/exec";
 const WEBHOOK_SECRET = "Oawa9g5ywPdik6bMk07wUlam7bf7qhEy";
 let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
@@ -1218,7 +1231,7 @@ function formatDate(iso) {
 function readPlayerName(){
   const el=document.getElementById('player-name');
   const v=el ? (el.value !== undefined ? el.value.trim() : el.textContent.trim()) : '';
-  return v.length ? v : 'Paul';
+  return v.length ? v : (PROFILE.name || 'Paul');
 }
 // ── START ─────────────────────────────────────────────
 function startRound() {
@@ -1465,9 +1478,9 @@ function renderSuccessSummary(){
     if(s.xud===1) xud++;
     if(typeof s.putts === "number") puttsTotal += s.putts;
   });
-  // TODO: read HI + teeKey from Settings tab once onboarding is wired.
-  const HI = 20;
-  const teeKey = "mensBlue";
+  // Read HI + teeKey from profile (set during onboarding)
+  const HI = (PROFILE.hi !== null && PROFILE.hi !== undefined) ? PROFILE.hi : 20;
+  const teeKey = PROFILE.homeTees || "mensBlue";
   const ch = courseHandicap(HI, teeKey);
   const net = total - ch;
   const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
@@ -1615,13 +1628,13 @@ function ignorePending() {
 }
 function discardRound(){ if(confirm("Discard this round? All scores will be lost.")) newRound(); }
 function newRound(){
-  state.players=["Paul"]; state.currentHole=0;
+  state.players=[(PROFILE.name || "Paul")]; state.currentHole=0;
   state.midroundSeen=false; state.roundStartTime=null;
   state.stats=[];
   clearSuccessSummary();
   localStorage.removeItem('roundStartTime');
   if(durationTimer){ clearInterval(durationTimer); durationTimer=null; }
-  const el=document.getElementById('player-name'); if(el){ if(el.tagName==='INPUT') el.value='Paul'; else el.textContent='Paul'; }
+  const el=document.getElementById('player-name'); const pn=PROFILE.name||'Paul'; if(el){ if(el.tagName==='INPUT') el.value=pn; else el.textContent=pn; }
   showScreen('setup');
 }
 function showScreen(name){
@@ -1851,7 +1864,9 @@ async function seedCourseCache() {
 
 // ── INIT ──────────────────────────────────────────────
 const today=new Date().toISOString().split('T')[0];
-state.date=today; state.players=["Paul"];
+state.date=today; state.players=[(PROFILE.name || "Paul")];
+// Sync player-name display from profile
+(function(){ const el=document.getElementById('player-name'); const pn=PROFILE.name||'Paul'; if(el){ if(el.tagName==='INPUT') el.value=pn; else el.textContent=pn; }})();
 // Restore persisted round start time (survives app close/reopen mid-round)
 const savedStart = localStorage.getItem('roundStartTime');
 if(savedStart){
