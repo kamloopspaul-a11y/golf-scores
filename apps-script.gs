@@ -281,7 +281,8 @@ function buildDiagnostics_(ss) {
 
     // Strokes Lost model
     const bsCost  = parseFloat((bsGap * 0.5).toFixed(2));              // Ball Striking Cost
-    const sgCost  = parseFloat((missed * 0.6).toFixed(2));             // Short Game Cost (v1.1: 0.7→0.6, calibrated for mid-HI players)
+    const sgMultiplier = hi >= 29 ? 0.55 : hi >= 19 ? 0.60 : hi >= 10 ? 0.65 : 0.75; // HI-scaled SG multiplier (v1.2, WHS brackets, capped 36)
+    const sgCost  = parseFloat((missed * sgMultiplier).toFixed(2));    // Short Game Cost (v1.2: HI-bracket multiplier)
     const puttBenchmark = hi >= 29 ? 36 : hi >= 19 ? 34 : hi >= 10 ? 32 : 30; // HI-scaled putt benchmark (v1.1)
     const puttCost = putts - puttBenchmark;                             // Putting Cost (>0 = strokes lost)
     const totalSL  = parseFloat((bsCost + sgCost + puttCost + pen).toFixed(2));
@@ -579,7 +580,7 @@ function sendReport_(ss, n) {
           <tr style="background:#f5f9f0">
             <td style="font-weight:600">Short Game</td>
             <td style="text-align:center;color:${scoreColour(avgSGCost,3,6)};font-weight:500">${f1(avgSGCost)}</td>
-            <td style="text-align:left">Failed up &amp; downs × 0.6 — each X-UD costs about 0.6 strokes</td>
+            <td style="text-align:left">Failed up &amp; downs × ${sgMultiplier} — HI-scaled cost per X-UD (0.75 / 0.65 / 0.60 / 0.55)</td>
           </tr>
           <tr>
             <td style="font-weight:600">Putting</td>

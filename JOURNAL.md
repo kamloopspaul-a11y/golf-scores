@@ -417,3 +417,54 @@ Rewrote `sendReport_()` in `apps-script.gs` to address May 6 feedback. All chang
 **Files changed:** `apps-script.gs`, `GPI_RULES.md`, `PROJECT.md`, `JOURNAL.md`
 
 **Next session:** Review GPI metric family — are multipliers calibrated for a ~20 HI player? HI-scaled benchmarks. Making Focus Areas advice data-driven.
+
+---
+
+## 2026-05-08 — GPI model exercise + Metrics Guide correction
+
+**Did:**
+- Loaded 2024 Golf Stats sheet (62 rounds, Mt. Paul, scores only — no GIR/Putts/X-UD/Penalties captured that season).
+- Built a score-based stat estimation model using piecewise linear interpolation from GPI_RULES.md anchor points (Good ~68, Average ~74, Poor ~84).
+- Applied model to all 62 rounds to produce estimated GPI — exercise only, not suitable for real reporting.
+- Discovered and fixed a bug in the first model pass: BSCost formula in Metrics Guide was wrong (used HI-adjusted expected-GIR gap instead of `(18 − GIR) × 0.5`). Confirmed correct formula against GPI_RULES.md verification table.
+- Corrected `2026-05-08-Golf-MetricsGuide.md` BSCost section to match GPI_RULES.md.
+
+**2024 Estimated GPI Results (score-modelled, 62 rounds):**
+- Season average GPI: **20.4 → Below Average** (19–28 HI bracket)
+- Best: 10.0 (71-score rounds) / Worst: 29.5 (89)
+- Band split: Good 10% · Average 21% · Below Avg 44% · Poor 26%
+- Avg cost drivers: SGCost 7.8 · BSCost 7.5 · PuttCost 2.7 · PenCost 2.4
+- Ball striking and short game essentially tied as primary leaks
+
+**Decided:**
+- Score-only GPI estimation is valid as a calibration/testing exercise but should never appear in real reports — it collapses all rounds of the same score to identical stat profiles.
+- `(18 − GIR) × 0.5` is the canonical BSCost formula. HI-gap variant is retired.
+
+**Files changed:** `2026-05-08-Golf-MetricsGuide.md`, `JOURNAL.md`
+
+**Next:** Making Focus Areas advice data-driven; HI-scaled benchmark review.
+
+---
+
+## 2026-05-08 — Unposted Scores screen planned
+
+**Did:**
+- Confirmed app auto-stamps today's date on all rounds — no date picker exists in the current setup flow.
+- Discussed HI tracking: Paul has 2026 scorecards but no way to back-enter them with correct dates.
+- Decided against modifying the main round entry flow for backdating.
+
+**Decided:**
+- Add a dedicated **"Add Unposted Scores"** screen, accessible via a footer link on Home and other non-Hole screens.
+- Screen supports two entry modes: **manual** (date picker, course, tees, hole-by-hole scores, optional stats) and **batch import** (CSV upload/paste matching existing Sheets column format, with preview and confirm step).
+- Stats marked as partial/unavailable if not entered — scores-only rounds still feed HI calculation.
+- Player selector included from the start so Dave can use the same screen when Player Profiles are built.
+- This is Phase 2 work — no implementation yet.
+
+**Context:**
+- Paul has traditional scorecards for all 2026 rounds. Once the screen is built he can back-enter them to seed his HI.
+- Dave tracks scores in a Numbers spreadsheet — batch CSV import is the likely path for him.
+- 20 rounds needed for a stable WHS HI calculation. Until then, HI is flagged as provisional in the report.
+
+**Files changed:** `JOURNAL.md`, `PROJECT.md`
+
+**Next:** Continue GPI metric refinement; Unposted Scores screen is a tracked roadmap item.

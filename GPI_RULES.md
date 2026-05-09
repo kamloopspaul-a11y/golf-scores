@@ -1,6 +1,6 @@
 # GPI Rules — Golf Performance Index
 
-**Version:** 1.0 — 2026-05-07
+**Version:** 1.1 — 2026-05-08
 **Status:** Informal personal metric. Not affiliated with the PGA Tour, Golf Canada, or the World Handicap System.
 
 ---
@@ -37,26 +37,51 @@ The GPI Rating is the sum of four cost components. Each represents estimated str
 ```
 BSCost = (18 − GIR) × 0.5
 ```
-Each green missed is estimated to cost 0.5 strokes on average (missed green → chip/pitch required → likely bogey or worse).
+Strokes lost by missing greens. Every missed green forces a chip or pitch instead of a putt — each costs approximately 0.5 strokes on average. Measures approach play quality (and tee shots on par 3s).
 
 ### 2. Short Game Cost (SGCost)
 ```
-SGCost = MissedOpp × 0.7
-MissedOpp = (18 − GIR) − UD    (failed up & downs)
+SGCost = MissedOpp × sgMultiplier(HI)
+MissedOpp = (18 − GIR) − UD    (= X-UD count)
 ```
-Each failed up & down is estimated to cost 0.7 strokes. Equivalent to X-UD count.
+Strokes lost by failing to recover once off the green. Isolates chipping and pitching execution — separate from the ball striking that caused the miss. The multiplier is HI-scaled because better players are expected to convert more often, so each failure costs them more relative to their baseline.
+
+**SGCost multiplier by HI bracket (WHS, capped at 36):**
+
+| HI bracket | Multiplier | Rationale |
+|---|---|---|
+| 0–9 | 0.75 | High conversion expected; each X-UD nearly guarantees a dropped stroke |
+| 10–18 | 0.65 | Mixed conversion; most X-UDs cost a stroke but not all |
+| **19–28** | **0.60** | **← Paul's bracket. Bogey still reachable without converting** |
+| 29–36 | 0.55 | X-UDs so frequent they're semi-expected; bogey still reachable |
+
+**Note:** BSCost and SGCost measure two sequential failures. Low BS + high SG = solid irons, short game costing you. High BS + low SG = bailing yourself out with good chipping despite missing greens.
+
+*Changed v1.1: fixed multiplier 0.7 → 0.6 for mid-HI players.*
+*Changed v1.2: multiplier HI-scaled by WHS bracket (0–9 / 10–18 / 19–28 / 29–36).*
 
 ### 3. Putting Cost (PuttCost)
 ```
-PuttCost = TotalPutts − 36
+PuttCost = TotalPutts − puttBenchmark(HI)
 ```
-Benchmark is 36 putts (2 putts per hole × 18 holes). Positive = strokes lost; negative = strokes saved.
+Strokes lost (or saved) on the greens vs the expected number of putts for your handicap bracket. Positive = strokes lost; negative = strokes saved.
 
-### 4. Penalty Cost
+**Putting benchmark by HI bracket:**
+
+| HI bracket | Putt benchmark | Rationale |
+|---|---|---|
+| 0–9 | 30 | High GIR rate → longer first putts but fewer chip-putts |
+| 10–18 | 32 | Mixed green-hit rate |
+| **19–28** | **34** | **← Paul's bracket. Fewer GIR → more chip-putts but shorter** |
+| 29+ | 36 | Low GIR rate → frequent chip-putts, more 3-putts |
+
+*Changed v1.1: fixed benchmark of 36 replaced with HI-scaled table. A 20 HI averages ~33–35 putts; 36 was making putting look like a strength when it isn't.*
+
+### 4. Penalty Cost (PenCost)
 ```
 PenCost = Total Penalties
 ```
-Each penalty stroke is a direct one-stroke cost.
+Each penalty stroke is a direct one-stroke cost. Multiplier is 1:1 regardless of HI.
 
 ---
 
@@ -65,7 +90,26 @@ Each penalty stroke is a direct one-stroke cost.
 GPI Rating = BSCost + SGCost + PuttCost + PenCost
 ```
 
-Lower is better. No target threshold is currently set — thresholds will be calibrated once sufficient rounds are recorded and HI-scaled benchmarks are built.
+Lower is better.
+
+---
+
+## GPI Interpretation Bands (HI-scaled)
+
+| HI bracket | Excellent | Good | Average | Below avg | Poor |
+|---|---|---|---|---|---|
+| 0–9 | < 4 | 4–7 | 8–11 | 12–15 | 16+ |
+| 10–18 | < 5 | 5–9 | 10–14 | 15–19 | 20+ |
+| **19–28** | **< 7** | **7–12** | **13–17** | **18–22** | **23+** |
+| 29+ | < 9 | 9–14 | 15–20 | 21–26 | 27+ |
+
+**Verification — 19–28 HI bracket (typical 20 HI round on Mt. Paul, par 64):**
+
+| Round type | Score | GIR | Putts | X-UD | Pen | GPI | Band |
+|---|---|---|---|---|---|---|---|
+| Good | ~68 | 7 | 32 | 6 | 0 | 7.1 | Good |
+| Average | ~74 | 5 | 34 | 9 | 1 | 12.9 | Average |
+| Poor | ~84 | 2 | 38 | 15 | 3 | 24.0 | Poor |
 
 ---
 
@@ -92,13 +136,23 @@ Contains: Scoring Summary, Round by Round, N Round Average, Cost Breakdown, Focu
 - **Away rounds** highlighted in light amber (`#fef3cd`) with hover tooltip showing course name.
 - **Home course** read from Settings tab (`Home Course` key).
 - **HI and Net Score** read from Settings tab (`Handicap_Index` key). Net = Gross − Course Handicap (Mt. Paul Mens Blue: CR 59.0, SR 86, Par 64).
+- **Putt benchmark** read from HI bracket at report generation time.
 
 ---
 
-## Open Questions (for future session)
+## Changelog
 
-- Are the cost multipliers (0.5 for BSCost, 0.7 for SGCost) well-calibrated for a ~20 HI player?
-- Should GPI thresholds scale with Handicap Index (e.g., different benchmarks for 0–9, 10–18, 19–28, 29+)?
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-05-07 | Initial version |
+| 1.1 | 2026-05-08 | SGCost multiplier 0.7 → 0.6; putting benchmark HI-scaled (34 for 19–28 HI); interpretation bands added |
+| 1.2 | 2026-05-08 | SGCost multiplier HI-scaled by WHS bracket (0.75 / 0.65 / 0.60 / 0.55); capped at HI 36 |
+
+---
+
+## Open Questions
+
 - Focus Areas advice (e.g., "practice 10–30 yard shots") — how to make recommendations data-driven given we don't capture shot distance or dispersion?
-- Is PuttsPerGIR a more meaningful putting metric than total putts?
 - Should Short Game Efficiency (UD conversion rate) surface in the email report?
+- Is PuttsPerGIR a more meaningful putting metric than total putts for the report?
+- Should SGCost multiplier extend beyond HI 36? WHS allows up to 54.0 but bracket calibration above 36 has no data basis.
