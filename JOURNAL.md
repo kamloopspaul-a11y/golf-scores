@@ -468,3 +468,23 @@ Rewrote `sendReport_()` in `apps-script.gs` to address May 6 feedback. All chang
 **Files changed:** `JOURNAL.md`, `PROJECT.md`
 
 **Next:** Continue GPI metric refinement; Unposted Scores screen is a tracked roadmap item.
+
+---
+
+## 2026-05-08 — Footer nav links
+
+**Did:**
+- Built footer nav grid on all 5 non-hole screens (Setup, Front 9, Back 9, Save Round, Course)
+- 8 text links in a 4×2 grid: Settings, Add Scores, Pro Tips, Penalty Rules, Quick Rules, Game Formats, My Stats, Courses
+- `showPanel()` stub wired — alert placeholder, panels to be built per link
+- Fixed structural bug: nav grid was landing outside `.footer` div, corrected to inside
+- Styled as text-only underlined links (no button borders/backgrounds)
+- Bumped to v9.34
+
+**Context:**
+- Paul has 12 real 2026 scorecards; missing 4 rounds. Going live in ~2 weeks after deleting dummy Sheets entries.
+- Stats won't be available for back-entered rounds.
+
+**Files changed:** `index.html`, `JOURNAL.md`, `PROJECT.md`
+
+**Next:** Pick a panel to build — Settings or Add Scores are the best candidates.

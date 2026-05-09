@@ -316,27 +316,27 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 7, 2026
+**Last worked:** May 8, 2026
 
 ### What was completed this session
-- **Email report full design pass** — section titles, spacing, fonts, rule lines, alternating rows, Away round amber highlight, left-aligned text columns
-- **GPI Rating named** — Golf Performance Index. Composite strokes-lost metric. Subject line, masthead, and Cost Breakdown all aligned to GPI theme
-- **`<details>/<summary>` replaced** — Gmail strips these; converted to plain `<div>` headings. All styling now renders reliably
-- **GPI_RULES.md created** — reference backup for the metric family, formulas, and open questions
-- **Git lock file cleared** — removed `.git/HEAD.lock` and `.git/objects/maintenance.lock`
+- **Footer nav grid** — 8 text links on all non-hole screens (Setup, Front 9, Back 9, Save Round, Course)
+- **Links:** Settings, Add Scores, Pro Tips, Penalty Rules, Quick Rules, Game Formats, My Stats, Courses
+- **`showPanel()` stub** wired — alert placeholder per link
+- **Structural fix** — nav grid corrected to inside `.footer` div
+- **Styled as text-only** underlined links (no borders/backgrounds)
+- **v9.34** — bumped and changelog updated
 
 ### Files changed
-- `apps-script.gs` — email report HTML/CSS overhaul, GPI naming, Away round logic restored
-- `GPI_RULES.md` — new file
-- `PROJECT.md`, `JOURNAL.md` — updated
+- `index.html` — footer nav grid, CSS, showPanel() stub
+- `JOURNAL.md`, `PROJECT.md` — updated
 
 ### Resume here next session
 
-**Last session: 2026-05-08** — GPI v1.2 shipped and published.
+**Last session: 2026-05-08** — Footer nav links shipped (v9.34).
 
 **Build queue (in order):**
-1. ~~Review GPI metric family~~ — DONE (2026-05-08): SGCost HI-scaled by WHS bracket (0.75/0.65/0.60/0.55, capped 36); BSCost formula corrected; Metrics Guide updated
-2. **Add Unposted Scores screen** — dedicated screen (footer link on Home + non-Hole screens); manual entry with date picker + hole-by-hole scores/stats; batch CSV import with preview; player selector ready for Dave; feeds HI auto-calc
+1. **Pick a panel to build** — Settings or Add Scores are the strongest candidates
+2. **Add Unposted Scores screen** — manual entry (date picker + hole-by-hole) + batch CSV import; feeds HI calc
 3. **Auto-calculate HI from entered rounds** (WHS formula, best 8 of 20); replace hardcoded Settings HI in hero display; flag as provisional < 20 rounds; fall back to Settings value if no rounds entered
 4. Make Focus Areas advice data-driven — current suggestions (e.g. "10–30 yard shots") not grounded in captured data
 5. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab

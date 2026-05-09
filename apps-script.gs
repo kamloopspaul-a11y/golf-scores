@@ -123,6 +123,13 @@ function doGet(e) {
 function doPost(e) {
   try {
     const p  = JSON.parse(e.postData.contents);
+
+    // ── Secret token check ───────────────────────────────────────────────
+    const secret = PropertiesService.getScriptProperties().getProperty('WEBHOOK_SECRET');
+    if (secret && p.secret !== secret) {
+      return json_({ ok: false, error: 'Unauthorised.' });
+    }
+
     const ss = SpreadsheetApp.getActive();
 
     // ── Gemini query branch ──────────────────────────────────────────────

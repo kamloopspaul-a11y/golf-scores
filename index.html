@@ -3,6 +3,10 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.34 — May 8 2026
+  - Footer nav grid added to all non-hole screens (Setup, Front 9, Back 9, Save Round, Course)
+  - 8 utility links: Settings, Add Scores, Pro Tips, Penalty Rules, Quick Rules, Game Formats, My Stats, Courses
+  - showPanel() stub wired — panels to be built per link
   v9.33 — May 4 2026
   - Ask Gemini screen removed (Diagnostics + email reports replace it)
   - apps-script.gs: doGet ?action=data, doPost action:query, callGemini_()
@@ -631,6 +635,29 @@
   #screen-midround .footer-grid,
   #screen-card     .footer-grid,
   #screen-success  .footer-grid { display: none; }
+  /* Footer nav — non-hole screens (4×2 grid of utility links) */
+  .footer-nav-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .fnav-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    font-weight: 500;
+    min-height: 44px;
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .fnav-btn:active { color: white; }
   /* iOS-style slider (unscripted placeholder) */
   .switch { position: relative; display: inline-block; width: 53px; height: 26px; }
   .switch input { opacity: 0; width: 0; height: 0; }
@@ -758,6 +785,22 @@
       navigator.serviceWorker.register('sw.js').catch(()=>{});
     });
   }
+  // ── Footer nav panel stub ──────────────────────────────────────────
+  function showPanel(name) {
+    // Stub: panels to be built. Each will render as an overlay or screen.
+    const labels = {
+      'settings':      'Settings — coming soon',
+      'add-scores':    'Add Scores — coming soon',
+      'pro-tips':      'Pro Tips — coming soon',
+      'penalty-rules': 'Penalty Rules — coming soon',
+      'quick-rules':   'Quick Rules — coming soon',
+      'game-formats':  'Game Formats — coming soon',
+      'my-stats':      'My Stats — coming soon',
+      'courses':       'Courses — coming soon',
+    };
+    alert(labels[name] || name);
+  }
+
 </script>
 </head>
 <body>
@@ -810,6 +853,16 @@
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
       <div class="fg-left">PUTTS</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+    </div>
+    <div class="footer-nav-grid">
+      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
+      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
+      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
+      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
+      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
+      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
+      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
+      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
     </div>
   </div>
 </div>
@@ -906,6 +959,16 @@
       <div class="fg-left">PUTTS</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
+    <div class="footer-nav-grid">
+      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
+      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
+      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
+      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
+      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
+      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
+      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
+      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
+    </div>
   </div>
 </div>
 <!-- ══════════════ FINAL SCORECARD ══════════════ -->
@@ -944,6 +1007,16 @@
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
       <div class="fg-left">PUTTS</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
+    </div>
+    <div class="footer-nav-grid">
+      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
+      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
+      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
+      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
+      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
+      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
+      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
+      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
     </div>
   </div>
 </div>
@@ -1028,6 +1101,16 @@
       <div class="fg-left">PUTTS</div>
       <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
     </div>
+    <div class="footer-nav-grid">
+      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
+      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
+      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
+      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
+      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
+      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
+      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
+      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
+    </div>
   </div>
 </div>
 <!-- ══════════════ COURSE SELECT ══════════════ -->
@@ -1060,7 +1143,19 @@
     <button class="btn-3d nav-btn" onclick="showScreen('setup')">Back</button>
     <button class="btn-3d nav-btn" id="use-course-btn" onclick="useSelectedCourse()" style="opacity:0.45;pointer-events:none">Use Course</button>
   </div>
-  <div class="footer"><div class="footer-grid"></div></div>
+  <div class="footer">
+    <div class="footer-grid"></div>
+    <div class="footer-nav-grid">
+      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
+      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
+      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
+      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
+      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
+      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
+      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
+      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
+    </div>
+  </div>
 </div>
 <audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
 <script>
@@ -1081,6 +1176,7 @@ const COURSE = {
   ]
 };
 const SHEETS_URL  = "https://script.google.com/macros/s/AKfycbySPqhl4-gdbq2yykCaUKh3shzQGDY0xjz--0WV5GX0Tkad2huG9IA3_blQVFBKloSpUg/exec";
+const WEBHOOK_SECRET = "Oawa9g5ywPdik6bMk07wUlam7bf7qhEy";
 let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
   scores:[], holeList:[], totalHoles:18, weatherStr:"—",
@@ -1446,7 +1542,7 @@ async function submitRound(){
   if(infoOverlay) infoOverlay.classList.remove('open');
   showScreen('success');
   try {
-    const res  = await fetch(SHEETS_URL,{method:"POST",body:JSON.stringify(payload)});
+    const res  = await fetch(SHEETS_URL,{method:"POST",body:JSON.stringify({...payload, secret: WEBHOOK_SECRET})});
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'Server rejected post');
     if(title) title.textContent='Posted';
@@ -1492,7 +1588,7 @@ async function repostPending() {
   for (let i = 0; i < queue.length; i++) {
     if (msg) msg.textContent = 'Posting ' + (i + 1) + ' of ' + queue.length + '…';
     try {
-      const res  = await fetch(SHEETS_URL, {method:'POST', body: JSON.stringify(queue[i])});
+      const res  = await fetch(SHEETS_URL, {method:'POST', body: JSON.stringify({...queue[i], secret: WEBHOOK_SECRET})});
       const data = await res.json();
       if(!data.ok) throw new Error(data.error || 'Server rejected post');
       posted++;
