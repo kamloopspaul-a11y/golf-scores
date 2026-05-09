@@ -332,14 +332,14 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ### Resume here next session
 
-**Email report is visually complete and deployed.** Next priorities:
+**Last session: 2026-05-08** — GPI v1.2 shipped and published.
 
 **Build queue (in order):**
 1. ~~Review GPI metric family~~ — DONE (2026-05-08): SGCost HI-scaled by WHS bracket (0.75/0.65/0.60/0.55, capped 36); BSCost formula corrected; Metrics Guide updated
-2. Make Focus Areas advice data-driven — current suggestions (e.g. "10–30 yard shots") not grounded in captured data
-3. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab
-4. **Add Unposted Scores screen** — dedicated screen (footer link on Home + non-Hole screens); manual entry with date picker + hole-by-hole scores/stats; batch CSV import with preview; player selector ready for Dave; feeds HI auto-calc
-5. **Auto-calculate HI from entered rounds** (WHS formula, best 8 of 20); replace hardcoded Settings HI in hero display; flag as provisional < 20 rounds; fall back to Settings value if no rounds entered
+2. **Add Unposted Scores screen** — dedicated screen (footer link on Home + non-Hole screens); manual entry with date picker + hole-by-hole scores/stats; batch CSV import with preview; player selector ready for Dave; feeds HI auto-calc
+3. **Auto-calculate HI from entered rounds** (WHS formula, best 8 of 20); replace hardcoded Settings HI in hero display; flag as provisional < 20 rounds; fall back to Settings value if no rounds entered
+4. Make Focus Areas advice data-driven — current suggestions (e.g. "10–30 yard shots") not grounded in captured data
+5. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab
 6. Player Profile screen in PWA — name, HI, email, Track Stats toggle, Stat Reports toggle
 7. Player goal field (target HI + timeframe) → report framing shifts to progress narrative
 
