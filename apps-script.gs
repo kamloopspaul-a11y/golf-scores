@@ -192,7 +192,7 @@ function doPost(e) {
       }
 
       rows.push([
-        roundId, date, course, tees, num,
+        roundId, sanitize_(date), sanitize_(course), sanitize_(tees), num,
         hPar, hIdx, hScore, hPutts,
         hFir, hGir, hUd, hXud, hPen, netScore
       ]);
@@ -859,4 +859,12 @@ function json_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── Input sanitiser — prevents formula injection in Sheets ──────────
+// Prefixes strings that start with a Sheets formula trigger character
+// with an apostrophe so they are stored as plain text.
+function sanitize_(v) {
+  if (typeof v !== 'string') return v;
+  return /^[=+\-@|%`]/.test(v) ? "'" + v : v;
 }
