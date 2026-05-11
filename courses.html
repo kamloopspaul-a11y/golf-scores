@@ -311,7 +311,7 @@
     <div class="form-section">
       <label class="field-label" for="course-name">Course Name</label>
       <input type="text" id="course-name" class="field-input"
-             placeholder="e.g. Kamloops Golf &amp; Country Club"
+             placeholder="e.g. Kamloops G&amp;CC"
              maxlength="60" autocorrect="off" autocomplete="off" spellcheck="false">
     </div>
 
@@ -328,10 +328,9 @@
     <div class="form-section">
       <label class="field-label">Tees</label>
       <div class="tee-chip-strip" id="tee-chips">
-        <button class="tee-chip"        onclick="toggleTee('Black')">Black</button>
-        <button class="tee-chip active" onclick="toggleTee('Blue')">Blue</button>
         <button class="tee-chip"        onclick="toggleTee('White')">White</button>
         <button class="tee-chip"        onclick="toggleTee('Gold')">Gold</button>
+        <button class="tee-chip active" onclick="toggleTee('Blue')">Blue</button>
         <button class="tee-chip"        onclick="toggleTee('Red')">Red</button>
       </div>
       <div id="tee-details"></div>
@@ -348,8 +347,8 @@
   </div><!-- /stage -->
 
   <div class="nav-bar">
-    <button class="btn-3d btn-grey" onclick="goHome()">← App</button>
-    <button class="btn-3d" onclick="goToHoles()">Hole Data →</button>
+    <button class="btn-3d btn-grey" onclick="goHome()">App</button>
+    <button class="btn-3d" onclick="goToHoles()">Hole Data</button>
   </div>
   <div class="footer"></div>
 
@@ -378,7 +377,7 @@
   </div>
 
   <div class="nav-bar">
-    <button class="btn-3d btn-grey" onclick="goToBasics()">← Back</button>
+    <button class="btn-3d btn-grey" onclick="goToBasics()">Back</button>
     <button class="btn-3d" onclick="saveCourse()">Save Course</button>
   </div>
   <div class="footer">Par required · Yardage &amp; SI optional</div>
@@ -390,7 +389,7 @@
 'use strict';
 
 // ── Constants ──────────────────────────────────────────
-const TEE_ORDER = ['Black', 'Blue', 'White', 'Gold', 'Red'];
+const TEE_ORDER = ['White', 'Gold', 'Blue', 'Red'];
 
 // ── State ──────────────────────────────────────────────
 let numHoles = 18;
