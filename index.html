@@ -3,6 +3,15 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.37 — May 11 2026
+  - Add Scores screen: date picker + course/tee selectors + 9/18 toggle for 9-hole courses
+  - Historical entry mode: state.historicalMode hides stats footer, uses selected date
+  - showPanel('add-scores') wired — no longer a stub
+  - initAddScoresScreen(), asOnCourseChange(), startHistoricalRound() added
+  v9.36 — May 11 2026
+  - Fix: 9-hole courses now reach Final Score screen (nextHole guard + showSummary)
+  - Fix: footer min-height released on scorecard/setup screens — stage no longer squeezed
+  - Fix: footer nav links — no underline, tighter padding
   v9.35 — May 11 2026
   - courses.html: Add Course panel (Screen 1: name/holes/tees+CR+SR; Screen 2: hole-by-hole par/yds/SI)
   - showPanel('courses') navigates to courses.html
@@ -635,10 +644,77 @@
   .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
   /* Stat controls belong only on the hole screen */
-  #screen-setup    .footer-grid,
-  #screen-midround .footer-grid,
-  #screen-card     .footer-grid,
-  #screen-success  .footer-grid { display: none; }
+  #screen-setup      .footer-grid,
+  #screen-midround   .footer-grid,
+  #screen-card       .footer-grid,
+  #screen-success    .footer-grid,
+  #screen-add-scores .footer-grid { display: none; }
+  /* Non-hole screens don't have stat sliders — release the 220px floor */
+  #screen-setup      .footer,
+  #screen-midround   .footer,
+  #screen-card       .footer,
+  #screen-success    .footer,
+  #screen-add-scores .footer {
+    min-height: calc(env(safe-area-inset-bottom) + 8px);
+    padding-top: 8px;
+  }
+  /* Historical entry mode — hide stats footer on hole screen */
+  #screen-hole.historical .footer-grid { display: none; }
+  #screen-hole.historical .footer {
+    min-height: calc(env(safe-area-inset-bottom) + 8px);
+    padding-top: 8px;
+  }
+  /* ── Add Scores form ─────────────────────────────── */
+  .as-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px 20px 12px;
+    overflow-y: auto;
+  }
+  .as-field { display: flex; flex-direction: column; gap: 6px; }
+  .as-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #555;
+  }
+  .as-input, .as-select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 17px;
+    border: 1.5px solid #ddd;
+    border-radius: 10px;
+    background: #fff;
+    color: #222;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+  }
+  .as-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+  .as-holes-toggle { display: flex; gap: 8px; }
+  .as-holes-toggle label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    border: 1.5px solid #ddd;
+    border-radius: 10px;
+    font-size: 15px;
+    cursor: pointer;
+    color: #444;
+  }
+  .as-holes-toggle input[type=radio] { accent-color: var(--green); }
+  #as-holes-field { display: none; }
   /* Footer nav — non-hole screens (4×2 grid of utility links) */
   .footer-nav-grid {
     display: grid;
@@ -649,17 +725,16 @@
   .fnav-btn {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.85);
-    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    font-size: 12px;
     font-weight: 500;
-    min-height: 44px;
-    padding: 10px 8px;
+    min-height: 34px;
+    padding: 4px 8px;
     text-align: center;
     cursor: pointer;
     width: 100%;
     -webkit-tap-highlight-color: transparent;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration: none;
   }
   .fnav-btn:active { color: white; }
   /* iOS-style slider (unscripted placeholder) */
@@ -792,10 +867,11 @@
   // ── Footer nav panel stub ──────────────────────────────────────────
   function showPanel(name) {
     if (name === 'courses') { window.location.href = 'courses.html'; return; }
+    if (name === 'add-scores') { initAddScoresScreen(); showScreen('add-scores'); return; }
     // Stub: remaining panels to be built.
     const labels = {
       'settings':      'Settings — coming soon',
-      'add-scores':    'Add Scores — coming soon',
+      'add-scores':    '__open__',
       'pro-tips':      'Pro Tips — coming soon',
       'penalty-rules': 'Penalty Rules — coming soon',
       'quick-rules':   'Quick Rules — coming soon',
@@ -870,6 +946,63 @@
     </div>
   </div>
 </div>
+<!-- ══════════════ ADD SCORES ══════════════ -->
+<div class="screen" id="screen-add-scores">
+  <div class="masthead">
+    <div class="header-upper">
+      <div class="hu-course" id="as-course-name"></div>
+      <div class="hu-weather" id="weather-add-scores">—</div>
+      <div class="hu-date" id="as-date-display"></div>
+      <div class="hu-duration"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="header-lower-title">Add Scores</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+  <div class="as-body">
+    <div class="as-field">
+      <label class="as-label" for="as-date-input">Date Played</label>
+      <input type="date" id="as-date-input" class="as-input">
+    </div>
+    <div class="as-field">
+      <label class="as-label" for="as-course-select">Course</label>
+      <select id="as-course-select" class="as-select" onchange="asOnCourseChange()">
+        <option value="">— Select a course —</option>
+      </select>
+    </div>
+    <div class="as-field">
+      <label class="as-label" for="as-tee-select">Tees</label>
+      <select id="as-tee-select" class="as-select">
+        <option value="">— Select course first —</option>
+      </select>
+    </div>
+    <div class="as-field" id="as-holes-field">
+      <label class="as-label">Holes Played</label>
+      <div class="as-holes-toggle">
+        <label><input type="radio" name="as-holes" value="9" id="as-holes-9"> <span>9 Holes</span></label>
+        <label><input type="radio" name="as-holes" value="18" id="as-holes-18" checked> <span>18 Holes</span></label>
+      </div>
+    </div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" onclick="startHistoricalRound()">Start Entry</button>
+  </div>
+  <div class="footer">
+    <div class="footer-grid"></div>
+    <div class="footer-nav-grid">
+      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
+      <button class="fnav-btn" onclick="showScreen('setup')">← Home</button>
+      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
+      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
+      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
+      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
+      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
+      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ HOLE ══════════════ -->
 <div class="screen" id="screen-hole">
   <div class="hole-masthead">
@@ -1198,7 +1331,7 @@ let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
   scores:[], holeList:[], totalHoles:18, weatherStr:"—",
   roundStartTime: null, midroundSeen: false,
-  stats: []
+  stats: [], historicalMode: false
 };
 let durationTimer = null;
 // ── WEATHER ──────────────────────────────────────────
@@ -1212,12 +1345,12 @@ async function fetchWeather() {
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function updateAllWeather() {
-  ["weather-setup","weather-hole","weather-midround","weather-card","weather-success","weather-ask"].forEach(id=>{
+  ["weather-setup","weather-hole","weather-midround","weather-card","weather-success","weather-ask","weather-add-scores"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=state.weatherStr;
   });
   updateCourseNameDisplay();
   const dateStr=state.date?formatDate(state.date):'';
-  ["setup-date-display","hole-date-display","midround-date-display","card-date-display","success-date-display"].forEach(id=>{
+  ["setup-date-display","hole-date-display","midround-date-display","card-date-display","success-date-display","as-date-display"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=dateStr;
   });
   // Duration — propagate to all header duration slots
@@ -1285,6 +1418,7 @@ function buildDots(){
   });
 }
 function showHole(index){
+  document.getElementById('screen-hole').classList.toggle('historical', !!state.historicalMode);
   const hole=state.holeList[index];
   document.getElementById('hole-num').textContent=index+1;
   document.getElementById('hole-par-display').textContent=hole.par;
@@ -1353,8 +1487,8 @@ function adjustScore(delta){
 }
 // ── NAVIGATION ────────────────────────────────────────
 function nextHole(){
-  if(state.currentHole===8){
-    // After hole 9 — show mid-round front 9 card
+  if(state.currentHole===8 && state.totalHoles > 9){
+    // After hole 9 on an 18-hole course — show mid-round front 9 card
     state.midroundSeen = true;
     buildMidroundCard();
     showScreen('midround');
@@ -1405,7 +1539,12 @@ function formatDuration(ms){
   return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
 }
 function showSummary(){
-  buildSection('sc-back',9,18,true);
+  if(state.totalHoles <= 9){
+    // 9-hole course: show all holes in the single sc-back table, OUT total only
+    buildSection('sc-back', 0, state.totalHoles, false);
+  } else {
+    buildSection('sc-back', 9, 18, true);
+  }
   showScreen('card');
 }
 function buildSection(tableId,start,end,isBack){
@@ -1634,7 +1773,7 @@ function discardRound(){ if(confirm("Discard this round? All scores will be lost
 function newRound(){
   state.players=[(PROFILE.name || "Paul")]; state.currentHole=0;
   state.midroundSeen=false; state.roundStartTime=null;
-  state.stats=[];
+  state.stats=[]; state.historicalMode=false;
   clearSuccessSummary();
   localStorage.removeItem('roundStartTime');
   if(durationTimer){ clearInterval(durationTimer); durationTimer=null; }
@@ -1836,7 +1975,7 @@ function updateCourseNameDisplay() {
   const name = activeCourseData ? activeCourseData.name : COURSE.name;
   const label = 'Course: ' + name;
   ["setup-course-name","hole-course-name","midround-course-name",
-   "card-course-name","success-course-name","cs-course-name"].forEach(id => {
+   "card-course-name","success-course-name","cs-course-name","as-course-name"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = label;
   });
   // Update Change Course link text to show active course
@@ -1865,6 +2004,141 @@ async function seedCourseCache() {
   } catch(e) { /* silent fail — offline is fine */ }
 }
 
+
+// ── ADD SCORES ───────────────────────────────────────
+function initAddScoresScreen() {
+  // Default date to today
+  const di = document.getElementById('as-date-input');
+  if (di) di.value = new Date().toISOString().split('T')[0];
+
+  // Build course dropdown from cache (seeded + user-added)
+  const sel = document.getElementById('as-course-select');
+  if (!sel) return;
+  const cache = _getCache();
+  const courses = Object.values(cache)
+    .filter(c => c.club_name)
+    .sort((a, b) => (a.club_name||'').localeCompare(b.club_name||''));
+
+  sel.innerHTML = '<option value="">— Select a course —</option>';
+  let defaultId = null;
+  courses.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.club_name;
+    if (!defaultId || (c.club_name||'').toLowerCase().includes('mt. paul') ||
+        (c.club_name||'').toLowerCase().includes('mt paul')) {
+      defaultId = c.id;
+    }
+    sel.appendChild(opt);
+  });
+  if (defaultId) { sel.value = defaultId; asOnCourseChange(); }
+}
+
+function asOnCourseChange() {
+  const sel     = document.getElementById('as-course-select');
+  const teeSel  = document.getElementById('as-tee-select');
+  const hField  = document.getElementById('as-holes-field');
+  if (!sel || !teeSel) return;
+
+  const course = getCachedCourse(sel.value);
+  teeSel.innerHTML = '';
+  if (!hField) return;
+
+  if (!course) {
+    teeSel.innerHTML = '<option value="">— Select course first —</option>';
+    hField.style.display = 'none';
+    return;
+  }
+
+  // Build tee list (male array is gender-neutral in our storage)
+  const allTees = ((course.tees || {}).male || [])
+    .map((t, i) => ({ idx: i, teeBox: t }));
+
+  if (!allTees.length) {
+    teeSel.innerHTML = '<option value="">No tee data</option>';
+  } else {
+    teeSel.innerHTML = '';
+    allTees.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.idx;
+      opt.textContent = t.teeBox.tee_name +
+        (t.teeBox.course_rating ? '  CR ' + t.teeBox.course_rating : '');
+      teeSel.appendChild(opt);
+    });
+    teeSel._teeList = allTees;
+    // Default to Blue tee if available
+    const blueIdx = allTees.findIndex(t => t.teeBox.tee_name === 'Blue');
+    if (blueIdx >= 0) teeSel.selectedIndex = blueIdx;
+  }
+
+  // Show 9/18 toggle only for 9-hole courses
+  const sampleTee = allTees[0] && allTees[0].teeBox;
+  const numHoles = sampleTee ? (sampleTee.holes || []).length : 18;
+  hField.style.display = numHoles === 9 ? 'block' : 'none';
+  // Default to 18 for 9-hole courses (two loops)
+  const r18 = document.getElementById('as-holes-18');
+  if (r18) r18.checked = true;
+}
+
+function startHistoricalRound() {
+  const di   = document.getElementById('as-date-input');
+  const cSel = document.getElementById('as-course-select');
+  const tSel = document.getElementById('as-tee-select');
+  if (!di || !di.value)   { alert('Please select a date.'); return; }
+  if (!cSel || !cSel.value) { alert('Please select a course.'); return; }
+
+  const course = getCachedCourse(cSel.value);
+  if (!course) { alert('Course data not found.'); return; }
+
+  const teeList = tSel._teeList || [];
+  const teeIdx  = parseInt(tSel.value, 10);
+  const teeEntry = teeList[teeIdx];
+  if (!teeEntry) { alert('Please select tees.'); return; }
+
+  // Build activeCourseData from selected course + tee
+  const teeBox = teeEntry.teeBox;
+  const rawHoles = (teeBox.holes || []).map(h => ({
+    par: h.par, yards: h.yardage || h.yards || 0, index: h.index || null
+  }));
+  const data = {
+    name:    course.club_name,
+    par:     teeBox.par_total || rawHoles.reduce((s, h) => s + h.par, 0),
+    holes:   rawHoles,
+    cr:      teeBox.course_rating,
+    sr:      teeBox.slope_rating,
+    teeName: teeBox.tee_name,
+    looped:  false,
+    id:      course.id
+  };
+
+  // Handle 9-hole courses — check radio selection
+  let holeList = [...data.holes];
+  if (holeList.length === 9) {
+    const play18 = document.getElementById('as-holes-18');
+    if (play18 && play18.checked) {
+      holeList = [...holeList, ...holeList]; // two loops
+    }
+  }
+
+  saveActiveCourseData(data);
+  updateCourseNameDisplay();
+
+  // Set state for historical round
+  state.historicalMode = true;
+  state.date           = di.value;
+  state.players        = [readPlayerName()];
+  state.holeList       = holeList;
+  state.totalHoles     = holeList.length;
+  state.scores         = [holeList.map(h => h.par)];
+  state.stats          = Array.from({length: holeList.length}, () =>
+    ({fir:null, gir:null, pen:null, ud:null, xud:null, putts:2}));
+  state.currentHole    = 0;
+  state.activePlayer   = 0;
+  state.roundStartTime = null;
+  state.midroundSeen   = false;
+
+  buildDots(); buildPlayerChips(); showHole(0); showScreen('hole');
+}
 
 // ── INIT ──────────────────────────────────────────────
 const today=new Date().toISOString().split('T')[0];
