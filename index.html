@@ -3,6 +3,10 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.35 — May 11 2026
+  - courses.html: Add Course panel (Screen 1: name/holes/tees+CR+SR; Screen 2: hole-by-hole par/yds/SI)
+  - showPanel('courses') navigates to courses.html
+  - SW bumped v31 → v32: courses.html cached
   v9.34 — May 8 2026
   - Footer nav grid added to all non-hole screens (Setup, Front 9, Back 9, Save Round, Course)
   - 8 utility links: Settings, Add Scores, Pro Tips, Penalty Rules, Quick Rules, Game Formats, My Stats, Courses
@@ -787,7 +791,8 @@
   }
   // ── Footer nav panel stub ──────────────────────────────────────────
   function showPanel(name) {
-    // Stub: panels to be built. Each will render as an overlay or screen.
+    if (name === 'courses') { window.location.href = 'courses.html'; return; }
+    // Stub: remaining panels to be built.
     const labels = {
       'settings':      'Settings — coming soon',
       'add-scores':    'Add Scores — coming soon',
@@ -796,7 +801,6 @@
       'quick-rules':   'Quick Rules — coming soon',
       'game-formats':  'Game Formats — coming soon',
       'my-stats':      'My Stats — coming soon',
-      'courses':       'Courses — coming soon',
     };
     alert(labels[name] || name);
   }
