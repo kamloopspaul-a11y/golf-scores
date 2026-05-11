@@ -385,6 +385,30 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 4. Remove Dev buttons (Jump to Post Screen, Simulate Failure)
 5. Dave's data import — wait for CSV/XLS sample, write transform script
 
+## Security Rules (standing)
+
+These apply to every form and every Apps Script write in this project.
+
+**Client-side (HTML forms)**
+- All `<input type="text">` and `<input type="tel">` fields must have `maxlength` set.
+- All numeric inputs must have `type="number"` with `min`, `max`, and `inputmode="numeric"`.
+- Never pass raw `input.value` strings to the Apps Script payload — always trim and validate first.
+
+**Apps Script (server-side)**
+- All string values written to Sheets via `setValues()` or `appendRow()` must pass through `sanitize_(v)`.
+  - `sanitize_` prefixes strings starting with `=`, `+`, `-`, `@`, `|`, `%`, `` ` `` with an apostrophe.
+  - Currently applied to: `date`, `course`, `tees` in `doPost`.
+  - Add to any new string fields before they reach a `setValues` / `appendRow` call.
+- Numeric values must be parsed (`parseInt` / `parseFloat`) with a safe fallback before use.
+- API keys and the Apps Script `/exec` URL live in Script Properties only — never in source.
+
+**localStorage**
+- No credentials, tokens, or sensitive personal data stored in plain text.
+- Course data and round state are non-sensitive; localStorage is appropriate.
+
+**Service Worker**
+- Cache scope covers only app assets. Never cache authenticated or user-specific API responses.
+
 ## Technical Notes
 
 - Single-file app: HTML, CSS, JS in `index.html`
@@ -451,3 +475,23 @@ The contextual message area and the offline queue are the same slot on the Home 
 - GitGuardian flagged `GeminiKey.txt` in the public repo containing `AIzaSyD...eWbU`
 - **Resolved:** Key revoked in Google Cloud Console, file deleted from repo, git history scrubbed, local file deleted
 - `apps-script.gs` and `index.html` were never at risk — key was stored in Script Properties only
+
+## Design Threads (continued)
+
+### Stat Entry — move to Stage area (2026-05-11)
+
+**Concept:** Replace footer stat sliders with a dedicated stat entry screen that appears after score entry on each hole. Two-step flow per hole: Score → Stats → Next Hole.
+
+**Reasoning:**
+- Safari URL bar clashes with footer stat area during in-browser testing
+- Stats currently easy to skip/forget mid-round — incentive languishes
+- Tee-box timing is natural for stat reflection (more time, no rushing off green)
+- Dedicated stage screen is cleaner and easier to interact with
+- Frees footer for nav links on ALL screens including hole screens
+
+**Flow:**
+- Record Stats toggle ON: Hole screen (score) → Stat screen (FIR/GIR/PEN/UD/X-UD/PUTTS) → next hole
+- Record Stats toggle OFF: Hole screen (score) → next hole directly (no stat screen)
+- Stat screen header shows score just entered as confirmation (e.g. "Hole 4 · Bogey +1")
+
+**Status:** Design thread — build after Add Course panel (courses.html)
