@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-05-09 — Onboarding screen + session init improvements
+
+**Did:**
+- Built `onboarding.html` — two-step wizard (masthead only, white stage). Step 1: first name (6 char max) + report email (kamloopspaul@live.ca). Step 2: Apps Script URL + home tees (Blue/Red) + optional HI. Writes `localStorage.profile` on completion, redirects to `index.html`.
+- Wired first-run detection into `index.html` — redirects to `onboarding.html` if `profile.setupComplete` is missing.
+- Replaced all hardcoded values in `index.html`: player name "Paul" (4 locations), `SHEETS_URL`, `HI = 20`, `teeKey = "mensBlue"` — all now read from `PROFILE` constant.
+- Bumped SW to v30 — `onboarding.html` added to cache list.
+- Discussed and resolved architecture: personal tool only, no multi-user, no Stripe, no OAuth complexity. Planned `settings.html` and `contact.html` as future additions.
+- Session init protocol fixed — CLAUDE.md, TODO_LIST.md, .claude-config now load correctly at session start. Init test ("Banana Pie") completed and removed from .claude-config.
+- CLAUDE.md updated: GitHub Desktop noted as fallback to Terminal for pushes.
+
+**Decided:**
+- App is a personal tool — no open-market release planned. Kamloops fork option shelved.
+- `onboarding.html` is first-run only; `settings.html` (future) handles ongoing preferences.
+- `contact.html` (future) — subject/body form posting through Apps Script to hide gmail address from scrapers.
+- No print option — physical scorecards fill that role.
+- Prompt injection mitigations planned for all new free-text fields: sanitize on input, validate URL prefix, strip formula-injection characters before Sheets write.
+
+**Files changed:** `onboarding.html` (new), `index.html`, `sw.js`, `JOURNAL.md`, `PROJECT.md`, `TODO_LIST.md`, `CLAUDE.md`
+
+**Next session:** Test onboarding.html on live app, then pick a footer nav panel — Settings or Add Scores.
+
+---
+
 ## 2026-05-04 — v9.28–v9.30: Title cleanup, 320px width, offline queue
 
 **Did:**
@@ -488,3 +512,27 @@ Rewrote `sendReport_()` in `apps-script.gs` to address May 6 feedback. All chang
 **Files changed:** `index.html`, `JOURNAL.md`, `PROJECT.md`
 
 **Next:** Pick a panel to build — Settings or Add Scores are the best candidates.
+
+---
+
+## 2026-05-10 — Architecture decisions, security hardening, sheet cleanup
+
+**Did:**
+- Removed hardcoded Apps Script `/exec` URL from `onboarding.html` (was exposed as a default `value` in a public GitHub repo)
+- Added `courses.json` to SW cache ASSETS list; bumped cache to v31
+- Deleted legacy Scorecard and Stats tabs from Google Sheets — Rounds, Diagnostics, Settings remain
+- Dropped GolfCourseAPI.com integration entirely — incomplete Canadian coverage, dirty data, subscription cost
+- Named the Courses footer panel "Add Course"
+- Locked build order: Add Course → Add Scores → Settings
+- Decided Add Scores reuses existing hole screens with a date picker + course selector entry step
+- Away course workflow: enter course in Add Course from paper scorecard → replay hole-by-hole in Add Scores with correct date → posts to Sheets
+- HI suppressed until 20 rounds entered (display "—"); no provisional number shown before threshold
+- GPS proximity detection retained only for courses in courses.json that have coordinates; optional for manually added courses
+- Confirmed PWA updates work via SW cache versioning — no App Store required
+- Confirmed course data is per-device localStorage only; not shared between users
+- Cleaned stale GolfCourseAPI references from PROJECT.md and Market Considerations section
+- Updated TODO_LIST.md resume pointer
+
+**Files changed:** `sw.js`, `onboarding.html`, `PROJECT.md`, `JOURNAL.md`, `TODO_LIST.md`
+
+**Next:** Build the Add Course panel — manual course entry form + saved course list, stored in localStorage.
