@@ -1,12 +1,16 @@
 <!--
   My Golf Scores — Add Course
   courses.html
-  v1.0 — May 11 2026
-  - Screen 1: course name, 9/18 toggle, tee chips (Black/Blue/White/Gold/Forward) with CR/SR
-  - Screen 2: hole-by-hole entry (par, yardage per tee, stroke index, progress dots)
-  - Saves to localStorage courseCache in courses.json-compatible format (negative IDs for manual courses)
+  v1.1 — May 11 2026
+  - Screen 0: Course Library — all courses A-Z, pencil to edit, Add Course button
+  - Edit mode: pre-fills Screen 1 + Screen 2, saves back to same ID
+  - Red asterisk on empty CR/SR fields (advisory, non-blocking)
+  - screen-library is now the default landing screen
+v1.0 — May 11 2026
+  - Screen 1: course name, 9/18 toggle, tee chips with CR/SR
+  - Screen 2: hole-by-hole entry
+  - Saves to localStorage courseCache (negative IDs for manual courses)
   - Saved courses list with delete
-  - No gender classification — tee colours identify tees (Black/Blue/White/Gold/Red)
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -285,12 +289,111 @@
   }
 
   .hidden { display: none !important; }
+
+  /* ── Screen 0: Course Library ─────────────────────── */
+  .lib-list { display: flex; flex-direction: column; gap: 0; }
+  .lib-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+    gap: 10px;
+  }
+  .lib-item:first-child { border-radius: 12px 12px 0 0; }
+  .lib-item:last-child  { border-radius: 0 0 12px 12px; border-bottom: none; }
+  .lib-item:only-child  { border-radius: 12px; }
+  .lib-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .lib-sub  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .lib-phone a { color: var(--green); text-decoration: none; }
+  .lib-edit {
+    flex-shrink: 0;
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lib-edit:active { background: var(--green-pale); }
+  .lib-del {
+    flex-shrink: 0;
+    background: none;
+    border: 1.5px solid #fca5a5;
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    font-size: 15px;
+    cursor: pointer;
+    color: #dc2626;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lib-del:active { background: #fee2e2; }
+  .lib-actions { display: flex; gap: 8px; }
+  .lib-empty { color: var(--text-muted); font-size: 14px; padding: 20px 0; text-align: center; }
+  .lib-add-btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 16px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: .02em;
+  }
+  .lib-add-btn:active { background: var(--green-hover); }
+  /* Edit mode — red asterisk on empty fields */
+  .field-label .req-star { color: #dc2626; margin-left: 3px; font-size: 13px; }
+  /* Edit mode header badge */
+  .edit-badge {
+    display: none;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--yellow);
+    margin-top: 4px;
+    letter-spacing: .02em;
+  }
+  .edit-mode .edit-badge { display: block; }
 </style>
 </head>
 <body>
 
+<!-- ══════════════════ SCREEN 0: LIBRARY ══════════════════ -->
+<div class="screen active" id="screen-library">
+
+  <div class="masthead">
+    <div class="header-upper">
+      <div class="hu-left">My Golf Scores</div>
+      <div class="hu-right"></div>
+      <div class="hu-date" id="lib-date"></div>
+      <div class="hu-dur"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top"><div class="hl-title">Courses</div></div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="lib-list" id="lib-list"></div>
+    <button class="lib-add-btn" onclick="startAddCourse()">+ Add Course</button>
+  </div>
+
+  <div class="nav-bar">
+    <button class="btn-3d btn-grey" onclick="goHome()">App</button>
+    <div></div>
+  </div>
+  <div class="footer"></div>
+
+</div>
+
 <!-- ══════════════════ SCREEN 1: BASICS ══════════════════ -->
-<div class="screen active" id="screen-basics">
+<div class="screen" id="screen-basics">
 
   <div class="masthead">
     <div class="header-upper">
@@ -300,7 +403,7 @@
       <div class="hu-dur"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="hl-title">Add Course</div></div>
+      <div class="header-lower-top"><div class="hl-title" id="basics-title">Add Course</div><div class="edit-badge" id="edit-badge"></div></div>
       <div class="header-lower-bot"></div>
     </div>
   </div>
@@ -477,14 +580,14 @@ function renderTeeDetails() {
       <div class="tee-detail-name">${esc(t.name)}</div>
       <div class="cr-sr-grid">
         <div>
-          <div class="cr-sr-label">Course Rating (CR)</div>
+          <div class="cr-sr-label" id="lbl-cr-${t.name}">Course Rating (CR)</div>
           <input type="number" class="cr-sr-input" id="cr-${t.name}"
                  placeholder="59.0" step="0.1" min="40" max="82"
                  inputmode="decimal" value="${esc(t.cr)}"
                  oninput="teesState.find(x=>x.name==='${t.name}').cr=this.value">
         </div>
         <div>
-          <div class="cr-sr-label">Slope Rating (SR)</div>
+          <div class="cr-sr-label" id="lbl-sr-${t.name}">Slope Rating (SR)</div>
           <input type="number" class="cr-sr-input" id="sr-${t.name}"
                  placeholder="86" step="1" min="55" max="155"
                  inputmode="numeric" value="${esc(t.sr)}"
@@ -509,6 +612,14 @@ function goToBasics() {
 }
 
 function goToHoles() {
+  // Pre-fill hole data if editing an existing course
+  if (editingId !== null) {
+    const course = getCache()[editingId];
+    renderHoleCards();
+    if (course) setTimeout(() => prefillHoleCards(course), 0);
+    showScreen('holes');
+    return;
+  }
   const name = document.getElementById('course-name').value.trim();
   if (!name) {
     alert('Please enter a course name.');
@@ -607,6 +718,151 @@ function scrollToHole(h) {
 }
 
 // ── Save Course ────────────────────────────────────────
+// ── EDIT MODE STATE ───────────────────────────────────
+let editingId = null;   // null = add new; set to course.id when editing
+
+// ── SCREEN 0: LIBRARY ─────────────────────────────────
+function renderLibrary() {
+  const cache   = getCache();
+  const courses = Object.values(cache)
+    .filter(c => c.club_name)
+    .sort((a, b) => (a.club_name || '').localeCompare(b.club_name || ''));
+  const el = document.getElementById('lib-list');
+  if (!el) return;
+
+  if (!courses.length) {
+    el.innerHTML = '<div class="lib-empty">No courses yet — tap Add Course.</div>';
+    return;
+  }
+
+  el.innerHTML = courses.map(c => {
+    const allTees = ((c.tees || {}).male || []).map(t => t.tee_name).join(', ');
+    const firstTee = ((c.tees || {}).male || [])[0];
+    const holesStr = firstTee ? firstTee.number_of_holes + ' holes' : '';
+    const meta = [allTees, holesStr].filter(Boolean).join(' · ');
+    const phoneHtml = c.phone
+      ? `<div class="lib-phone"><a href="tel:${esc(c.phone)}">${esc(c.phone)}</a></div>` : '';
+    const isUserAdded = Number(c.id) < 0;
+    const delBtn = isUserAdded
+      ? `<button class="lib-del" onclick="deleteCourse('${c.id}')" title="Delete">✕</button>` : '';
+    return `<div class="lib-item">
+      <div class="lib-info">
+        <div class="lib-name">${esc(c.club_name)}</div>
+        <div class="lib-sub">${esc(meta)}</div>
+        ${phoneHtml}
+      </div>
+      <div class="lib-actions">
+        <button class="lib-edit" onclick="editCourse('${c.id}')" title="Edit">✏️</button>
+        ${delBtn}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startAddCourse() {
+  editingId = null;
+  // Reset form to blank
+  document.getElementById('course-name').value  = '';
+  document.getElementById('course-phone').value = '';
+  teesState.forEach(t => { t.active = (t.name === 'Blue'); t.cr = ''; t.sr = ''; });
+  document.querySelectorAll('#tee-chips .tee-chip').forEach((chip, i) => {
+    chip.classList.toggle('active', TEE_ORDER[i] === 'Blue');
+  });
+  setHoles(18);
+  renderTeeDetails();
+  setEditMode(false);
+  showScreen('basics');
+}
+
+function editCourse(id) {
+  const cache  = getCache();
+  const course = cache[id];
+  if (!course) { alert('Course not found.'); return; }
+
+  editingId = course.id;
+
+  // Pre-fill Screen 1
+  document.getElementById('course-name').value  = course.club_name || '';
+  document.getElementById('course-phone').value = course.phone || '';
+
+  const maleTees = (course.tees || {}).male || [];
+  const firstTee = maleTees[0];
+  const holes    = firstTee ? (firstTee.number_of_holes || (firstTee.holes || []).length || 18) : 18;
+  setHoles(holes);
+
+  // Activate tee chips from saved data
+  const savedTeeNames = maleTees.map(t => t.tee_name);
+  teesState.forEach(t => {
+    t.active = savedTeeNames.includes(t.name);
+    const match = maleTees.find(m => m.tee_name === t.name);
+    t.cr = match ? (match.course_rating || '') : '';
+    t.sr = match ? (match.slope_rating  || '') : '';
+  });
+  document.querySelectorAll('#tee-chips .tee-chip').forEach((chip, i) => {
+    chip.classList.toggle('active', teesState[i].active);
+  });
+  renderTeeDetails();
+  applyFieldAsterisks();
+
+  setEditMode(true, course.club_name);
+  showScreen('basics');
+}
+
+function setEditMode(on, courseName) {
+  const title = document.getElementById('basics-title');
+  const badge = document.getElementById('edit-badge');
+  const stage = document.getElementById('basics-stage');
+  if (title) title.textContent = on ? 'Edit Course' : 'Add Course';
+  if (badge) badge.textContent = on ? 'Editing: ' + (courseName || '') : '';
+  if (stage) stage.classList.toggle('edit-mode', on);
+}
+
+function applyFieldAsterisks() {
+  // Mark CR/SR labels with a red asterisk if the value is empty/zero
+  teesState.filter(t => t.active).forEach(t => {
+    const crEl = document.getElementById('cr-' + t.name);
+    const srEl = document.getElementById('sr-' + t.name);
+    const crLbl = document.getElementById('lbl-cr-' + t.name);
+    const srLbl = document.getElementById('lbl-sr-' + t.name);
+    if (crLbl) {
+      const star = crLbl.querySelector('.req-star');
+      if (star) star.remove();
+      if (!crEl || !parseFloat(crEl.value)) {
+        crLbl.insertAdjacentHTML('beforeend', '<span class="req-star">*</span>');
+      }
+    }
+    if (srLbl) {
+      const star = srLbl.querySelector('.req-star');
+      if (star) star.remove();
+      if (!srEl || !parseInt(srEl.value)) {
+        srLbl.insertAdjacentHTML('beforeend', '<span class="req-star">*</span>');
+      }
+    }
+  });
+}
+
+function prefillHoleCards(course) {
+  const maleTees = (course.tees || {}).male || [];
+  const firstTee = maleTees[0];
+  if (!firstTee) return;
+  const holeData = firstTee.holes || [];
+
+  holeData.forEach((h, i) => {
+    const hNum = i + 1;
+    const parEl = document.getElementById('h' + hNum + '-par');
+    const siEl  = document.getElementById('h' + hNum + '-si');
+    if (parEl && h.par)    parEl.value = h.par;
+    if (siEl  && h.index)  siEl.value  = h.index;
+
+    // Yardage per tee
+    maleTees.forEach(t => {
+      const yEl = document.getElementById('h' + hNum + '-yds-' + t.tee_name);
+      if (yEl && t.holes && t.holes[i]) yEl.value = t.holes[i].yardage || '';
+    });
+  });
+  updateDots();
+}
+
 function saveCourse() {
   const name = document.getElementById('course-name').value.trim();
   if (!name) { alert('Course name is required.'); return; }
@@ -652,10 +908,15 @@ function saveCourse() {
     });
   });
 
-  // Assign a new negative ID (one below the lowest existing)
+  // Edit mode: overwrite existing; add mode: assign new negative ID
   const cache  = getCache();
-  const negIds = Object.keys(cache).map(Number).filter(n => n < 0);
-  const newId  = negIds.length ? Math.min(...negIds) - 1 : -1;
+  let newId;
+  if (editingId !== null) {
+    newId = editingId;
+  } else {
+    const negIds = Object.keys(cache).map(Number).filter(n => n < 0);
+    newId = negIds.length ? Math.min(...negIds) - 1 : -1;
+  }
 
   const phone = (document.getElementById('course-phone').value || '').trim();
 
@@ -669,27 +930,10 @@ function saveCourse() {
   };
 
   saveToCache(course);
-
-  // Reset form
-  document.getElementById('course-name').value  = '';
-  document.getElementById('course-phone').value = '';
-  teesState.forEach(t => {
-    t.active = (t.name === 'Blue');
-    t.cr = ''; t.sr = '';
-  });
-  document.querySelectorAll('#tee-chips .tee-chip').forEach((chip, i) => {
-    chip.classList.toggle('active', TEE_ORDER[i] === 'Blue');
-  });
-  setHoles(18);
-  renderTeeDetails();
-  renderSavedList();
-  goToBasics();
-
-  // Scroll to saved list
-  setTimeout(() => {
-    document.getElementById('saved-list')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 150);
+  editingId = null;
+  setEditMode(false);
+  renderLibrary();
+  showScreen('library');
 }
 
 // ── Saved Courses List ─────────────────────────────────
@@ -723,8 +967,11 @@ function renderSavedList() {
 }
 
 function deleteCourse(id) {
-  if (!confirm('Delete this course? This cannot be undone.')) return;
+  const cache = getCache();
+  const name = (cache[id] || {}).club_name || 'this course';
+  if (!confirm('Delete ' + name + '? The rounds you played there are safe in your scoresheet.')) return;
   removeFromCache(id);
+  renderLibrary();
   renderSavedList();
 }
 
@@ -735,8 +982,10 @@ function deleteCourse(id) {
   });
   document.getElementById('basics-date').textContent = today;
   document.getElementById('holes-date').textContent  = today;
+  document.getElementById('lib-date').textContent    = today;
   renderTeeDetails();
   renderSavedList();
+  renderLibrary();
 })();
 </script>
 </body>
