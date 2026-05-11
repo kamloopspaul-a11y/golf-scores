@@ -315,6 +315,14 @@
              maxlength="60" autocorrect="off" autocomplete="off" spellcheck="false">
     </div>
 
+    <!-- Phone -->
+    <div class="form-section">
+      <label class="field-label" for="course-phone">Phone <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(optional)</span></label>
+      <input type="tel" id="course-phone" class="field-input"
+             placeholder="e.g. 250-573-2453"
+             autocorrect="off" autocomplete="off">
+    </div>
+
     <!-- Holes -->
     <div class="form-section">
       <label class="field-label">Holes</label>
@@ -649,10 +657,13 @@ function saveCourse() {
   const negIds = Object.keys(cache).map(Number).filter(n => n < 0);
   const newId  = negIds.length ? Math.min(...negIds) - 1 : -1;
 
+  const phone = (document.getElementById('course-phone').value || '').trim();
+
   const course = {
     id:          newId,
     club_name:   name,
     course_name: name,
+    phone:       phone || undefined,
     location:    { city: '', state: 'BC', country: 'Canada' },
     tees:        { male: allTeeObjs, female: [] }   // male key for compat with course-select in index.html
   };
@@ -660,7 +671,8 @@ function saveCourse() {
   saveToCache(course);
 
   // Reset form
-  document.getElementById('course-name').value = '';
+  document.getElementById('course-name').value  = '';
+  document.getElementById('course-phone').value = '';
   teesState.forEach(t => {
     t.active = (t.name === 'Blue');
     t.cr = ''; t.sr = '';
@@ -698,11 +710,12 @@ function renderSavedList() {
     ].join(', ');
     const firstTee = ((c.tees || {}).male || (c.tees || {}).female || [])[0];
     const holesStr = firstTee ? firstTee.number_of_holes + ' holes' : '';
+    const phoneStr = c.phone ? ` · <a href="tel:${esc(c.phone)}" style="color:var(--green);text-decoration:none">${esc(c.phone)}</a>` : '';
     return `
       <div class="saved-item">
         <div>
           <div class="saved-name">${esc(c.club_name)}</div>
-          <div class="saved-sub">${esc(allTees)}${holesStr ? ' · ' + holesStr : ''}</div>
+          <div class="saved-sub">${esc(allTees)}${holesStr ? ' · ' + holesStr : ''}${phoneStr}</div>
         </div>
         <button class="del-btn" onclick="deleteCourse(${c.id})" title="Delete">✕</button>
       </div>`;
