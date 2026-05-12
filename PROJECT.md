@@ -138,6 +138,12 @@
 
 ## Open / Pending Items
 
+### courses.html — Edit Mode UX note
+- In edit mode, flag any unfilled fields (CR, SR, yardage) with a red asterisk beside the label.
+- Allow user to proceed/save with unfilled fields — asterisk is advisory only, not a blocker.
+- Applies especially to away courses entered from partial data (e.g. Valley GC missing CR/SR).
+- Build alongside the Courses landing page (Screen 0 — saved course list + edit pencil icon).
+
 ### Hot list — post-publish iPhone feedback (2026-04-29 evening)
 
 - [x] **Player name on Setup screen → non-editable display.** The single input field becomes display-only on Setup. Editable name moves into onboarding (first run / install) and Settings tab. Match Setup's player-name styling to how it appears on other screens. Default value still "Paul" until the install step is built.
@@ -351,7 +357,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 8, 2026
+**Last worked:** May 12, 2026
 
 ### What was completed this session
 - **Footer nav grid** — 8 text links on all non-hole screens (Setup, Front 9, Back 9, Save Round, Course)
@@ -495,3 +501,61 @@ The contextual message area and the offline queue are the same slot on the Home 
 - Stat screen header shows score just entered as confirmation (e.g. "Hole 4 · Bogey +1")
 
 **Status:** Design thread — build after Add Course panel (courses.html)
+
+---
+
+## Page Template Architecture (locked 2026-05-12)
+
+Every screen in this app — current and future — uses a five-zone flex-column layout. Zones are named and purpose-locked. No zone does two jobs.
+
+```
+┌─────────────────────────────────┐
+│  masthead   green · fixed       │  Branding, context (course, hole, date)
+├─────────────────────────────────┤
+│  stageScore white · fixed       │  Primary interaction (score counter, key input)
+│             OPTIONAL            │  Absent on screens with no primary fixed widget
+├─────────────────────────────────┤
+│  stageScrolls white · flex/scroll│ All other content — forms, lists, stats, tips
+│             ALWAYS PRESENT      │  Expands to fill space when stageScore is absent
+├─────────────────────────────────┤
+│  navBar     white · fixed       │  Action buttons (Next, Back, Save, Home, Add Course)
+│             ALWAYS PRESENT      │
+├─────────────────────────────────┤
+│  footer     green · fixed       │  Universal nav links — always present, every page
+└─────────────────────────────────┘
+```
+
+### CSS behaviour
+- `masthead`, `stageScore`, `navBar`, `footer` → `flex: 0 0 auto`
+- `stageScrolls` → `flex: 1 1 auto; overflow-y: auto`
+- When `stageScore` is `display: none`, `stageScrolls` fills the gap automatically
+
+### Zone map by screen
+
+| Screen | stageScore | stageScrolls | navBar |
+|--------|-----------|-------------|--------|
+| Hole (score) | Score counter | Stats (if on) | Back · Next |
+| Hole (stats) | Hole + score badge | FIR/GIR/PEN/UD/X-UD/PUTTS | Back · Next |
+| Add Scores | — | Date/Course/Tees form | Start Entry |
+| Courses listing | — | Course list | Home |
+| Add Course | — | Name/Address/Tees form | Back · Save Course |
+| Pro Tips | — | Tips content | Home |
+| Settings | — | Settings fields | Save |
+
+### Locked decisions from this thread
+- **Direction arrows** — no `←` or `→` on any label or button anywhere in the app. Labels only.
+- **Footer nav — universal** — same link set rendered on every screen including hole screens. One JS array, one render function. Change once, propagates everywhere.
+- **shared.js** — masthead and footer rendered from a shared JS file included by every HTML page. Eliminates copy-paste drift. Per-screen content (title, hole number, course name) passed as arguments to render functions.
+- **Stats on Add Scores — none** — historical round entry captures scores only. No stat screen appears in the Add Scores flow. Players with historical stats use their own export tools.
+- **Stat screen per hole — conditional** — live rounds only. If Record Stats toggle is OFF, stat screen is skipped entirely. If ON, stat screen appears between each hole's score entry and the next hole.
+- **stageScore is optional** — screens without a primary fixed interaction leave stageScore absent (`display: none`). stageScrolls fills the full middle zone.
+- **navBar replaces hole-actions** — the current `hole-actions` div is renamed/repurposed as `navBar`. Same visual treatment (white, fixed), same position. This is a naming and scoping cleanup, not a layout change.
+
+### Build sequence for template migration
+1. Write `shared.js` — NAV_LINKS array + `renderFooterNav()` + `renderMasthead()` functions
+2. Migrate `courses.html` to 5-zone template (closest to target already)
+3. Add `shared.js` to SW cache assets list
+4. Migrate `index.html` screens one at a time — hole screen last (most complex)
+5. Remove duplicated footer nav grids from each screen in `index.html`
+6. Build per-hole stat screen using the template
+

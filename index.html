@@ -3,6 +3,12 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.38 — 2026-05-12
+  - shared.js: NAV_LINKS, renderFooterNav(), showPanel() — single source of truth
+  - index.html: footer nav replaced with data-nav (shared.js auto-renders) on all non-hole screens
+  - CSS: hu-course → hu-breadcrumb (canonical class name)
+  - showPanel() removed from inline script; _handlePanel override wires add-scores
+  - fnav-btn color: white → yellow (matches courses.html canonical)
   v9.37 — May 11 2026
   - Add Scores screen: date picker + course/tee selectors + 9/18 toggle for 9-hole courses
   - Historical entry mode: state.historicalMode hides stats footer, uses selected date
@@ -288,7 +294,7 @@
     row-gap: 3px;
     margin-bottom: 14px;
   }
-  .hu-course {
+  .hu-breadcrumb {
     font-size: 13px; color: var(--yellow); font-weight: 500;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
@@ -666,6 +672,8 @@
   }
   /* ── Add Scores form ─────────────────────────────── */
   .as-body {
+    background: #fff;
+    margin-top: 12px;
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
@@ -725,7 +733,7 @@
   .fnav-btn {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.75);
+    color: var(--yellow);
     font-size: 12px;
     font-weight: 500;
     min-height: 34px;
@@ -858,28 +866,22 @@
     .ss-hero .ss-val { font-size: 46px; }
   }
 </style>
+<script src="shared.js"></script>
 <script>
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
       navigator.serviceWorker.register('sw.js').catch(()=>{});
     });
   }
-  // ── Footer nav panel stub ──────────────────────────────────────────
-  function showPanel(name) {
-    if (name === 'courses') { window.location.href = 'courses.html'; return; }
-    if (name === 'add-scores') { initAddScoresScreen(); showScreen('add-scores'); return; }
-    // Stub: remaining panels to be built.
-    const labels = {
-      'settings':      'Settings — coming soon',
-      'add-scores':    '__open__',
-      'pro-tips':      'Pro Tips — coming soon',
-      'penalty-rules': 'Penalty Rules — coming soon',
-      'quick-rules':   'Quick Rules — coming soon',
-      'game-formats':  'Game Formats — coming soon',
-      'my-stats':      'My Stats — coming soon',
-    };
-    alert(labels[name] || name);
-  }
+  // ── Page-specific panel handler (shared.js calls this first) ──────────
+  window._handlePanel = function(name) {
+    if (name === 'add-scores') {
+      initAddScoresScreen();
+      showScreen('add-scores');
+      return true;
+    }
+    return false;
+  };
 
 </script>
 </head>
@@ -888,7 +890,7 @@
 <div class="screen active" id="screen-setup">
   <div class="masthead">
     <div class="header-upper">
-      <div class="hu-course" id="setup-course-name"></div>
+      <div class="hu-breadcrumb" id="setup-course-name"></div>
       <div class="hu-weather" id="weather-setup">—</div>
       <div class="hu-date" id="setup-date-display"></div>
       <div class="hu-duration"></div>
@@ -919,38 +921,13 @@
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
   </div>
-  <div class="footer">
-    <div class="footer-grid">
-      <div class="fg-left">FIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">GIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PEN</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">X-UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PUTTS</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-    </div>
-    <div class="footer-nav-grid">
-      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
-      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
-      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
-      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
-      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
-      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
-      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
-      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
-    </div>
-  </div>
+  <div class="footer" data-nav></div>
 </div>
 <!-- ══════════════ ADD SCORES ══════════════ -->
 <div class="screen" id="screen-add-scores">
   <div class="masthead">
     <div class="header-upper">
-      <div class="hu-course" id="as-course-name"></div>
+      <div class="hu-breadcrumb" id="as-course-name"></div>
       <div class="hu-weather" id="weather-add-scores">—</div>
       <div class="hu-date" id="as-date-display"></div>
       <div class="hu-duration"></div>
@@ -988,26 +965,14 @@
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startHistoricalRound()">Start Entry</button>
   </div>
-  <div class="footer">
-    <div class="footer-grid"></div>
-    <div class="footer-nav-grid">
-      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
-      <button class="fnav-btn" onclick="showScreen('setup')">← Home</button>
-      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
-      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
-      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
-      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
-      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
-      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
-    </div>
-  </div>
+  <div class="footer" data-nav></div>
 </div>
 
 <!-- ══════════════ HOLE ══════════════ -->
 <div class="screen" id="screen-hole">
   <div class="hole-masthead">
     <div class="header-upper">
-      <div class="hu-course" id="hole-course-name"></div>
+      <div class="hu-breadcrumb" id="hole-course-name"></div>
       <div class="hu-weather" id="weather-hole">—</div>
       <div class="hu-date" id="hole-date-display"></div>
       <div class="hu-duration" id="hole-duration">00:00</div>
@@ -1064,7 +1029,7 @@
 <div class="screen" id="screen-midround">
   <div class="card-masthead">
     <div class="header-upper">
-      <div class="hu-course" id="midround-course-name"></div>
+      <div class="hu-breadcrumb" id="midround-course-name"></div>
       <div class="hu-weather" id="weather-midround">—</div>
       <div class="hu-date" id="midround-date-display"></div>
       <div class="hu-duration" id="midround-duration"></div>
@@ -1081,38 +1046,13 @@
     <button class="btn-3d nav-btn" onclick="goBackFromMidround()">Back</button>
     <button class="btn-3d nav-btn" onclick="continueToBack9()">Next</button>
   </div>
-  <div class="footer">
-    <div class="footer-grid">
-      <div class="fg-left">FIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">GIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PEN</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">X-UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PUTTS</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-    </div>
-    <div class="footer-nav-grid">
-      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
-      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
-      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
-      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
-      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
-      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
-      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
-      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
-    </div>
-  </div>
+  <div class="footer" data-nav></div>
 </div>
 <!-- ══════════════ FINAL SCORECARD ══════════════ -->
 <div class="screen" id="screen-card">
   <div class="card-masthead">
     <div class="header-upper">
-      <div class="hu-course" id="card-course-name"></div>
+      <div class="hu-breadcrumb" id="card-course-name"></div>
       <div class="hu-weather" id="weather-card">—</div>
       <div class="hu-date" id="card-date-display"></div>
       <div class="hu-duration" id="card-duration"></div>
@@ -1130,38 +1070,13 @@
     <button class="btn-3d nav-btn" onclick="goBackToRound()">Back</button>
     <button class="btn-3d nav-btn" onclick="submitRound()">Post Score</button>
   </div>
-  <div class="footer">
-    <div class="footer-grid">
-      <div class="fg-left">FIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">GIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PEN</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">X-UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PUTTS</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-    </div>
-    <div class="footer-nav-grid">
-      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
-      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
-      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
-      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
-      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
-      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
-      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
-      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
-    </div>
-  </div>
+  <div class="footer" data-nav></div>
 </div>
 <!-- ══════════════ SUCCESS ══════════════ -->
 <div class="screen" id="screen-success">
   <div class="card-masthead">
     <div class="header-upper">
-      <div class="hu-course" id="success-course-name"></div>
+      <div class="hu-breadcrumb" id="success-course-name"></div>
       <div class="hu-weather" id="weather-success">—</div>
       <div class="hu-date" id="success-date-display"></div>
       <div class="hu-duration" id="success-duration"></div>
@@ -1223,38 +1138,13 @@
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="newRound()">Start New Round</button>
   </div>
-  <div class="footer">
-    <div class="footer-grid">
-      <div class="fg-left">FIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">GIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PEN</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">X-UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PUTTS</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox"><span class="slider-bg"></span></label></div>
-    </div>
-    <div class="footer-nav-grid">
-      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
-      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
-      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
-      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
-      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
-      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
-      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
-      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
-    </div>
-  </div>
+  <div class="footer" data-nav></div>
 </div>
 <!-- ══════════════ COURSE SELECT ══════════════ -->
 <div class="screen" id="screen-course">
   <div class="masthead">
     <div class="header-upper">
-      <div class="hu-course" id="cs-course-name"></div>
+      <div class="hu-breadcrumb" id="cs-course-name"></div>
       <div class="hu-weather" id="cs-weather">—</div>
       <div class="hu-date" id="cs-date"></div>
       <div class="hu-duration"></div>
@@ -1280,19 +1170,7 @@
     <button class="btn-3d nav-btn" onclick="showScreen('setup')">Back</button>
     <button class="btn-3d nav-btn" id="use-course-btn" onclick="useSelectedCourse()" style="opacity:0.45;pointer-events:none">Use Course</button>
   </div>
-  <div class="footer">
-    <div class="footer-grid"></div>
-    <div class="footer-nav-grid">
-      <button class="fnav-btn" onclick="showPanel('settings')">Settings</button>
-      <button class="fnav-btn" onclick="showPanel('add-scores')">Add Scores</button>
-      <button class="fnav-btn" onclick="showPanel('pro-tips')">Pro Tips</button>
-      <button class="fnav-btn" onclick="showPanel('penalty-rules')">Penalty Rules</button>
-      <button class="fnav-btn" onclick="showPanel('quick-rules')">Quick Rules</button>
-      <button class="fnav-btn" onclick="showPanel('game-formats')">Game Formats</button>
-      <button class="fnav-btn" onclick="showPanel('my-stats')">My Stats</button>
-      <button class="fnav-btn" onclick="showPanel('courses')">Courses</button>
-    </div>
-  </div>
+  <div class="footer" data-nav></div>
 </div>
 <audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
 <script>

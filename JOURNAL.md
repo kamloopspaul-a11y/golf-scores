@@ -4,6 +4,64 @@
 
 ---
 
+## 2026-05-12 — index.html migrated to shared.js (Step 4+5 complete)
+
+**Did:**
+- Bumped to v9.38
+- Added `<script src="shared.js"></script>` in head
+- Removed inline `showPanel()` — shared.js provides it now
+- Added `window._handlePanel` override: intercepts `add-scores` to call `initAddScoresScreen()` + `showScreen()`; returns false for all others (shared.js handles)
+- CSS: `.hu-course` → `.hu-breadcrumb` (canonical name)
+- CSS: `.fnav-btn` color `rgba(255,255,255,0.75)` → `var(--yellow)` (matches courses.html)
+- HTML: all 6 non-hole screen footers (setup, add-scores, midround, card, success, course-select) replaced hardcoded `footer-grid + footer-nav-grid` blocks with `<div class="footer" data-nav></div>`
+- Hole screen footer: left intact — stat sliders (FIR/GIR/PEN/UD/X-UD/PUTTS) still functional, migrates when stat screen is built (Step 6)
+- All `hu-course` class attributes renamed to `hu-breadcrumb` across all 7 screen mastheads
+
+**Files changed:** `index.html`
+
+**Template migration complete.** shared.js is the single source of truth for footer nav across all pages.
+
+**Next build queue item:** Add Scores screen (repurposes hole screens for historical round entry)
+
+---
+
+## 2026-05-12 — courses.html migrated to 5-zone template (Step 2)
+
+**Did:**
+- Bumped to v1.2
+- Added `<script src="shared.js"></script>` in head
+- CSS class renames to canonical set: `hu-left` → `hu-breadcrumb`, `hu-right` → `hu-weather`, `hu-dur` → `hu-duration`, `hl-title` → `header-lower-title`, `.stage` → `.stage-scrolls`
+- Footer CSS: white background → transparent (green body shows through)
+- Added `.footer-nav-grid` and `.fnav-btn` (yellow) CSS
+- All 3 screen footer divs: added `data-nav` attribute — shared.js auto-renders nav on DOMContentLoaded
+- Removed advisory text from holes screen footer ("Par required · Yardage & SI optional")
+- HTML class attributes updated throughout to match canonical names
+- No JS logic changes — all existing functions intact
+
+**Files changed:** `courses.html`
+
+**Next:** Migrate `index.html` — one screen at a time, hole screen last
+
+---
+
+## 2026-05-12 — shared.js built (Step 1 of template migration)
+
+**Did:**
+- Created `shared.js` — v1.0, Golf PWA shared utilities
+- `NAV_LINKS` — single source of truth for all 8 footer nav links (Settings, Add Scores, Pro Tips, Penalty Rules, Quick Rules, Game Formats, My Stats, Courses)
+- `showPanel(name)` — universal handler; checks `window._handlePanel` override first, then handles cross-page navigation (courses.html, index.html), then stub alerts for unbuilt panels
+- `renderFooterNav(el)` — writes 4×2 grid into any element; used via `[data-nav]` attribute auto-init or called directly
+- `renderMasthead(el, opts)` — writes canonical 5-zone masthead HTML (breadcrumb, weather, date, duration, title, subtitle) with optional IDs for live JS updates
+- Auto-init on DOMContentLoaded: finds all `[data-nav]` elements and renders nav into them
+- Added `/shared.js` to SW cache ASSETS list; bumped SW to v34
+- CSS contract documented in shared.js header comment block
+
+**Files changed:** `shared.js` (new), `sw.js`
+
+**Next:** Migrate `courses.html` to 5-zone template (Step 2) — add `<script src="shared.js"></script>`, wire `[data-nav]` footer, replace masthead HTML with `renderMasthead()` call, update CSS class names to canonical set
+
+---
+
 ## 2026-05-09 — Onboarding screen + session init improvements
 
 **Did:**
@@ -536,3 +594,65 @@ Rewrote `sendReport_()` in `apps-script.gs` to address May 6 feedback. All chang
 **Files changed:** `sw.js`, `onboarding.html`, `PROJECT.md`, `JOURNAL.md`, `TODO_LIST.md`
 
 **Next:** Build the Add Course panel — manual course entry form + saved course list, stored in localStorage.
+
+---
+
+## 2026-05-11 — Add Course design, stat screen UX thread
+
+**Did:**
+- Designed `courses.html` — Add Course panel, two screens:
+  - Screen 1: Course basics (name, holes, par, tee checkboxes with inline CR/SR expansion)
+  - Screen 2: Hole-by-hole entry (one hole at a time — par, yardage per tee, stroke index, progress dots above nav buttons)
+- Locked tee colour order: Gold → White → Blue → Red (longest to shortest)
+- Locked tee options: Gold, White, Blue, Red only (no Black)
+- Locked architecture: separate `courses.html` file (not in index.html — rarely used, same pattern as onboarding.html)
+- Locked layout: Option B — full-page scroll, masthead always present, footer appears at bottom of content. Frees stage from fixed-height constraints, consistent across all admin/setup screens.
+- Footer nav links: yellow, no underline, rendered from shared JS array (change once, applies everywhere)
+- GPS coordinates: acquired silently in background, not shown in UI
+- Decided: "Courses" footer link triggers courses.html
+- New design thread: Stat entry moves from footer to Stage area — dedicated stat screen after score entry per hole. See PROJECT.md design threads.
+
+**Files changed:** `JOURNAL.md`, `PROJECT.md`, `TODO_LIST.md`
+
+**Next:** Build `courses.html` — scrollable Option B layout, Screen 1 basics form, Screen 2 hole-by-hole entry, add to SW cache (v32)
+
+---
+
+## 2026-05-12 — courses.html polish + 5-zone architecture locked
+
+**Did:**
+
+courses.html improvements:
+- Header upper-left changed to "Courses: Listings" on library screen
+- Tobiano auto-purged from localStorage on page load
+- `syncPhones()` upgraded — backfills missing phones AND injects new courses.json entries missing from cache
+- Valley Golf Centre added to courses.json (ID 12, 604-853-4653, 4211 Gladwin Road Abbotsford)
+- Tee display: Black/Silver/standalone Green filtered out; max 3 shortest shown; all names normalized to Title Case; combined tees (Gold/White) preserved
+- Holes text removed from library listings
+- ADD COURSE button: no +, all caps via CSS text-transform
+- HOME button: green, full width, dropped 50px, replaces grey "App" button
+- Footer: white background, text colour changed to var(--text-muted)
+- Address fields added to Add/Edit Course form: Street Address + City/Province (2-col grid, province 2-char uppercase, default BC)
+- `toAddrCase()` function — on-the-fly Canada Post title case as user types; province always uppercase; directionals and abbreviations preserved
+- City shown in library listing alongside tee info (e.g. "Blue, White, Red · Abbotsford")
+- Address pre-fills correctly in edit mode; cleared on new course
+
+index.html fix:
+- `as-body` missing `background: #fff` and `margin-top: 12px` — fixed. Add Scores entry fields now sit on white stage, not green body.
+
+**Locked decisions (all added to PROJECT.md):**
+- **5-zone page template** — masthead · stageScore (optional) · stageScrolls · navBar · footer. Every current and future screen uses this structure. Documented with zone map by screen type.
+- **shared.js** — NAV_LINKS array + renderMasthead() + renderFooterNav() render functions. One file, included by every HTML page. Change nav once, propagates everywhere.
+- **No direction arrows** — no ← or → on any label or button anywhere in the app.
+- **Footer nav universal** — same link set on every screen including hole screens.
+- **Stats on Add Scores — none** — historical entry is scores only. No stat screen in that flow.
+- **Per-hole stat screen — conditional** — live rounds only, only if Record Stats toggle is ON.
+- **Masthead schema locked** — four named slots: breadcrumb (yellow), title (large white variable — string or number), subtitle (bot row — par/yds on hole screens, empty elsewhere), plus weather/date/duration in header upper. renderMasthead() accepts all as parameters. Subtitle data flows from courses.json → localStorage → hole screen JS → renderMasthead().
+
+**Files changed:** `courses.html`, `courses.json`, `index.html`, `PROJECT.md`, `JOURNAL.md`
+
+**Next session (tomorrow afternoon):**
+- Build `shared.js` — NAV_LINKS + renderMasthead() + renderFooterNav()
+- Migrate `courses.html` to 5-zone template
+- Add shared.js to SW cache
+- Then begin index.html migration

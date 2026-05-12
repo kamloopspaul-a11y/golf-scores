@@ -1,12 +1,20 @@
 <!--
   My Golf Scores — Add Course
   courses.html
-  v1.1 — May 11 2026
+  v1.2 — 2026-05-12
+  - Migrated to 5-zone template: masthead · stageScrolls · navBar · footer
+  - Added shared.js: NAV_LINKS, renderFooterNav(), showPanel()
+  - Footer: green (transparent), nav rendered via [data-nav]
+  - CSS class names updated to canonical set:
+      hu-left → hu-breadcrumb, hu-right → hu-weather,
+      hu-dur → hu-duration, hl-title → header-lower-title,
+      .stage → .stage-scrolls
+v1.1 — 2026-05-11
   - Screen 0: Course Library — all courses A-Z, pencil to edit, Add Course button
   - Edit mode: pre-fills Screen 1 + Screen 2, saves back to same ID
   - Red asterisk on empty CR/SR fields (advisory, non-blocking)
   - screen-library is now the default landing screen
-v1.0 — May 11 2026
+v1.0 — 2026-05-11
   - Screen 1: course name, 9/18 toggle, tee chips with CR/SR
   - Screen 2: hole-by-hole entry
   - Saves to localStorage courseCache (negative IDs for manual courses)
@@ -23,6 +31,7 @@ v1.0 — May 11 2026
 <link rel="manifest" href="manifest.json">
 <title>Add Course</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="shared.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   button, input, select, textarea { font: inherit; }
@@ -75,21 +84,21 @@ v1.0 — May 11 2026
     row-gap: 3px;
     margin-bottom: 14px;
   }
-  .hu-left  { font-size: 13px; color: var(--yellow); font-weight: 500;
+  .hu-breadcrumb { font-size: 13px; color: var(--yellow); font-weight: 500;
               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hu-right { font-size: 13px; color: rgba(255,255,255,0.8); text-align: right; }
+  .hu-weather { font-size: 13px; color: rgba(255,255,255,0.8); text-align: right; }
   .hu-date  { font-size: 12px; color: rgba(255,255,255,0.5); }
-  .hu-dur   { font-size: 12px; color: rgba(255,255,255,0.5); text-align: right; }
+  .hu-duration { font-size: 12px; color: rgba(255,255,255,0.5); text-align: right; }
   .header-lower     { display: flex; flex-direction: column; }
   .header-lower-top { min-height: 86px; display: flex; align-items: flex-end; }
   .header-lower-bot { min-height: 38px; display: flex; align-items: center; }
-  .hl-title {
+  .header-lower-title {
     font-size: 56px; font-weight: 600; letter-spacing: -2px;
     color: white; line-height: 1; white-space: nowrap;
   }
 
-  /* ── STAGE ─────────────────────────────────────────── */
-  .stage {
+  /* ── STAGE SCROLLS ─────────────────────────────────── */
+  .stage-scrolls {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
@@ -113,10 +122,28 @@ v1.0 — May 11 2026
     min-height: calc(52px + env(safe-area-inset-bottom));
     padding: 10px 16px calc(env(safe-area-inset-bottom) + 10px);
     flex: 0 0 auto;
-    color: rgba(255,255,255,0.6);
-    font-size: 12px;
-    text-align: center;
   }
+  /* Footer nav — 4×2 utility link grid (rendered by shared.js) */
+  .footer-nav-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .fnav-btn {
+    background: none;
+    border: none;
+    color: var(--yellow);
+    font-size: 12px;
+    font-weight: 500;
+    min-height: 34px;
+    padding: 4px 8px;
+    text-align: center;
+    cursor: pointer;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
+  }
+  .fnav-btn:active { color: white; }
 
   /* ── 3D BUTTONS ────────────────────────────────────── */
   .btn-3d {
@@ -189,6 +216,7 @@ v1.0 — May 11 2026
   }
   .tee-detail-name { font-size: 15px; font-weight: 600; color: var(--green); margin-bottom: 10px; }
   .cr-sr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .city-prov-grid { display: grid; grid-template-columns: 1fr 72px; gap: 10px; }
   .cr-sr-label {
     font-size: 10px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;
@@ -285,7 +313,7 @@ v1.0 — May 11 2026
     .header-upper { margin-bottom: 4px; }
     .header-lower-top { min-height: 74px; }
     .header-lower-bot { min-height: 32px; }
-    .hl-title { font-size: 46px; }
+    .header-lower-title { font-size: 46px; }
   }
 
   .hidden { display: none !important; }
@@ -347,6 +375,9 @@ v1.0 — May 11 2026
     letter-spacing: .02em;
   }
   .lib-add-btn:active { background: var(--green-hover); }
+  .lib-add-btn { text-transform: uppercase; letter-spacing: 0.06em; }
+  /* Library screen: drop HOME button by ~one button height */
+  #screen-library .nav-bar { padding-top: 50px; }
   /* Edit mode — red asterisk on empty fields */
   .field-label .req-star { color: #dc2626; margin-left: 3px; font-size: 13px; }
   /* Edit mode header badge */
@@ -368,27 +399,26 @@ v1.0 — May 11 2026
 
   <div class="masthead">
     <div class="header-upper">
-      <div class="hu-left">My Golf Scores</div>
-      <div class="hu-right"></div>
+      <div class="hu-breadcrumb">Courses: Listings</div>
+      <div class="hu-weather"></div>
       <div class="hu-date" id="lib-date"></div>
-      <div class="hu-dur"></div>
+      <div class="hu-duration"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="hl-title">Courses</div></div>
+      <div class="header-lower-top"><div class="header-lower-title">Courses</div></div>
       <div class="header-lower-bot"></div>
     </div>
   </div>
 
-  <div class="stage">
+  <div class="stage-scrolls">
     <div class="lib-list" id="lib-list"></div>
-    <button class="lib-add-btn" onclick="startAddCourse()">+ Add Course</button>
+    <button class="lib-add-btn" onclick="startAddCourse()">Add Course</button>
   </div>
 
   <div class="nav-bar">
-    <button class="btn-3d btn-grey" onclick="goHome()">App</button>
-    <div></div>
+    <button class="btn-3d" onclick="goHome()">HOME</button>
   </div>
-  <div class="footer"></div>
+  <div class="footer" data-nav></div>
 
 </div>
 
@@ -397,18 +427,18 @@ v1.0 — May 11 2026
 
   <div class="masthead">
     <div class="header-upper">
-      <div class="hu-left">My Golf Scores</div>
-      <div class="hu-right"></div>
+      <div class="hu-breadcrumb">My Golf Scores</div>
+      <div class="hu-weather"></div>
       <div class="hu-date" id="basics-date"></div>
-      <div class="hu-dur"></div>
+      <div class="hu-duration"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="hl-title" id="basics-title">Add Course</div><div class="edit-badge" id="edit-badge"></div></div>
+      <div class="header-lower-top"><div class="header-lower-title" id="basics-title">Add Course</div><div class="edit-badge" id="edit-badge"></div></div>
       <div class="header-lower-bot"></div>
     </div>
   </div>
 
-  <div class="stage" id="basics-stage">
+  <div class="stage-scrolls" id="basics-stage">
 
     <!-- Course Name -->
     <div class="form-section">
@@ -424,6 +454,30 @@ v1.0 — May 11 2026
       <input type="tel" id="course-phone" class="field-input"
              placeholder="e.g. 250-573-2453"
              autocorrect="off" autocomplete="off">
+    </div>
+
+    <!-- Street Address -->
+    <div class="form-section">
+      <label class="field-label" for="course-street">Street Address <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(optional)</span></label>
+      <input type="text" id="course-street" class="field-input"
+             placeholder="e.g. 4211 Gladwin Road"
+             autocorrect="off" autocomplete="off" spellcheck="false"
+             oninput="this.value=toAddrCase(this.value)">
+    </div>
+
+    <!-- City / Province -->
+    <div class="form-section">
+      <label class="field-label">City &amp; Province <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(optional)</span></label>
+      <div class="city-prov-grid">
+        <input type="text" id="course-city" class="field-input"
+               placeholder="Kamloops"
+               autocorrect="off" autocomplete="off" spellcheck="false"
+               oninput="this.value=toAddrCase(this.value)">
+        <input type="text" id="course-province" class="field-input"
+               placeholder="BC" maxlength="2"
+               autocorrect="off" autocomplete="off" spellcheck="false"
+               oninput="this.value=this.value.toUpperCase()">
+      </div>
     </div>
 
     <!-- Holes -->
@@ -461,7 +515,7 @@ v1.0 — May 11 2026
     <button class="btn-3d btn-grey" onclick="goHome()">App</button>
     <button class="btn-3d" onclick="goToHoles()">Hole Data</button>
   </div>
-  <div class="footer"></div>
+  <div class="footer" data-nav></div>
 
 </div>
 
@@ -471,18 +525,18 @@ v1.0 — May 11 2026
 
   <div class="masthead">
     <div class="header-upper">
-      <div class="hu-left" id="holes-course-label">My Golf Scores</div>
-      <div class="hu-right"></div>
+      <div class="hu-breadcrumb" id="holes-course-label">My Golf Scores</div>
+      <div class="hu-weather"></div>
       <div class="hu-date" id="holes-date"></div>
-      <div class="hu-dur"></div>
+      <div class="hu-duration"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="hl-title">Hole Data</div></div>
+      <div class="header-lower-top"><div class="header-lower-title">Hole Data</div></div>
       <div class="header-lower-bot"></div>
     </div>
   </div>
 
-  <div class="stage" id="holes-stage">
+  <div class="stage-scrolls" id="holes-stage">
     <div class="nav-dots" id="hole-dots"></div>
     <div id="hole-cards"></div>
   </div>
@@ -491,7 +545,7 @@ v1.0 — May 11 2026
     <button class="btn-3d btn-grey" onclick="goToBasics()">Back</button>
     <button class="btn-3d" onclick="saveCourse()">Save Course</button>
   </div>
-  <div class="footer">Par required · Yardage &amp; SI optional</div>
+  <div class="footer" data-nav></div>
 
 </div>
 
@@ -721,6 +775,76 @@ function scrollToHole(h) {
 // ── EDIT MODE STATE ───────────────────────────────────
 let editingId = null;   // null = add new; set to course.id when editing
 
+// ── Address title-case (Canada Post word order, on-the-fly) ──
+const ADDR_UPPER = new Set(['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','NT','YT','NU',
+                             'PO','NE','NW','SE','SW','N','S','E','W']);
+function toAddrCase(str) {
+  return str.replace(/[A-Za-z]+/g, w =>
+    ADDR_UPPER.has(w.toUpperCase()) ? w.toUpperCase()
+      : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+  );
+}
+
+// ── Tee display helpers ───────────────────────────────
+const TEE_EXCLUDE_SOLO = ['black', 'silver', 'green'];
+
+function toTitleCase(str) {
+  // Converts BLUE → Blue, WHITE/BLUE → White/Blue, etc.
+  return str.replace(/[A-Za-z]+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
+function filterDisplayTees(teeNames) {
+  // Remove solo tees we never play (Black, Silver, standalone Green)
+  const filtered = teeNames.filter(name => {
+    const low = name.toLowerCase();
+    // Keep combined tees (contain /) regardless
+    if (low.includes('/')) return true;
+    return !TEE_EXCLUDE_SOLO.includes(low);
+  });
+  // Keep at most 3 shortest (arrays run longest → shortest, so slice from end)
+  return filtered.length > 3 ? filtered.slice(-3) : filtered;
+}
+
+// ── One-time: purge Tobiano from cache ────────────────
+function purgeTobiano() {
+  const c = getCache();
+  const before = Object.keys(c).length;
+  Object.keys(c).forEach(k => {
+    if ((c[k].club_name || '').toLowerCase().includes('tobiano')) delete c[k];
+  });
+  if (Object.keys(c).length !== before) localStorage.setItem('courseCache', JSON.stringify(c));
+}
+
+// ── Sync from courses.json: fill missing phones + inject new entries ──
+async function syncPhones() {
+  try {
+    const resp = await fetch('courses.json');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const cache = getCache();
+    let changed = false;
+    Object.entries(data).forEach(([k, src]) => {
+      if (k === '_meta' || !src || !src.id) return;
+      const key = String(src.id);
+      if (cache[key]) {
+        // Update phone if the cached entry is missing it
+        if (src.phone && !cache[key].phone) {
+          cache[key].phone = src.phone;
+          changed = true;
+        }
+      } else {
+        // Course not in cache yet — inject it (e.g. Valley Golf Centre)
+        cache[key] = { ...src, cachedAt: new Date().toISOString().split('T')[0] };
+        changed = true;
+      }
+    });
+    if (changed) {
+      localStorage.setItem('courseCache', JSON.stringify(cache));
+      renderLibrary();
+    }
+  } catch(e) {}
+}
+
 // ── SCREEN 0: LIBRARY ─────────────────────────────────
 function renderLibrary() {
   const cache   = getCache();
@@ -736,10 +860,10 @@ function renderLibrary() {
   }
 
   el.innerHTML = courses.map(c => {
-    const allTees = ((c.tees || {}).male || []).map(t => t.tee_name).join(', ');
-    const firstTee = ((c.tees || {}).male || [])[0];
-    const holesStr = firstTee ? firstTee.number_of_holes + ' holes' : '';
-    const meta = [allTees, holesStr].filter(Boolean).join(' · ');
+    const rawTees = ((c.tees || {}).male || []).map(t => t.tee_name);
+    const teeStr  = filterDisplayTees(rawTees).map(toTitleCase).join(', ');
+    const cityStr = (c.location || {}).city || '';
+    const meta    = [teeStr, cityStr].filter(Boolean).join(' · ');
     const phoneHtml = c.phone
       ? `<div class="lib-phone"><a href="tel:${esc(c.phone)}">${esc(c.phone)}</a></div>` : '';
     const isUserAdded = Number(c.id) < 0;
@@ -762,8 +886,11 @@ function renderLibrary() {
 function startAddCourse() {
   editingId = null;
   // Reset form to blank
-  document.getElementById('course-name').value  = '';
-  document.getElementById('course-phone').value = '';
+  document.getElementById('course-name').value     = '';
+  document.getElementById('course-phone').value    = '';
+  document.getElementById('course-street').value   = '';
+  document.getElementById('course-city').value     = '';
+  document.getElementById('course-province').value = 'BC';
   teesState.forEach(t => { t.active = (t.name === 'Blue'); t.cr = ''; t.sr = ''; });
   document.querySelectorAll('#tee-chips .tee-chip').forEach((chip, i) => {
     chip.classList.toggle('active', TEE_ORDER[i] === 'Blue');
@@ -782,8 +909,12 @@ function editCourse(id) {
   editingId = course.id;
 
   // Pre-fill Screen 1
-  document.getElementById('course-name').value  = course.club_name || '';
-  document.getElementById('course-phone').value = course.phone || '';
+  document.getElementById('course-name').value     = course.club_name || '';
+  document.getElementById('course-phone').value    = course.phone || '';
+  const loc = course.location || {};
+  document.getElementById('course-street').value   = toAddrCase(loc.address  || '');
+  document.getElementById('course-city').value     = toAddrCase(loc.city     || '');
+  document.getElementById('course-province').value = (loc.state || 'BC').toUpperCase();
 
   const maleTees = (course.tees || {}).male || [];
   const firstTee = maleTees[0];
@@ -918,14 +1049,22 @@ function saveCourse() {
     newId = negIds.length ? Math.min(...negIds) - 1 : -1;
   }
 
-  const phone = (document.getElementById('course-phone').value || '').trim();
+  const phone    = (document.getElementById('course-phone').value    || '').trim();
+  const street   = (document.getElementById('course-street').value   || '').trim();
+  const city     = (document.getElementById('course-city').value     || '').trim();
+  const province = (document.getElementById('course-province').value || 'BC').trim().toUpperCase();
 
   const course = {
     id:          newId,
     club_name:   name,
     course_name: name,
-    phone:       phone || undefined,
-    location:    { city: '', state: 'BC', country: 'Canada' },
+    phone:       phone  || undefined,
+    location: {
+      address: street   || undefined,
+      city:    city     || '',
+      state:   province || 'BC',
+      country: 'Canada'
+    },
     tees:        { male: allTeeObjs, female: [] }   // male key for compat with course-select in index.html
   };
 
@@ -977,6 +1116,7 @@ function deleteCourse(id) {
 
 // ── Init ───────────────────────────────────────────────
 (function init() {
+  purgeTobiano();
   const today = new Date().toLocaleDateString('en-CA', {
     weekday: 'short', month: 'short', day: 'numeric'
   });
@@ -986,6 +1126,7 @@ function deleteCourse(id) {
   renderTeeDetails();
   renderSavedList();
   renderLibrary();
+  syncPhones(); // async — updates cache then re-renders if phones were missing
 })();
 </script>
 </body>
