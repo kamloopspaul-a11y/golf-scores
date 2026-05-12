@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.39 — 2026-05-12
+  v9.40 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -655,29 +655,26 @@
     row-gap: 6px;
     font-size: 13px;
   }
+  .stats-zone {
+    flex: 0 0 auto;
+    padding: 20px 20px 0;
+    color: white;
+  }
   .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
-  /* Stat controls belong only on the hole screen */
-  #screen-setup      .footer-grid,
-  #screen-midround   .footer-grid,
-  #screen-card       .footer-grid,
-  #screen-success    .footer-grid,
-  #screen-add-scores .footer-grid { display: none; }
+  /* Stat controls belong only on the hole screen — .footer-grid lives in .stats-zone */
   /* Non-hole screens don't have stat sliders — release the 220px floor */
   #screen-setup      .footer,
   #screen-midround   .footer,
   #screen-card       .footer,
   #screen-success    .footer,
-  #screen-add-scores .footer {
+  #screen-add-scores .footer,
+  #screen-hole       .footer {
     min-height: calc(env(safe-area-inset-bottom) + 8px);
     padding-top: 8px;
   }
-  /* Historical entry mode — hide stats footer on hole screen */
-  #screen-hole.historical .footer-grid { display: none; }
-  #screen-hole.historical .footer {
-    min-height: calc(env(safe-area-inset-bottom) + 8px);
-    padding-top: 8px;
-  }
+  /* Historical entry mode — hide stats zone on hole screen */
+  #screen-hole.historical .stats-zone { display: none; }
   /* ── Add Scores form ─────────────────────────────── */
   .as-body {
     background: #fff;
@@ -1016,7 +1013,7 @@
     <button class="btn-3d nav-btn" id="back-btn" onclick="prevHole()">HOME</button>
     <button class="btn-3d nav-btn" id="next-btn" onclick="nextHole()">NEXT</button>
   </div>
-  <div class="footer">
+  <div class="stats-zone">
     <div class="footer-grid">
       <div class="fg-left">FIR</div>
       <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
@@ -1032,6 +1029,7 @@
       <div class="fg-right"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
     </div>
   </div>
+  <div class="footer" data-nav></div>
 </div>
 <!-- ══════════════ MID-ROUND 9-HOLE CARD ══════════════ -->
 <div class="screen" id="screen-midround">
