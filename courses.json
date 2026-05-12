@@ -1,15 +1,15 @@
 {
   "_meta": {
-    "_comment": "My Golf Scores \u2014 regional course seed file. Loaded at first launch and merged into localStorage courseCache.",
+    "_comment": "My Golf Scores — regional course seed file. Loaded at first launch and merged into localStorage courseCache.",
     "_format_version": "1",
     "_updated": "2026-05-11",
     "_instructions": [
       "Keys are course IDs (strings). API courses use positive integer IDs matching GolfCourseAPI.com.",
       "Manual courses (no API record) use NEGATIVE integer IDs: '-1', '-2', etc.",
       "Each entry: id, club_name, course_name, location {address?, city, state, country, latitude?, longitude?},",
-      "  tees { male: [...], female: [...] } \u2014 each tee:",
+      "  tees { male: [...], female: [...] } — each tee:",
       "  tee_name, course_rating, slope_rating, number_of_holes, par_total, total_yards,",
-      "  holes: [{par, yardage}, ...] \u2014 18 entries.",
+      "  holes: [{par, yardage}, ...] — 18 entries.",
       "cachedAt: ISO date (YYYY-MM-DD).",
       "To add a manual course: copy an existing entry, assign a new negative ID, fill in the data, append at end."
     ]
@@ -940,7 +940,7 @@
     "club_name": "Chinook Cove",
     "course_name": "Chinook Cove",
     "location": {
-      "address": "5045 Boulder Mountain Rd, Barri\u00e8re, BC V0E 1E0, Canada",
+      "address": "5045 Boulder Mountain Rd, Barriere, BC V0E 1E0, Canada",
       "city": "Barriere",
       "state": "BC",
       "country": "Canada",
@@ -3003,7 +3003,7 @@
     "club_name": "Meadow Creek",
     "course_name": "Meadow Creek",
     "phone": "250-523-6666",
-    "notes": "9-hole course played twice for 18. Some holes use different tee boxes on back 9 (reflected in yardages). Tee names WHITE/BLUE and RED/GOLD indicate mixed tee sets.",
+    "notes": "9-hole course played twice for 18. Some holes use different tee boxes on back 9 (reflected in yardages). Tee names White/Blue and Red/Gold indicate mixed tee sets.",
     "location": {
       "address": "Logan Lake, BC V0K, Canada",
       "city": "Logan Lake",
@@ -7645,5 +7645,22 @@
     },
     "cachedAt": "2026-05-01",
     "phone": "250-579-3300"
+  },
+  "12": {
+    "id": 12,
+    "club_name": "Valley Golf Centre",
+    "course_name": "Valley Golf Centre",
+    "phone": "604-853-4653",
+    "location": {
+      "address": "4211 Gladwin Road, Abbotsford, BC V4X 1W6",
+      "city": "Abbotsford",
+      "state": "BC",
+      "country": "Canada"
+    },
+    "tees": {
+      "male": [],
+      "female": []
+    },
+    "cachedAt": "2026-05-11"
   }
 }
