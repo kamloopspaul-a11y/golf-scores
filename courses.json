@@ -3435,7 +3435,7 @@
       "male": [
         {
           "tee_name": "Blue",
-          "course_rating": 59.0,
+          "course_rating": 59,
           "slope_rating": 86,
           "number_of_holes": 18,
           "par_total": 64,
@@ -3958,7 +3958,7 @@
         },
         {
           "tee_name": "Red",
-          "course_rating": 51.0,
+          "course_rating": 51,
           "slope_rating": 78,
           "number_of_holes": 18,
           "par_total": 55,
@@ -7645,22 +7645,5 @@
     },
     "cachedAt": "2026-05-01",
     "phone": "250-579-3300"
-  },
-  "12": {
-    "id": 12,
-    "club_name": "Valley GC",
-    "course_name": "Valley GC",
-    "phone": "604-853-4653",
-    "location": {
-      "address": "4211 Gladwin Road, Abbotsford, BC V4X 1W6",
-      "city": "Abbotsford",
-      "state": "BC",
-      "country": "Canada"
-    },
-    "tees": {
-      "male": [],
-      "female": []
-    },
-    "cachedAt": "2026-05-11"
   }
 }
