@@ -1,6 +1,13 @@
 <!--
   My Golf Scores — Add Course
   courses.html
+  v1.3 — 2026-05-12
+  - ADD COURSE: btn-3d 3D styling
+  - screen-basics: BACK|NEXT (green), removed Saved Courses section
+  - screen-holes: BACK|SAVE COURSE (green), all-caps
+  - Breadcrumb dynamic: Courses: Add / Courses: Edit per mode
+  - Edit mode title shows course name, badge retired
+  - goToLibrary() added for BACK from basics
   v1.2 — 2026-05-12
   - Migrated to 5-zone template: masthead · stageScrolls · navBar · footer
   - Added shared.js: NAV_LINKS, renderFooterNav(), showPanel()
@@ -412,7 +419,7 @@ v1.0 — 2026-05-11
 
   <div class="stage-scrolls">
     <div class="lib-list" id="lib-list"></div>
-    <button class="lib-add-btn" onclick="startAddCourse()">Add Course</button>
+    <button class="btn-3d" style="width:100%;margin-top:16px" onclick="startAddCourse()">ADD COURSE</button>
   </div>
 
   <div class="nav-bar">
@@ -427,7 +434,7 @@ v1.0 — 2026-05-11
 
   <div class="masthead">
     <div class="header-upper">
-      <div class="hu-breadcrumb">My Golf Scores</div>
+      <div class="hu-breadcrumb">Courses: Add</div>
       <div class="hu-weather"></div>
       <div class="hu-date" id="basics-date"></div>
       <div class="hu-duration"></div>
@@ -502,19 +509,12 @@ v1.0 — 2026-05-11
       <div id="tee-details"></div>
     </div>
 
-    <hr class="section-divider">
-
-    <!-- Saved Courses -->
-    <div class="form-section">
-      <label class="field-label">Saved Courses</label>
-      <div id="saved-list"></div>
-    </div>
 
   </div><!-- /stage -->
 
   <div class="nav-bar">
-    <button class="btn-3d btn-grey" onclick="goHome()">App</button>
-    <button class="btn-3d" onclick="goToHoles()">Hole Data</button>
+    <button class="btn-3d" onclick="goToLibrary()">BACK</button>
+    <button class="btn-3d" onclick="goToHoles()">NEXT</button>
   </div>
   <div class="footer" data-nav></div>
 
@@ -526,7 +526,7 @@ v1.0 — 2026-05-11
 
   <div class="masthead">
     <div class="header-upper">
-      <div class="hu-breadcrumb" id="holes-course-label">My Golf Scores</div>
+      <div class="hu-breadcrumb" id="holes-course-label">Courses: Hole Data</div>
       <div class="hu-weather"></div>
       <div class="hu-date" id="holes-date"></div>
       <div class="hu-duration"></div>
@@ -543,8 +543,8 @@ v1.0 — 2026-05-11
   </div>
 
   <div class="nav-bar">
-    <button class="btn-3d btn-grey" onclick="goToBasics()">Back</button>
-    <button class="btn-3d" onclick="saveCourse()">Save Course</button>
+    <button class="btn-3d" onclick="goToBasics()">BACK</button>
+    <button class="btn-3d" onclick="saveCourse()">SAVE COURSE</button>
   </div>
   <div class="footer" data-nav></div>
 
@@ -672,6 +672,10 @@ function goHome() {
   window.location.href = 'index.html';
 }
 
+function goToLibrary() {
+  showScreen('library');
+}
+
 function goToBasics() {
   showScreen('basics');
 }
@@ -697,7 +701,7 @@ function goToHoles() {
     return;
   }
   syncTeeInputsToState();
-  document.getElementById('holes-course-label').textContent = name;
+  document.getElementById('holes-course-label').textContent = 'Courses: ' + name;
   renderHoleCards();
   showScreen('holes');
   document.getElementById('holes-stage').scrollTop = 0;
@@ -954,9 +958,11 @@ function setEditMode(on, courseName) {
   const title = document.getElementById('basics-title');
   const badge = document.getElementById('edit-badge');
   const stage = document.getElementById('basics-stage');
-  if (title) title.textContent = on ? 'Edit Course' : 'Add Course';
-  if (badge) badge.textContent = on ? 'Editing: ' + (courseName || '') : '';
+  const bc    = document.querySelector('#screen-basics .hu-breadcrumb');
+  if (title) title.textContent = on ? (courseName || 'Edit Course') : 'Add Course';
+  if (badge) badge.textContent = '';   // badge retired — breadcrumb carries context
   if (stage) stage.classList.toggle('edit-mode', on);
+  if (bc)    bc.textContent = on ? 'Courses: Edit' : 'Courses: Add';
 }
 
 function applyFieldAsterisks() {
@@ -1122,7 +1128,6 @@ function deleteCourse(id) {
   if (!confirm('Delete ' + name + '? The rounds you played there are safe in your scoresheet.')) return;
   removeFromCache(id);
   renderLibrary();
-  renderSavedList();
 }
 
 // ── Init ───────────────────────────────────────────────
@@ -1135,7 +1140,6 @@ function deleteCourse(id) {
   document.getElementById('holes-date').textContent  = today;
   document.getElementById('lib-date').textContent    = today;
   renderTeeDetails();
-  renderSavedList();
   renderLibrary();
   syncPhones(); // async — updates cache then re-renders if phones were missing
 })();

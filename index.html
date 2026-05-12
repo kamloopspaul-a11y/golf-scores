@@ -3,6 +3,9 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
+  v9.39 — 2026-05-12
+  - START ROUND button all-caps
+  - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
   - shared.js: NAV_LINKS, renderFooterNav(), showPanel() — single source of truth
   - index.html: footer nav replaced with data-nav (shared.js auto-renders) on all non-hole screens
@@ -346,7 +349,9 @@
   .player-input:focus { border-color: var(--green); }
   .player-name-display {
     display: block; cursor: default; pointer-events: none;
-    border-color: transparent; background: var(--green-pale); color: var(--green);
+    border-color: transparent; background: transparent;
+    color: var(--text-primary); font-size: 20px; font-weight: 600;
+    text-align: center; font-family: 'DM Sans', sans-serif;
   }
   /* ── 3D BUTTONS ────────────────────────────────────── */
   .btn-3d {
@@ -919,7 +924,7 @@
     <!-- end dev -->
   </div>
   <div class="hole-actions">
-    <button class="btn-3d nav-btn" onclick="startRound()">Start Round</button>
+    <button class="btn-3d nav-btn" onclick="startRound()">START ROUND</button>
   </div>
   <div class="footer" data-nav></div>
 </div>
