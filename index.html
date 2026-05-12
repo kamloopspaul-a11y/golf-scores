@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.40 — 2026-05-12
+  v9.41 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -655,14 +655,55 @@
     row-gap: 6px;
     font-size: 13px;
   }
-  .stats-zone {
-    flex: 0 0 auto;
-    padding: 20px 20px 0;
-    color: white;
+  /* ── STATS SCREEN ──────────────────────────────────── */
+  .stageScrolls {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    background: #fff;
+    margin-top: 12px;
   }
+  .stats-badge {
+    text-align: center;
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .stats-badge-score {
+    font-size: 56px; font-weight: 600; letter-spacing: -2px;
+    color: var(--text-primary); line-height: 1;
+    font-family: 'DM Mono', monospace;
+  }
+  .stats-badge-label {
+    font-size: 14px; color: var(--text-secondary); margin-top: 6px;
+    font-weight: 500; letter-spacing: 0.02em;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    padding: 0 24px;
+  }
+  .sg-label {
+    font-size: 15px; font-weight: 500; color: var(--text-primary);
+    align-self: center; padding: 15px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .sg-control {
+    align-self: center; justify-self: end; padding: 15px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  /* Last row — no divider */
+  .stats-grid .sg-label:last-of-type,
+  .stats-grid .sg-control:last-of-type { border-bottom: none; }
+  /* Slider colours for white background */
+  #screen-stats .switch .slider-bg { background: #d1d5db; }
+  #screen-stats .switch input:checked + .slider-bg { background: var(--green); }
+  /* Putts counter colours for white background */
+  #screen-stats .putts-counter {
+    background: var(--card); border: 1px solid var(--border);
+  }
+  #screen-stats .putts-btn { background: transparent; color: var(--green); }
+  #screen-stats #putts-value { color: var(--text-primary); }
   .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
-  /* Stat controls belong only on the hole screen — .footer-grid lives in .stats-zone */
   /* Non-hole screens don't have stat sliders — release the 220px floor */
   #screen-setup      .footer,
   #screen-midround   .footer,
@@ -673,8 +714,7 @@
     min-height: calc(env(safe-area-inset-bottom) + 8px);
     padding-top: 8px;
   }
-  /* Historical entry mode — hide stats zone on hole screen */
-  #screen-hole.historical .stats-zone { display: none; }
+  /* Historical entry mode — stats screen is skipped entirely (advanceHole called directly) */
   /* ── Add Scores form ─────────────────────────────── */
   .as-body {
     background: #fff;
@@ -1013,21 +1053,50 @@
     <button class="btn-3d nav-btn" id="back-btn" onclick="prevHole()">HOME</button>
     <button class="btn-3d nav-btn" id="next-btn" onclick="nextHole()">NEXT</button>
   </div>
-  <div class="stats-zone">
-    <div class="footer-grid">
-      <div class="fg-left">FIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">GIR</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-gir" onchange="statChanged('gir')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PEN</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-pen" onchange="statChanged('pen')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-ud" onchange="statChanged('ud')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">X-UD</div>
-      <div class="fg-right"><label class="switch"><input type="checkbox" id="slider-xud" onchange="statChanged('xud')"><span class="slider-bg"></span></label></div>
-      <div class="fg-left">PUTTS</div>
-      <div class="fg-right"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
+  <div class="footer" data-nav></div>
+</div>
+<!-- ══════════════ STATS ══════════════ -->
+<div class="screen" id="screen-stats">
+  <div class="hole-masthead">
+    <div class="header-upper">
+      <div class="hu-breadcrumb" id="stats-course-name"></div>
+      <div class="hu-weather" id="weather-stats">—</div>
+      <div class="hu-date" id="stats-date-display"></div>
+      <div class="hu-duration" id="stats-duration">00:00</div>
     </div>
+    <div class="header-lower">
+      <div class="header-lower-top">
+        <div class="hole-num" id="stats-hole-num">1</div>
+      </div>
+      <div class="header-lower-bot">
+        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="stats-par-display">4</span></span>
+        <span class="stat-pair"><span class="hole-stat-val" id="stats-yards-display">275</span><span class="hole-stat-label">YDS</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="stageScrolls">
+    <div class="stats-badge">
+      <div class="stats-badge-score" id="stats-badge-score">4</div>
+      <div class="stats-badge-label" id="stats-badge-label">Par</div>
+    </div>
+    <div class="stats-grid">
+      <div class="sg-label">FIR</div>
+      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
+      <div class="sg-label">GIR</div>
+      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-gir" onchange="statChanged('gir')"><span class="slider-bg"></span></label></div>
+      <div class="sg-label">PEN</div>
+      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-pen" onchange="statChanged('pen')"><span class="slider-bg"></span></label></div>
+      <div class="sg-label">UD</div>
+      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-ud" onchange="statChanged('ud')"><span class="slider-bg"></span></label></div>
+      <div class="sg-label">X-UD</div>
+      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-xud" onchange="statChanged('xud')"><span class="slider-bg"></span></label></div>
+      <div class="sg-label">PUTTS</div>
+      <div class="sg-control"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
+    </div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" onclick="statsBack()">BACK</button>
+    <button class="btn-3d nav-btn" onclick="statsNext()">NEXT</button>
   </div>
   <div class="footer" data-nav></div>
 </div>
@@ -1229,17 +1298,17 @@ async function fetchWeather() {
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function updateAllWeather() {
-  ["weather-setup","weather-hole","weather-midround","weather-card","weather-success","weather-ask","weather-add-scores"].forEach(id=>{
+  ["weather-setup","weather-hole","weather-stats","weather-midround","weather-card","weather-success","weather-ask","weather-add-scores"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=state.weatherStr;
   });
   updateCourseNameDisplay();
   const dateStr=state.date?formatDate(state.date):'';
-  ["setup-date-display","hole-date-display","midround-date-display","card-date-display","success-date-display","as-date-display"].forEach(id=>{
+  ["setup-date-display","hole-date-display","stats-date-display","midround-date-display","card-date-display","success-date-display","as-date-display"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=dateStr;
   });
   // Duration — propagate to all header duration slots
   const durStr=state.roundStartTime ? formatDuration(Date.now()-state.roundStartTime) : '';
-  ["hole-duration","midround-duration","card-duration","success-duration"].forEach(id=>{
+  ["hole-duration","stats-duration","midround-duration","card-duration","success-duration"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=durStr;
   });
 }
@@ -1371,17 +1440,46 @@ function adjustScore(delta){
 }
 // ── NAVIGATION ────────────────────────────────────────
 function nextHole(){
+  // Go to stats entry screen (unless historical mode — stats not tracked there)
+  if(!state.historicalMode){
+    showStatsScreen();
+  } else {
+    advanceHole();
+  }
+}
+function advanceHole(){
   if(state.currentHole===8 && state.totalHoles > 9){
-    // After hole 9 on an 18-hole course — show mid-round front 9 card
     state.midroundSeen = true;
     buildMidroundCard();
     showScreen('midround');
   } else if(state.currentHole<state.totalHoles-1){
-    state.currentHole++; showHole(state.currentHole);
+    state.currentHole++; showHole(state.currentHole); showScreen('hole');
   } else {
     showSummary();
   }
 }
+function showStatsScreen(){
+  const i = state.currentHole;
+  const hole = state.holeList[i];
+  const score = state.scores[state.activePlayer][i];
+  const diff = score - hole.par;
+  let label;
+  if(score===1)       label = 'Hole in One!';
+  else if(diff<=-2)   label = 'Eagle';
+  else if(diff===-1)  label = 'Birdie';
+  else if(diff===0)   label = 'Par';
+  else if(diff===1)   label = 'Bogey';
+  else                label = '+' + diff;
+  document.getElementById('stats-hole-num').textContent   = i + 1;
+  document.getElementById('stats-par-display').textContent  = hole.par;
+  document.getElementById('stats-yards-display').textContent = hole.yards;
+  document.getElementById('stats-badge-score').textContent  = score;
+  document.getElementById('stats-badge-label').textContent  = label;
+  syncStatSliders(i);
+  showScreen('stats');
+}
+function statsBack(){ showScreen('hole'); }
+function statsNext(){ advanceHole(); }
 function prevHole(){
   if(state.currentHole===0) showScreen('setup');
   else if(state.currentHole===9 && state.midroundSeen){
@@ -1858,7 +1956,7 @@ function useSelectedCourse() {
 function updateCourseNameDisplay() {
   const name = activeCourseData ? activeCourseData.name : COURSE.name;
   const label = 'Course: ' + name;
-  ["setup-course-name","hole-course-name","midround-course-name",
+  ["setup-course-name","hole-course-name","stats-course-name","midround-course-name",
    "card-course-name","success-course-name","cs-course-name","as-course-name"].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = label;
   });
