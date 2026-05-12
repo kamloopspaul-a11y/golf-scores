@@ -360,29 +360,24 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 **Last worked:** May 12, 2026
 
 ### What was completed this session
-- **Footer nav grid** — 8 text links on all non-hole screens (Setup, Front 9, Back 9, Save Round, Course)
-- **Links:** Settings, Add Scores, Pro Tips, Penalty Rules, Quick Rules, Game Formats, My Stats, Courses
-- **`showPanel()` stub** wired — alert placeholder per link
-- **Structural fix** — nav grid corrected to inside `.footer` div
-- **Styled as text-only** underlined links (no borders/backgrounds)
-- **v9.34** — bumped and changelog updated
+- **shared.js v1.0** — NAV_LINKS, showPanel(), renderFooterNav(), renderMasthead(); single source of truth for footer nav across all pages
+- **courses.html v1.3** — 5-zone template migration; canonical CSS class names (hu-breadcrumb etc.); footer nav via [data-nav]; breadcrumb dynamic (Courses: Add / Courses: Edit); ADD COURSE btn-3d; BACK|NEXT|SAVE COURSE all green/all-caps; Saved Courses section removed; phone field regular keyboard + auto-dash formatter
+- **index.html v9.39** — shared.js wired; _handlePanel for add-scores; hu-course → hu-breadcrumb; non-hole footers → data-nav; fnav-btn yellow; START ROUND all-caps; player name plain text (no green pill)
+- **sw.js v34** — shared.js added to cache ASSETS
+- All committed and pushed — live at kamloopspaul-a11y.github.io/golf-scores
 
 ### Files changed
-- `index.html` — footer nav grid, CSS, showPanel() stub
-- `JOURNAL.md`, `PROJECT.md` — updated
+- `shared.js` (new), `index.html`, `courses.html`, `sw.js`, `JOURNAL.md`, `PROJECT.md`
 
 ### Resume here next session
 
-**Last session: 2026-05-10** — Security hardening (removed hardcoded Apps Script URL from onboarding.html); courses.json added to SW cache (v31); old Scorecard and Stats tabs deleted from Google Sheets; GolfCourseAPI dropped; build order locked; Add Course panel named and scoped.
-
 **Build queue (in order):**
-1. **Add Course panel** — manual course entry form (name, tee sets, CR, SR, par/yardage/stroke index per hole, optional GPS coords). Saved to localStorage. List of saved courses. Foundation for Add Scores.
-2. **Add Scores screen** — entry setup (date picker + course selector defaulting to Mt. Paul + tees) → existing hole screens → post to Sheets. Stats footer hidden for historical rounds.
-3. **Auto-calculate HI from entered rounds** (WHS formula, best 8 of 20); display "—" until 20 rounds; fall back to Settings value if not yet computed.
-4. **Settings panel** — name, home tees, HI, email, Track Stats toggle, Stat Reports toggle.
-5. Make Focus Areas advice data-driven — current suggestions not grounded in captured data.
-6. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab.
-7. Player goal field (target HI + timeframe) → report framing shifts to progress narrative.
+1. **Add Scores screen** ← NEXT — entry setup (date picker + course selector defaulting to Mt. Paul + tees) → existing hole screens → post to Sheets. Stats footer hidden for historical rounds.
+2. **Auto-calculate HI from entered rounds** (WHS formula, best 8 of 20); display "—" until 20 rounds.
+3. **Settings panel** — name, home tees, HI, email, Track Stats toggle, Stat Reports toggle.
+4. Make Focus Areas advice data-driven.
+5. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab.
+6. Player goal field (target HI + timeframe) → report framing shifts to progress narrative.
 
 #### Other pre-release tasks
 1. Record Stats toggle (FIR/GIR/etc. on Setup screen)

@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-05-12 — UI polish + phone formatter (courses v1.3, index v9.39)
+
+**Did:**
+- courses.html phone field: `type="tel"` → `type="text"` (regular iOS keyboard); `formatPhone()` auto-dashes 10/11-digit numbers on blur and on Save
+- ADD COURSE button: replaced custom `lib-add-btn` with full-width `btn-3d` (proper 3D shading)
+- screen-basics nav: App (grey) → BACK (green) + Hole Data → NEXT; both green, all-caps; BACK goes to library via `goToLibrary()`
+- screen-holes nav: Back → BACK, Save Course → SAVE COURSE; both green
+- Breadcrumb: dynamic — "Courses: Add" / "Courses: Edit" set via `setEditMode()`; edit mode title shows course name
+- Removed redundant Saved Courses section from screen-basics (library screen handles it)
+- index.html: Start Round → START ROUND
+- index.html: Player name display — removed green pill, now plain bold text on white stage
+- Committed and pushed: v9.39 / courses v1.3
+
+**Files changed:** `courses.html`, `index.html`
+
+**Next session:** Add Scores screen — repurpose hole screens for historical round entry (date picker + course selector + tees entry step)
+
+---
+
 ## 2026-05-12 — index.html migrated to shared.js (Step 4+5 complete)
 
 **Did:**
