@@ -39,15 +39,13 @@
 // Single source of truth for all footer nav links.
 // Change label or order here — every page updates automatically.
 const NAV_LINKS = [
-  { id: 'settings',      label: 'Settings'      },
-  { id: 'add-scores',    label: 'Add Scores'    },
-  { id: 'pro-tips',      label: 'Pro Tips'      },
-  { id: 'penalty-rules', label: 'Penalty Rules' },
-  { id: 'quick-rules',   label: 'Quick Rules'   },
-  { id: 'game-formats',  label: 'Game Formats'  },
-  { id: 'my-stats',      label: 'My Stats'      },
-  { id: 'courses',       label: 'Courses'       },
+  { id: 'settings',   label: 'Settings'   },
+  { id: 'add-scores', label: 'Add Scores' },
+  { id: 'my-stats',   label: 'My Stats'   },
+  { id: 'courses',    label: 'Courses'    },
 ];
+
+const APP_VERSION = 'v9.57';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
@@ -119,8 +117,13 @@ function renderFooterNav(el) {
     grid.appendChild(btn);
   });
 
+  const ver = document.createElement('div');
+  ver.className = 'footer-version';
+  ver.textContent = APP_VERSION;
+
   el.innerHTML = '';
   el.appendChild(grid);
+  el.appendChild(ver);
 }
 
 
