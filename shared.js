@@ -45,7 +45,7 @@ const NAV_LINKS = [
   { id: 'courses',    label: 'Courses'    },
 ];
 
-const APP_VERSION = 'v9.57';
+const APP_VERSION = 'v9.58';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
