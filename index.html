@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.54 — 2026-05-12
+  v9.55 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -1345,14 +1345,14 @@ function readPlayerName(){
 function saveBootstrapUrl() {
   const val = document.getElementById('bootstrap-url-input').value.trim();
   if (!val || !val.includes('script.google.com')) {
-    alert('That doesn't look right — paste the full Apps Script /exec URL.');
+    alert("Paste the full Apps Script /exec URL.");
     return;
   }
   const p = JSON.parse(localStorage.getItem('profile') || '{}');
   p.sheetsUrl = val;
   localStorage.setItem('profile', JSON.stringify(p));
   document.getElementById('bootstrap-url-wrap').style.display = 'none';
-  alert('Saved! You're all set.');
+  alert("Saved! You are all set.");
 }
 function startRound() {
   state.players = [readPlayerName()];
