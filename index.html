@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.46 — 2026-05-12
+  v9.47 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -2125,7 +2125,7 @@ loadActiveCourse();
     let changed = false;
     for (const key of Object.keys(c)) {
       const entry = c[key];
-      if (entry && entry.id === 12 && entry.city === 'Abbotsford') {
+      if (entry && entry.id === 12) {
         delete c[key]; changed = true;
       }
     }
