@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.52 — 2026-05-12
+  v9.53 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -1014,7 +1014,7 @@
     </div>
     <div class="header-lower">
       <div class="header-lower-top">
-        <div class="hole-num" id="hole-num" onclick="_debugTap()">1</div>
+        <div class="hole-num" id="hole-num">1</div>
       </div>
       <div class="header-lower-bot">
         <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
@@ -1056,7 +1056,7 @@
     </div>
     <div class="header-lower">
       <div class="header-lower-top">
-        <div class="hole-num" id="stats-hole-num" onclick="_debugTap()">1</div>
+        <div class="hole-num" id="stats-hole-num">1</div>
       </div>
       <div class="header-lower-bot">
         <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="stats-par-display">4</span></span>
@@ -1466,34 +1466,6 @@ function showStatsScreen(){
 }
 function statsBack(){ showScreen('hole'); }
 
-// ── DEBUG: tap hole-num 5× to show layout heights ─────────────────
-let _dbgTaps = 0, _dbgTimer;
-function _debugTap(){
-  clearTimeout(_dbgTimer);
-  _dbgTaps++;
-  _dbgTimer = setTimeout(() => { _dbgTaps = 0; }, 1500);
-  if(_dbgTaps >= 5){
-    _dbgTaps = 0;
-    const active = document.querySelector('.screen.active');
-    if(!active){ alert('No active screen'); return; }
-    const r  = (el) => el ? Math.round(el.getBoundingClientRect().height) : '?';
-    const mh = r(active.querySelector('.hole-masthead') || active.querySelector('.masthead') || active.querySelector('.card-masthead'));
-    const st = r(active.querySelector('.score-section') || active.querySelector('.stageScrolls') || active.querySelector('.setup-body') || active.querySelector('.scorecard-wrap'));
-    const ha = r(active.querySelector('.hole-actions'));
-    const ft = r(active.querySelector('.footer'));
-    const msg = [
-      'Screen: ' + active.id,
-      'masthead:    ' + mh,
-      'stage:       ' + st,
-      'hole-actions:' + ha,
-      'footer:      ' + ft,
-      'white total: ' + (st + ha),
-      'sum:         ' + (mh + st + ha + ft),
-      'viewport h:  ' + window.innerHeight,
-    ].join('\n');
-    alert(msg);
-  }
-}
 function statsNext(){ advanceHole(); }
 function prevHole(){
   if(state.currentHole===0) showScreen('setup');
