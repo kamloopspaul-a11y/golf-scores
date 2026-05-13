@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.51 — 2026-05-12
+  v9.52 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -1474,26 +1474,22 @@ function _debugTap(){
   _dbgTimer = setTimeout(() => { _dbgTaps = 0; }, 1500);
   if(_dbgTaps >= 5){
     _dbgTaps = 0;
-    const sH  = document.getElementById('screen-hole');
-    const sS  = document.getElementById('screen-stats');
-    const r   = (el) => el ? Math.round(el.getBoundingClientRect().height) : '?';
-    const qs  = (screen, sel) => screen.querySelector(sel);
+    const active = document.querySelector('.screen.active');
+    if(!active){ alert('No active screen'); return; }
+    const r  = (el) => el ? Math.round(el.getBoundingClientRect().height) : '?';
+    const mh = r(active.querySelector('.hole-masthead') || active.querySelector('.masthead') || active.querySelector('.card-masthead'));
+    const st = r(active.querySelector('.score-section') || active.querySelector('.stageScrolls') || active.querySelector('.setup-body') || active.querySelector('.scorecard-wrap'));
+    const ha = r(active.querySelector('.hole-actions'));
+    const ft = r(active.querySelector('.footer'));
     const msg = [
-      'HOLE screen:',
-      '  masthead:    ' + r(qs(sH,'.hole-masthead')),
-      '  score-sect:  ' + r(qs(sH,'.score-section')),
-      '  hole-actions:' + r(qs(sH,'.hole-actions')),
-      '  footer:      ' + r(qs(sH,'.footer')),
-      '  TOTAL white: ' + (r(qs(sH,'.score-section'))+r(qs(sH,'.hole-actions'))),
-      '',
-      'STATS screen:',
-      '  masthead:    ' + r(qs(sS,'.hole-masthead')),
-      '  stageScrolls:' + r(qs(sS,'.stageScrolls')),
-      '  hole-actions:' + r(qs(sS,'.hole-actions')),
-      '  footer:      ' + r(qs(sS,'.footer')),
-      '  TOTAL white: ' + (r(qs(sS,'.stageScrolls'))+r(qs(sS,'.hole-actions'))),
-      '',
-      'viewport h: ' + window.innerHeight,
+      'Screen: ' + active.id,
+      'masthead:    ' + mh,
+      'stage:       ' + st,
+      'hole-actions:' + ha,
+      'footer:      ' + ft,
+      'white total: ' + (st + ha),
+      'sum:         ' + (mh + st + ha + ft),
+      'viewport h:  ' + window.innerHeight,
     ].join('\n');
     alert(msg);
   }
