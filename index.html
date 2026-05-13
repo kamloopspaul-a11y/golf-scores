@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.47 — 2026-05-12
+  v9.50 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -657,7 +657,8 @@
   }
   /* ── STATS SCREEN ──────────────────────────────────── */
   .stageScrolls {
-    flex: 1 1 auto;
+    flex: 1 1 0;
+    min-height: 0;
     overflow-y: auto;
     background: #fff;
     margin-top: 12px;
@@ -698,7 +699,8 @@
   #screen-card       .footer,
   #screen-success    .footer,
   #screen-add-scores .footer,
-  #screen-hole       .footer {
+  #screen-hole       .footer,
+  #screen-stats      .footer {
     min-height: calc(env(safe-area-inset-bottom) + 8px);
     padding-top: 8px;
   }
@@ -1012,7 +1014,7 @@
     </div>
     <div class="header-lower">
       <div class="header-lower-top">
-        <div class="hole-num" id="hole-num">1</div>
+        <div class="hole-num" id="hole-num" onclick="_debugTap()">1</div>
       </div>
       <div class="header-lower-bot">
         <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
@@ -1054,7 +1056,7 @@
     </div>
     <div class="header-lower">
       <div class="header-lower-top">
-        <div class="hole-num" id="stats-hole-num">1</div>
+        <div class="hole-num" id="stats-hole-num" onclick="_debugTap()">1</div>
       </div>
       <div class="header-lower-bot">
         <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="stats-par-display">4</span></span>
@@ -1463,6 +1465,40 @@ function showStatsScreen(){
   showScreen('stats');
 }
 function statsBack(){ showScreen('hole'); }
+
+// ── DEBUG: tap hole-num 5× to show layout heights ─────────────────
+let _dbgTaps = 0, _dbgTimer;
+function _debugTap(){
+  clearTimeout(_dbgTimer);
+  _dbgTaps++;
+  _dbgTimer = setTimeout(() => { _dbgTaps = 0; }, 1500);
+  if(_dbgTaps >= 5){
+    _dbgTaps = 0;
+    const sH  = document.getElementById('screen-hole');
+    const sS  = document.getElementById('screen-stats');
+    const r   = (el) => el ? Math.round(el.getBoundingClientRect().height) : '?';
+    const qs  = (screen, sel) => screen.querySelector(sel);
+    const msg = [
+      'HOLE screen:',
+      '  masthead:    ' + r(qs(sH,'.hole-masthead')),
+      '  score-sect:  ' + r(qs(sH,'.score-section')),
+      '  hole-actions:' + r(qs(sH,'.hole-actions')),
+      '  footer:      ' + r(qs(sH,'.footer')),
+      '  TOTAL white: ' + (r(qs(sH,'.score-section'))+r(qs(sH,'.hole-actions'))),
+      '',
+      'STATS screen:',
+      '  masthead:    ' + r(qs(sS,'.hole-masthead')),
+      '  stageScrolls:' + r(qs(sS,'.stageScrolls')),
+      '  hole-actions:' + r(qs(sS,'.hole-actions')),
+      '  footer:      ' + r(qs(sS,'.footer')),
+      '  TOTAL white: ' + (r(qs(sS,'.stageScrolls'))+r(qs(sS,'.hole-actions'))),
+      '',
+      'viewport h: ' + window.innerHeight,
+    ].join('
+');
+    alert(msg);
+  }
+}
 function statsNext(){ advanceHole(); }
 function prevHole(){
   if(state.currentHole===0) showScreen('setup');
