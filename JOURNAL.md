@@ -675,3 +675,54 @@ index.html fix:
 - Migrate `courses.html` to 5-zone template
 - Add shared.js to SW cache
 - Then begin index.html migration
+
+---
+
+## 2026-05-13 — index.html UI fixes (player pill, nav all-caps, masthead height)
+
+**Did:**
+- Player name display: restored green pill — `background: var(--green); color: #fff; border-radius: 20px; padding: 5px 14px; font-size: 13px; font-weight: 500; flex: 0 0 auto; align-self: center;` + `.player-row { justify-content: center; }` to prevent full-width bleed
+- All hole nav buttons: `text-transform: uppercase; letter-spacing: 0.04em;` — global via `.nav-btn`
+- Hole 1 nav buttons: JS updated — first hole shows HOME | NEXT, subsequent holes BACK | NEXT
+- Masthead height: reduced 248px → 208px; bottom padding 28px → 4px (saves ~40px vertical)
+- as-body: `background: #fff; margin-top: 12px;` — fixes green background on Add Scores screen
+
+**Pending push:** all changes are local only — not yet committed or pushed to GitHub
+
+**Files changed:** `index.html`, `courses.json` (Valley GC name)
+
+**Next session resume:** verify masthead height on device, then start shared.js build (NAV_LINKS + renderMasthead + renderFooterNav)
+
+
+---
+
+## 2026-05-12 — Stats screen, SW cache fixes, Valley GC eviction (v9.47 / SW v36)
+
+**Did:**
+
+**Stats screen (v9.40–v9.45)**
+- Migrated hole screen to 5-zone template: extracted stat sliders out of footer into `.stats-zone`
+- Built `#screen-stats` — two-step Score → Stats → Next Hole flow
+- Stats screen: masthead (hole num + PAR/YDS strip), stageScrolls (player name pill + stats grid), navBar (BACK / NEXT)
+- `nextHole()` routes to stats screen if `!state.historicalMode`; `statsBack()` / `statsNext()` complete the nav
+- `showStatsScreen()`: renders hole num, par label (Birdie/Par/Bogey etc.), syncs stat sliders
+- Dropped score badge from stats screen header; kept PAR/YDS strip
+- Player name rendered via `renderPlayerName()` / `[data-player-name]` pattern from shared.js — same injection as footer nav
+- Added `renderPlayerName()` + `getPlayerName()` to shared.js v1.1; auto-calls on DOMContentLoaded
+- `.player-row` + `.player-name-display` CSS used for green pill, centred — consistent with other screens
+
+**SW cache busting (SW v36)**
+- Root cause identified: GitHub Pages CDN caching sw.js + index.html; SW's `fetch(req)` respected HTTP cache even in "network-first" strategy
+- Fixed: HTML fetch now uses `fetch(req, { cache: 'no-cache' })` — bypasses CDN stale responses
+- `skipWaiting()` already present; confirmed in install event
+
+**Valley GC duplicate eviction (v9.46 → v9.47)**
+- Removed entry "12" (Valley GC, Abbotsford, no tee data) from `courses.json`; 11 seeded courses remain
+- v9.46: added `evictStaleSeeds()` IIFE to purge id:12 from `localStorage.courseCache` on startup; also fixed `seedCourseCache()` to use `cache: 'no-cache'`
+- v9.47: **bug fix** — IIFE checked `entry.city === 'Abbotsford'` but actual structure is `entry.location.city`; city check always returned false so nothing was ever evicted. Fixed to check `entry.id === 12` only — unambiguous, correct.
+- Duplicate now evicted on first page load after v9.47 deploys
+
+**Files changed:** `index.html` (v9.47), `shared.js` (v1.1), `sw.js` (v36), `courses.json`
+
+**Next session:** Add Scores screen — date picker + course selector (default Mt. Paul) + tees → existing hole screens → post to Sheets. Stats footer hidden for historical rounds (`state.historicalMode`).
+

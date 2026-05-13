@@ -138,6 +138,10 @@
 
 ## Open / Pending Items
 
+### Stage area height inconsistency (known, defer)
+- Stage area is slightly taller on Home (Setup), Score Card (midround/card), and Post (success) screens compared to hole screens.
+- Not breaking — defer until 5-zone template migration, which will standardise all screen heights.
+
 ### courses.html — Edit Mode UX note
 - In edit mode, flag any unfilled fields (CR, SR, yardage) with a red asterisk beside the label.
 - Allow user to proceed/save with unfilled fields — asterisk is advisory only, not a blocker.
@@ -357,34 +361,31 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 12, 2026
+**Last worked:** May 12, 2026 (evening)
 
 ### What was completed this session
-- **shared.js v1.0** — NAV_LINKS, showPanel(), renderFooterNav(), renderMasthead(); single source of truth for footer nav across all pages
-- **courses.html v1.3** — 5-zone template migration; canonical CSS class names (hu-breadcrumb etc.); footer nav via [data-nav]; breadcrumb dynamic (Courses: Add / Courses: Edit); ADD COURSE btn-3d; BACK|NEXT|SAVE COURSE all green/all-caps; Saved Courses section removed; phone field regular keyboard + auto-dash formatter
-- **index.html v9.39** — shared.js wired; _handlePanel for add-scores; hu-course → hu-breadcrumb; non-hole footers → data-nav; fnav-btn yellow; START ROUND all-caps; player name plain text (no green pill)
-- **sw.js v34** — shared.js added to cache ASSETS
+- **shared.js v1.1** — added `getPlayerName()` + `renderPlayerName()` + `[data-player-name]` injection pattern; auto-calls on DOMContentLoaded alongside `renderFooterNav()`
+- **index.html v9.47** — 5-zone hole screen migration; two-step Score → Stats flow; stats screen with player name pill, PAR/YDS strip, stat sliders; `evictStaleSeeds()` IIFE (v9.46 bug, fixed v9.47: was checking `entry.city`, correct path is `entry.location.city`, now checks `entry.id === 12` only); `seedCourseCache()` fetch uses `cache: 'no-cache'`
+- **sw.js v36** — HTML fetch now uses `cache: 'no-cache'` to bypass GitHub Pages CDN stale responses
+- **courses.json** — removed entry 12 (Valley GC, Abbotsford stub, no tee data); 11 seeded courses remain
 - All committed and pushed — live at kamloopspaul-a11y.github.io/golf-scores
 
 ### Files changed
-- `shared.js` (new), `index.html`, `courses.html`, `sw.js`, `JOURNAL.md`, `PROJECT.md`
+- `shared.js`, `index.html`, `sw.js`, `courses.json`, `JOURNAL.md`, `PROJECT.md`
 
 ### Resume here next session
 
 **Build queue (in order):**
-1. **Add Scores screen** ← NEXT — entry setup (date picker + course selector defaulting to Mt. Paul + tees) → existing hole screens → post to Sheets. Stats footer hidden for historical rounds.
-2. **Auto-calculate HI from entered rounds** (WHS formula, best 8 of 20); display "—" until 20 rounds.
+1. **Add Scores screen** ← NEXT — entry setup (date picker + course selector defaulting to Mt. Paul + tees) → existing hole screens → post to Sheets. Stats footer hidden for historical rounds (`state.historicalMode`).
+2. **Record Stats toggle** on Setup screen — ON/OFF before round starts; persisted in Player Profile.
 3. **Settings panel** — name, home tees, HI, email, Track Stats toggle, Stat Reports toggle.
-4. Make Focus Areas advice data-driven.
-5. Move REPORT_EVERY_N_ROUNDS + REPORT_LAST_N_ROUNDS from constants into Settings tab.
-6. Player goal field (target HI + timeframe) → report framing shifts to progress narrative.
+4. **Auto-calculate HI from entered rounds** (WHS formula, best 8 of 20); display "—" until 20 rounds.
+5. Remove Dev buttons (Jump to Post Screen, Simulate Failure) before release.
 
 #### Other pre-release tasks
-1. Record Stats toggle (FIR/GIR/etc. on Setup screen)
-2. Touch-target review for mobile
-3. App icons
-4. Remove Dev buttons (Jump to Post Screen, Simulate Failure)
-5. Dave's data import — wait for CSV/XLS sample, write transform script
+- Touch-target review for mobile
+- App icons
+- Dave's data import — wait for CSV/XLS sample, write transform script
 
 ## Security Rules (standing)
 
