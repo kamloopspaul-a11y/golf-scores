@@ -1,7 +1,7 @@
 // My Golf Scores — Service Worker
 // Network-first for HTML, cache-first for assets
 
-const CACHE_NAME = 'golf-scores-v35';
+const CACHE_NAME = 'golf-scores-v36';
 const ASSETS = [
   '/',
   '/index.html',
@@ -40,7 +40,7 @@ self.addEventListener('fetch', e => {
 
   if (isHTML) {
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-cache' })
         .then(res => {
           const copy = res.clone();
           caches.open(CACHE_NAME).then(c => c.put(req, copy));
