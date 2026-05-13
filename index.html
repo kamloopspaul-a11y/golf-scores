@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.45 — 2026-05-12
+  v9.46 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -1960,7 +1960,7 @@ async function seedCourseCache() {
   const cache = _getCache();
   if (Object.keys(cache).length >= 5) return; // already seeded
   try {
-    const res = await fetch(COURSES_JSON_URL);
+    const res = await fetch(COURSES_JSON_URL, { cache: 'no-cache' });
     if (!res.ok) return;
     const data = await res.json();
     for (const [key, course] of Object.entries(data)) {
@@ -2118,6 +2118,20 @@ if(savedStart){
   durationTimer = setInterval(updateAllWeather, 30000);
 }
 loadActiveCourse();
+// One-time migration: remove Valley GC stub (id 12) seeded from old courses.json
+(function evictStaleSeeds() {
+  try {
+    const c = JSON.parse(localStorage.getItem('courseCache') || '{}');
+    let changed = false;
+    for (const key of Object.keys(c)) {
+      const entry = c[key];
+      if (entry && entry.id === 12 && entry.city === 'Abbotsford') {
+        delete c[key]; changed = true;
+      }
+    }
+    if (changed) localStorage.setItem('courseCache', JSON.stringify(c));
+  } catch(e) {}
+})();
 seedCourseCache(); // silent background cache seed
 fetchWeather();
 
