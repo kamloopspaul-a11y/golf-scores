@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.41 — 2026-05-12
+  v9.43 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -662,19 +662,11 @@
     background: #fff;
     margin-top: 12px;
   }
-  .stats-badge {
-    text-align: center;
-    padding: 24px 24px 20px;
+  .stats-player-name {
+    font-size: 14px; font-weight: 600; color: var(--text-secondary);
+    padding: 14px 24px 14px;
     border-bottom: 1px solid var(--border);
-  }
-  .stats-badge-score {
-    font-size: 56px; font-weight: 600; letter-spacing: -2px;
-    color: var(--text-primary); line-height: 1;
-    font-family: 'DM Mono', monospace;
-  }
-  .stats-badge-label {
-    font-size: 14px; color: var(--text-secondary); margin-top: 6px;
-    font-weight: 500; letter-spacing: 0.02em;
+    letter-spacing: 0.03em; text-transform: uppercase;
   }
   .stats-grid {
     display: grid;
@@ -1075,10 +1067,7 @@
     </div>
   </div>
   <div class="stageScrolls">
-    <div class="stats-badge">
-      <div class="stats-badge-score" id="stats-badge-score">4</div>
-      <div class="stats-badge-label" id="stats-badge-label">Par</div>
-    </div>
+    <div class="stats-player-name" id="stats-player-name">Paul</div>
     <div class="stats-grid">
       <div class="sg-label">FIR</div>
       <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
@@ -1470,11 +1459,10 @@ function showStatsScreen(){
   else if(diff===0)   label = 'Par';
   else if(diff===1)   label = 'Bogey';
   else                label = '+' + diff;
-  document.getElementById('stats-hole-num').textContent   = i + 1;
-  document.getElementById('stats-par-display').textContent  = hole.par;
+  document.getElementById('stats-hole-num').textContent      = i + 1;
+  document.getElementById('stats-par-display').textContent   = hole.par;
   document.getElementById('stats-yards-display').textContent = hole.yards;
-  document.getElementById('stats-badge-score').textContent  = score;
-  document.getElementById('stats-badge-label').textContent  = label;
+  document.getElementById('stats-player-name').textContent   = state.players[state.activePlayer] || 'Paul';
   syncStatSliders(i);
   showScreen('stats');
 }
