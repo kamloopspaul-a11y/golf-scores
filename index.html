@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.55 — 2026-05-12
+  v9.57 — 2026-05-13
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -465,29 +465,7 @@
   }
   .nav-btn { flex: 1; padding: 15px; text-transform: uppercase; letter-spacing: 0.04em; }
   .start-btn { padding: 15px; margin-top: 0; }
-  /* ── SHEETS URL BOOTSTRAP (one-time, hidden after save) ── */
-  .bootstrap-url-wrap {
-    background: var(--card); border: 1px solid var(--green);
-    border-radius: 14px; padding: 14px 16px; margin-top: 16px;
-  }
-  .bootstrap-url-label {
-    font-size: 13px; font-weight: 600; color: var(--green);
-    margin-bottom: 8px; display: block;
-  }
-  .bootstrap-url-input {
-    width: 100%; box-sizing: border-box;
-    background: #fff; border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 12px;
-    font-size: 12px; font-family: DM Mono, monospace;
-    color: var(--text-primary); outline: none;
-  }
-  .bootstrap-url-input:focus { border-color: var(--green); }
-  .bootstrap-url-save {
-    margin-top: 10px; width: 100%; padding: 12px;
-    background: var(--green); color: #fff;
-    border: none; border-radius: 10px;
-    font-size: 15px; font-weight: 600; cursor: pointer;
-  }
+
   /* ── SCORECARD ─────────────────────────────────────── */
   .scorecard-wrap { padding: 16px 12px; overflow-x: hidden; }
   .sc-section { margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -845,13 +823,6 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── COURSE SELECT ──────────────────────────────────── */
-  /* ── DEV ONLY — remove before release ── */
-  .dev-shortcut {
-    display: block; margin-top: 10px;
-    font-size: 11px; color: #e55; text-decoration: underline;
-    background: none; border: none; cursor: pointer; padding: 0;
-  }
-  /* ── end dev ── */
 
   .change-course-link {
     display: block; margin-top: 14px;
@@ -971,18 +942,8 @@
     </div>
     <div id="pending-quiet" class="pending-quiet hidden">Post when internet is available.</div>
     <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
-    <!-- BOOTSTRAP: one-time Apps Script URL entry -->
-    <div class="bootstrap-url-wrap" id="bootstrap-url-wrap">
-      <span class="bootstrap-url-label">One-time setup — paste your Apps Script URL</span>
-      <input class="bootstrap-url-input" id="bootstrap-url-input" type="url"
-             placeholder="https://script.google.com/macros/s/…/exec"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <button class="bootstrap-url-save" onclick="saveBootstrapUrl()">Save URL</button>
-    </div>
-    <!-- DEV ONLY — remove before release -->
-    <button class="dev-shortcut" onclick="devPostScreen()">⚙ Dev: Jump to Post Screen</button>
-    <button class="dev-shortcut" onclick="devSimulateFailure()">⚙ Dev: Simulate Failure</button>
-    <!-- end dev -->
+
+
   </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="startRound()">START ROUND</button>
@@ -1296,7 +1257,7 @@ const COURSE = {
     {par:3,yards:135,index:15},{par:4,yards:251,index:7 },{par:4,yards:270,index:9 }
   ]
 };
-const SHEETS_URL  = PROFILE.sheetsUrl || "https://script.google.com/macros/s/AKfycbySPqhl4-gdbq2yykCaUKh3shzQGDY0xjz--0WV5GX0Tkad2huG9IA3_blQVFBKloSpUg/exec";
+const SHEETS_URL  = PROFILE.sheetsUrl;
 const WEBHOOK_SECRET = "Oawa9g5ywPdik6bMk07wUlam7bf7qhEy";
 let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
@@ -1342,18 +1303,7 @@ function readPlayerName(){
   return v.length ? v : (PROFILE.name || 'Paul');
 }
 // ── START ─────────────────────────────────────────────
-function saveBootstrapUrl() {
-  const val = document.getElementById('bootstrap-url-input').value.trim();
-  if (!val || !val.includes('script.google.com')) {
-    alert("Paste the full Apps Script /exec URL.");
-    return;
-  }
-  const p = JSON.parse(localStorage.getItem('profile') || '{}');
-  p.sheetsUrl = val;
-  localStorage.setItem('profile', JSON.stringify(p));
-  document.getElementById('bootstrap-url-wrap').style.display = 'none';
-  alert("Saved! You are all set.");
-}
+
 function startRound() {
   state.players = [readPlayerName()];
   state.date=new Date().toISOString().split('T')[0];
@@ -2178,61 +2128,11 @@ loadActiveCourse();
     if (changed) localStorage.setItem('courseCache', JSON.stringify(c));
   } catch(e) {}
 })();
-// Hide bootstrap URL field if already configured
-(function(){
-  const p = JSON.parse(localStorage.getItem('profile') || '{}');
-  if (p.sheetsUrl) {
-    const el = document.getElementById('bootstrap-url-wrap');
-    if (el) el.style.display = 'none';
-  }
-})();
+
 seedCourseCache(); // silent background cache seed
 fetchWeather();
 
 // Stats help overlay toggle
-// ── DEV ONLY — remove before release ─────────────────────────────────────────
-function devPostScreen() {
-  // Fake course
-  document.getElementById('success-course-name').textContent = 'Kamloops Golf & Country Club';
-  // Fake stats summary
-  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-  set('ss-fir',    '9');
-  set('ss-gir',    '7');
-  set('ss-pen',    '2');
-  set('ss-ud',     '4');
-  set('ss-xud',    '3');
-  set('ss-putts',  '31');
-  set('ss-actual', '84');
-  set('ss-hi',     'HI: 20');
-  set('ss-net',    'Net Score: 72');
-  // Show summary, hide spinner, reset title
-  const spinner = document.getElementById('success-spinner');
-  const title   = document.getElementById('success-title');
-  const summary = document.getElementById('success-summary');
-  if(spinner) spinner.classList.add('hidden');
-  if(title)   title.textContent = 'Posted';
-  if(summary) summary.style.display = '';
-  // Fake date/duration
-  document.getElementById('success-date-display').textContent = new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});
-  document.getElementById('success-duration').textContent = '3h 42m';
-  showScreen('success');
-}
-function devSimulateFailure() {
-  devPostScreen();
-  const title = document.getElementById('success-title');
-  const mhTitle = document.querySelector('#screen-success .header-lower-title');
-  const infoBtn = document.getElementById('masthead-info-btn');
-  const infoOverlay = document.getElementById('masthead-info-overlay');
-  if(title){ title.textContent='Unable to Post'; title.classList.remove('success-title-error'); }
-  if(mhTitle) mhTitle.textContent='Save Round';
-  if(infoBtn) infoBtn.classList.add('visible');
-  if(infoOverlay) infoOverlay.classList.remove('open');
-  // Write a fake round to the queue so the banner can be tested
-  const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
-  queue.push({date: new Date().toISOString().split('T')[0], player:'Paul', course:'Mt. Paul', tees:'Blue', roundType:'18', holes:[], par:64, pars:[], stats:[], savedAt: new Date().toISOString()});
-  localStorage.setItem('pendingRounds', JSON.stringify(queue));
-}
-// ── end dev ───────────────────────────────────────────────────────────────────
 function toggleStatsHelp(e) {
   e.stopPropagation();
   const overlay = document.getElementById('stats-help-overlay');
