@@ -1,6 +1,6 @@
 /**
  * shared.js — Golf PWA shared utilities
- * v1.0 — 2026-05-12
+ * v1.1 — 2026-05-12
  *
  * Included by every HTML page via <script src="shared.js"></script>.
  * Provides:
@@ -183,6 +183,32 @@ function renderMasthead(el, opts) {
 }
 
 
+// ── PLAYER NAME ───────────────────────────────────────────────────────────────
+/**
+ * Reads player name from localStorage profile (same key index.html uses).
+ * Falls back to 'Paul' if not set.
+ */
+function getPlayerName() {
+  try {
+    const p = JSON.parse(localStorage.getItem('profile') || '{}');
+    return p.name || 'Paul';
+  } catch(e) { return 'Paul'; }
+}
+
+/**
+ * Populates every [data-player-name] element with the player name.
+ * Pass a name explicitly (e.g. from state.players[0]) or omit to
+ * read fresh from localStorage.
+ *
+ * @param {string} [name]
+ */
+function renderPlayerName(name) {
+  const n = name || getPlayerName();
+  document.querySelectorAll('[data-player-name]').forEach(function(el) {
+    el.textContent = n;
+  });
+}
+
 // ── AUTO-INIT ──────────────────────────────────────────────────────────────────
 // Render footer nav into every [data-nav] element once the DOM is ready.
 // Usage in HTML: <div class="footer" data-nav></div>
@@ -190,4 +216,5 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('[data-nav]').forEach(function (el) {
     renderFooterNav(el);
   });
+  renderPlayerName();
 });

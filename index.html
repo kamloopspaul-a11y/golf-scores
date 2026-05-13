@@ -3,7 +3,7 @@
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
   CHANGELOG
-  v9.43 — 2026-05-12
+  v9.45 — 2026-05-12
   - START ROUND button all-caps
   - Player name display: plain text (no green pill)
   v9.38 — 2026-05-12
@@ -662,12 +662,8 @@
     background: #fff;
     margin-top: 12px;
   }
-  .stats-player-name {
-    font-size: 14px; font-weight: 600; color: var(--text-secondary);
-    padding: 14px 24px 14px;
-    border-bottom: 1px solid var(--border);
-    letter-spacing: 0.03em; text-transform: uppercase;
-  }
+  /* Stats screen — player name row spacing */
+  #screen-stats .player-row { padding: 14px 0 14px; border-bottom: 1px solid var(--border); }
   .stats-grid {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -939,7 +935,7 @@
   </div>
   <div class="setup-body">
     <div class="player-row">
-      <span class="player-input player-name-display" id="player-name">Paul</span>
+      <span class="player-input player-name-display" id="player-name" data-player-name>Paul</span>
     </div>
     <div id="pending-banner" class="pending-banner hidden">
       <span id="pending-banner-msg"></span>
@@ -1067,7 +1063,7 @@
     </div>
   </div>
   <div class="stageScrolls">
-    <div class="stats-player-name" id="stats-player-name">Paul</div>
+    <div class="player-row"><span class="player-name-display" data-player-name>Paul</span></div>
     <div class="stats-grid">
       <div class="sg-label">FIR</div>
       <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
@@ -1462,7 +1458,7 @@ function showStatsScreen(){
   document.getElementById('stats-hole-num').textContent      = i + 1;
   document.getElementById('stats-par-display').textContent   = hole.par;
   document.getElementById('stats-yards-display').textContent = hole.yards;
-  document.getElementById('stats-player-name').textContent   = state.players[state.activePlayer] || 'Paul';
+  renderPlayerName(state.players[state.activePlayer]);
   syncStatSliders(i);
   showScreen('stats');
 }
