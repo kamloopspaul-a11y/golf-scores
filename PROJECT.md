@@ -4,11 +4,11 @@
 
 ## Status
 
-**Version:** v9.33 — May 5, 2026
+**Version:** v9.58 — May 13, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
-**Service Worker:** v26 (network-first for HTML, cache-first for assets)
+**Service Worker:** v37 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
 ## Core Spec
@@ -21,7 +21,7 @@
 - Course: stored as `COURSE` constant in `index.html` (hole-by-hole par/yardage)
 - Data flow: local during play → Google Sheets only on explicit Post Score
 - Service Worker: network-first for HTML, cache-first for assets, full offline play
-- Apps Script `/exec` URL embedded at `index.html` line 652
+- Apps Script `/exec` URL stored in `localStorage` (profile.sheetsUrl) — set via onboarding.html
 
 ## Scoring Rules
 

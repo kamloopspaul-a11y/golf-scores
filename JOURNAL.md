@@ -726,3 +726,30 @@ index.html fix:
 
 **Next session:** Add Scores screen — date picker + course selector (default Mt. Paul) + tees → existing hole screens → post to Sheets. Stats footer hidden for historical rounds (`state.historicalMode`).
 
+
+---
+
+## 2026-05-13 — Security hardening + footer cleanup (v9.57–v9.58 / SW v37)
+
+**Did:**
+
+**Security hardening (v9.57)**
+- Removed hardcoded Apps Script URL fallback from `index.html` — `SHEETS_URL` now reads solely from `PROFILE.sheetsUrl` (set via onboarding)
+- Removed bootstrap URL input field (HTML, CSS, JS) from setup screen — redundant since onboarding captures it
+- Removed dev buttons ("Jump to Post Screen", "Simulate Failure") and all associated CSS/JS
+- Confirmed: WEBHOOK_SECRET left in source — risk assessed as low (personal golf score data only, git history already cleaned previously, localStorage not meaningfully more secure)
+- Both devices (macBook + iPhone) confirmed functional after changes
+- iPhone localStorage was intact throughout; macBook required onboarding re-completion after earlier Safari data clear
+
+**Footer cleanup + version display (v9.58 / SW v37)**
+- Trimmed NAV_LINKS from 8 to 4 active links: Settings, Add Scores, My Stats, Courses
+- Added `APP_VERSION = 'v9.58'` constant to `shared.js`
+- `renderFooterNav()` now appends version string below the 2×2 grid — white, centred, 13px, 0.7 opacity
+- Added `.footer-version` CSS to `index.html` and `courses.html`
+- SW bumped to v37 to force cache eviction and pull fresh `shared.js`
+
+**Tech debt noted:** inline `<style>` blocks duplicated across `index.html`, `courses.html`, `onboarding.html` — extract to `shared.css` in a future session.
+
+**Files changed:** `index.html`, `shared.js`, `courses.html`, `sw.js`
+
+**Next session:** Add Scores screen — date picker + course selector (default Mt. Paul) + tees entry → existing hole screens → post to Sheets. `state.historicalMode` suppresses stats screen.
