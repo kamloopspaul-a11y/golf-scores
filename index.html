@@ -825,34 +825,10 @@
     text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2;
   }
   .setup-course-meta {
-    font-size: 13px; color: var(--text-secondary);
-    margin-top: 5px;
+    font-size: 15px; color: var(--text-secondary);
+    margin-top: 6px;
   }
-  /* ── SETUP TWO-BUTTON ROW ── */
-  .setup-actions {
-    display: flex; gap: 12px; margin-top: 28px;
-  }
-  .btn-outline {
-    flex: 1;
-    background: none; color: var(--green);
-    border: 2px solid var(--green); border-radius: 8px;
-    padding: 12px 10px; font-size: 14px; font-weight: 600;
-    cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em;
-    font-family: inherit;
-    transition: background 0.15s;
-  }
-  .btn-outline:active { background: var(--green-pale); }
-  .btn-start {
-    flex: 1;
-    background: var(--green); color: white;
-    border: none; border-radius: 8px;
-    padding: 12px 10px; font-size: 14px; font-weight: 600;
-    cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em;
-    box-shadow: 0 5px 0 var(--green-deep);
-    transition: box-shadow 0.1s, transform 0.1s;
-    margin-bottom: 4px;
-  }
-  .btn-start:active { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(4px); }
+
   .course-search-row {
     display: flex; gap: 8px; margin-bottom: 12px;
   }
@@ -968,10 +944,10 @@
       </div>
     </div>
     <div id="pending-quiet" class="pending-quiet hidden">Post when internet is available.</div>
-    <div class="setup-actions">
-      <button class="btn-outline" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
-      <button class="btn-start" onclick="startRound()">Start Round</button>
-    </div>
+  </div>
+  <div class="hole-actions">
+    <button class="btn-3d nav-btn" id="setup-course-link" onclick="showCourseSelect()">Change Course</button>
+    <button class="btn-3d nav-btn" onclick="startRound()">START ROUND</button>
   </div>
   <div class="footer" data-nav></div>
 </div>
@@ -2018,7 +1994,8 @@ function updateCourseNameDisplay() {
       const cr = activeCourseData.cr || '';
       const sr = activeCourseData.sr || '';
       const tee = activeCourseData.teeName || '';
-      metaEl.textContent = tee + (cr && sr ? ' · ' + cr + ' / ' + sr : '');
+      const teeFull = tee ? tee + ' Tees' : '';
+      metaEl.textContent = teeFull + (cr && sr ? ' · ' + cr + ' / ' + sr : '');
     } else {
       nameEl.textContent = 'Select a Course';
       metaEl.textContent = '';
