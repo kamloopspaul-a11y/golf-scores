@@ -692,6 +692,15 @@
   }
   #screen-stats .putts-btn { background: transparent; color: var(--green); }
   #screen-stats #putts-value { color: var(--text-primary); }
+
+  /* Nine-hole "Continue | Post Now" toggle */
+  .nine-hole-toggle-wrap {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; padding: 10px 0 4px;
+  }
+  .nht-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .nht-switch .slider-bg { background: #d1d5db; }
+  .nht-switch input:checked + .slider-bg { background: var(--green); }
   .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
   /* Non-hole screens don't have stat sliders — release the 220px floor */
@@ -1105,9 +1114,17 @@
   <div class="midround-wrap">
     <div class="sc-section"><table class="sc-table" id="sc-midround"></table></div>
   </div>
+  <div class="nine-hole-toggle-wrap">
+    <span class="nht-label">Continue</span>
+    <label class="switch nht-switch">
+      <input type="checkbox" id="post-now-toggle" onchange="onPostNowToggle(this)">
+      <span class="slider-bg"></span>
+    </label>
+    <span class="nht-label">Post Now</span>
+  </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="goBackFromMidround()">Back</button>
-    <button class="btn-3d nav-btn" onclick="continueToBack9()">Next</button>
+    <button class="btn-3d nav-btn" id="midround-next-btn" onclick="continueToBack9()">Next</button>
   </div>
   <div class="footer" data-nav></div>
 </div>
@@ -1272,6 +1289,7 @@ let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
   scores:[], holeList:[], totalHoles:18, weatherStr:"—",
   roundStartTime: null, midroundSeen: false,
+  pendingRound: false, pairingId: null,
   stats: [], historicalMode: false
 };
 let durationTimer = null;
@@ -1482,8 +1500,35 @@ function continueToBack9(){
 function goBackFromMidround(){
   state.currentHole=8; showHole(8); showScreen('hole');
 }
+function onPostNowToggle(el){
+  const btn = document.getElementById('midround-next-btn');
+  if (!btn) return;
+  if (el.checked) {
+    btn.textContent = 'POST';
+    btn.onclick = postFront9;
+  } else {
+    btn.textContent = 'NEXT';
+    btn.onclick = continueToBack9;
+  }
+}
+function postFront9(){
+  // Trim state to front 9 only
+  state.holeList   = state.holeList.slice(0, 9);
+  state.scores     = [state.scores[0].slice(0, 9)];
+  state.stats      = state.stats.slice(0, 9);
+  state.totalHoles = 9;
+  // Stamp a pairing ID so a future 9-hole entry can be matched
+  state.pairingId  = (crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Date.now().toString(36) + Math.random().toString(36).slice(2);
+  state.pendingRound = true;
+  submitRound();
+}
 // ── MID-ROUND CARD ────────────────────────────────────
 function buildMidroundCard(){
+  // Reset the Continue | Post Now toggle each time the card is shown
+  const toggle = document.getElementById('post-now-toggle');
+  if (toggle) { toggle.checked = false; onPostNowToggle(toggle); }
   const table=document.getElementById('sc-midround');
   const holes=state.holeList.slice(0,9);
   const par9=holes.reduce((a,h)=>a+h.par,0);
@@ -1654,7 +1699,8 @@ async function submitRound(){
     courseRating: cr,
     slopeRating:  sr,
     par:          totalPar,
-    holes:        holePayload
+    holes:        holePayload,
+    ...(state.pendingRound ? { pending: true, pairingId: state.pairingId } : {})
   };
   const spinner=document.getElementById('success-spinner');
   const title=document.getElementById('success-title');
@@ -1744,6 +1790,7 @@ function discardRound(){ if(confirm("Discard this round? All scores will be lost
 function newRound(){
   state.players=[(PROFILE.name || "Paul")]; state.currentHole=0;
   state.midroundSeen=false; state.roundStartTime=null;
+  state.pendingRound=false; state.pairingId=null;
   state.stats=[]; state.historicalMode=false;
   clearSuccessSummary();
   localStorage.removeItem('roundStartTime');
