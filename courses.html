@@ -251,47 +251,63 @@ v1.0 — 2026-05-11
   /* ── SMALL-SCREEN ADJUSTMENTS ──────────────────────── */
   @media (max-height: 750px) {
   
+  /* ── COURSE LIBRARY ITEM ── */
   .lib-item {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
-    padding: 14px 16px;
     border-bottom: 1px solid rgba(0,0,0,0.12);
     background: #fff;
-    gap: 10px;
   }
-  .lib-info { flex: 1; min-width: 0; }
   .lib-item:first-child { border-radius: 12px 12px 0 0; }
   .lib-item:last-child  { border-radius: 0 0 12px 12px; border-bottom: none; }
   .lib-item:only-child  { border-radius: 12px; }
-  .lib-name { font-size: 17px; font-weight: 700; color: var(--text-primary); }
-  .lib-sub  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-  .lib-phone a { color: var(--green); text-decoration: none; font-size: 13px; }
-  .lib-edit {
+
+  /* Left: tappable name row + sub info + phone */
+  .lib-info {
+    flex: 1; min-width: 0;
+    padding: 14px 12px 14px 16px;
+    display: flex; flex-direction: column; gap: 3px;
+    cursor: pointer;
+  }
+  .lib-info:active { background: var(--green-pale); }
+  .lib-name {
+    font-size: 17px; font-weight: 700; color: var(--green);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lib-sub  { font-size: 12px; color: var(--text-secondary); }
+  .lib-phone { margin-top: 4px; }
+  .lib-phone a {
+    color: var(--green); text-decoration: none; font-size: 13px;
+  }
+
+  /* Right: action buttons stacked vertically */
+  .lib-actions {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-left: 1px solid rgba(0,0,0,0.07);
     flex-shrink: 0;
+  }
+  .lib-edit {
     background: none;
     border: 1.5px solid var(--border);
     border-radius: 8px;
     width: 36px; height: 36px;
-    font-size: 16px;
-    cursor: pointer;
-    color: var(--text-secondary);
+    font-size: 16px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
   }
   .lib-edit:active { background: var(--green-pale); }
   .lib-del {
-    flex-shrink: 0;
     background: none;
     border: 1.5px solid #fca5a5;
     border-radius: 8px;
     width: 36px; height: 36px;
-    font-size: 15px;
-    cursor: pointer;
-    color: #dc2626;
+    font-size: 15px; cursor: pointer; color: #dc2626;
     display: flex; align-items: center; justify-content: center;
   }
   .lib-del:active { background: #fee2e2; }
-  .lib-actions { display: flex; gap: 8px; }
   .lib-empty { color: var(--text-muted); font-size: 14px; padding: 20px 0; text-align: center; }
   .lib-add-btn {
     width: 100%;
@@ -810,7 +826,7 @@ function renderLibrary() {
     const delBtn = isUserAdded
       ? `<button class="lib-del" onclick="deleteCourse('${c.id}')" title="Delete">✕</button>` : '';
     return `<div class="lib-item">
-      <div class="lib-info">
+      <div class="lib-info" onclick="selectCourse('${c.id}')">
         <div class="lib-name">${esc(c.club_name)}</div>
         <div class="lib-sub">${esc(meta)}</div>
         ${phoneHtml}
@@ -1047,6 +1063,36 @@ function renderSavedList() {
   }).join('');
 }
 
+
+function selectCourse(id) {
+  const course = getCache()[String(id)];
+  if (!course) return;
+
+  // Pick first available mens tee
+  const maleTees = (course.tees || {}).male || [];
+  const tee = maleTees[0];
+  if (!tee) { alert('No tee data for this course — edit it first.'); return; }
+
+  const holes = (tee.holes || []).slice(0, Math.min(tee.number_of_holes || 18, 18))
+    .map(h => ({ par: h.par, yards: h.yardage || 0, index: h.index || null }));
+  const label = (!course.course_name || course.course_name === course.club_name)
+    ? course.club_name
+    : course.club_name + ' – ' + course.course_name;
+
+  const activeCourse = {
+    name:     label,
+    par:      tee.par_total || holes.reduce((a, h) => a + h.par, 0),
+    holes:    holes,
+    cr:       tee.course_rating || '',
+    sr:       tee.slope_rating  || '',
+    teeName:  tee.tee_name      || '',
+    gender:   'male',
+    looped:   false,
+    apiId:    course.id
+  };
+  localStorage.setItem('activeCourse', JSON.stringify(activeCourse));
+  window.location.href = 'index.html';
+}
 function deleteCourse(id) {
   const cache = getCache();
   const name = (cache[id] || {}).club_name || 'this course';
