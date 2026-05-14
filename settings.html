@@ -163,7 +163,7 @@
   /* ── CHEVRON LINK ROW ── */
   .setting-row.link { cursor: pointer; }
   .setting-row.link:active { background: var(--row-alt); }
-  .chevron { color: var(--text-muted); font-size: 18px; flex-shrink: 0; }
+  .chevron { color: var(--text-muted); font-size: 36px; flex-shrink: 0; line-height: 1; }
 
   /* ── MUTED ROW (coming soon) ── */
   .setting-row.muted .setting-label { color: var(--text-muted); }
@@ -176,15 +176,17 @@
 
   /* ── SEND REPORT BUTTON ── */
   .report-btn {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     background: var(--green); color: white;
     border: none; border-radius: 8px;
-    padding: 8px 16px; font-size: 14px; font-weight: 600;
+    padding: 12px 28px; font-size: 15px; font-weight: 600;
     cursor: pointer; flex-shrink: 0;
-    transition: background 0.15s;
+    text-transform: uppercase;
+    box-shadow: 0 4px 0 var(--green-deep);
+    transition: box-shadow 0.1s, transform 0.1s;
   }
-  .report-btn:active { background: var(--green-hover); }
-  .report-btn:disabled { background: #9ca3af; cursor: default; }
+  .report-btn:active { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(3px); }
+  .report-btn:disabled { background: #9ca3af; box-shadow: 0 4px 0 #6b7280; cursor: default; }
   .report-status {
     font-size: 12px; color: var(--text-secondary);
     margin-top: 6px; min-height: 16px;
@@ -206,7 +208,7 @@
     padding: 12px 20px;
     border-top: 1px solid var(--border);
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
   }
   .btn-3d {
     background: var(--green);
@@ -225,11 +227,11 @@
   /* ── FOOTER ── */
   .footer {
     flex: 0 0 auto;
-    background: transparent;
+    background: var(--green);
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
   }
   .footer-nav-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
   }
   .fnav-btn {
     background: none; border: none; cursor: pointer;
@@ -285,8 +287,8 @@
     <div class="section-header">Reports</div>
 
     <!-- Send Report -->
-    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-      <div class="setting-left">
+    <div class="setting-row" style="flex-direction: column; align-items: center; gap: 8px;">
+      <div class="setting-left" style="text-align: center;">
         <div class="setting-label">Performance Report</div>
         <div class="setting-sublabel">Sent automatically every 20 rounds · includes GPI, stats, strokes lost</div>
       </div>
@@ -313,15 +315,6 @@
         <div class="setting-sublabel">Add or edit local and away courses</div>
       </div>
       <div class="chevron">›</div>
-    </div>
-
-    <!-- Analytics -->
-    <div class="setting-row muted">
-      <div class="setting-left">
-        <div class="setting-label">Analytics</div>
-        <div class="setting-sublabel">Dashboard — performance trends over time</div>
-      </div>
-      <div class="coming-soon">COMING SOON</div>
     </div>
 
   </div><!-- /stage-scrolls -->

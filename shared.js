@@ -41,7 +41,7 @@
 const NAV_LINKS = [
   { id: 'settings',   label: 'Settings',   title: 'Settings'   },
   { id: 'add-scores', label: 'Add Scores', title: 'Add Scores' },
-  { id: 'my-stats',   label: 'My Stats',   title: 'My Stats'   },
+  { id: 'analytics',  label: 'Analytics',  title: 'Analytics'  },
   { id: 'courses',    label: 'Courses',    title: 'Courses'    },
 ];
 
@@ -116,7 +116,7 @@ function showPanel(name) {
     'penalty-rules': 'Penalty Rules — coming soon',
     'quick-rules':   'Quick Rules — coming soon',
     'game-formats':  'Game Formats — coming soon',
-    'my-stats':      'My Stats — coming soon',
+    'analytics':     'Analytics — coming soon',
   };
   if (stubs[name]) alert(stubs[name]);
 }
