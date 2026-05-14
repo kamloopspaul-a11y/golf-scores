@@ -169,6 +169,9 @@ function doPost(e) {
       ? Math.round(hi * (sr / 113) + (cr - par))
       : Math.round(hi);
 
+    const isPending = p.pending === true;
+    const pairingId = p.pairingId || '';
+
     const holes = Array.isArray(p.holes) ? p.holes : [];
     const rows  = [];
 
@@ -194,7 +197,8 @@ function doPost(e) {
       rows.push([
         roundId, sanitize_(date), sanitize_(course), sanitize_(tees), num,
         hPar, hIdx, hScore, hPutts,
-        hFir, hGir, hUd, hXud, hPen, netScore
+        hFir, hGir, hUd, hXud, hPen, netScore,
+        isPending ? 'TRUE' : '', pairingId
       ]);
     }
 
@@ -204,16 +208,20 @@ function doPost(e) {
         .setValues(rows);
     }
 
-    // Rebuild the Diagnostics tab after each posted round
-    buildDiagnostics_(ss);
+    // Rebuild the Diagnostics tab after each posted round (skip pending 9-hole rounds)
+    if (!isPending) {
+      buildDiagnostics_(ss);
+    }
 
-    // Count total distinct rounds and send report every N rounds
+    // Count total distinct completed rounds and send report every N rounds
     const totalRounds = countRounds_(roundsSh);
-    if (totalRounds > 0 && totalRounds % REPORT_EVERY_N_ROUNDS === 0) {
+    if (!isPending && totalRounds > 0 && totalRounds % REPORT_EVERY_N_ROUNDS === 0) {
       sendReport_(ss, REPORT_LAST_N_ROUNDS);
     }
 
-    return json_({ ok: true, roundId: roundId, courseHandicap: ch, totalRounds: totalRounds });
+    const response = { ok: true, roundId: roundId, courseHandicap: ch, totalRounds: totalRounds };
+    if (isPending) response.pairingId = pairingId;
+    return json_(response);
 
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -246,7 +254,9 @@ function buildDiagnostics_(ss) {
   const byRound = {};
 
   raw.forEach(row => {
-    const id = String(row[0]);
+    const id      = String(row[0]);
+    const pending = row[15];                          // col 16 = Pending
+    if (pending === 'TRUE' || pending === true) return; // skip pending 9-hole rounds
     if (!byRound[id]) {
       order.push(id);
       byRound[id] = {
@@ -841,8 +851,12 @@ function getSettings_(sh) {
 
 function countRounds_(roundsSh) {
   if (!roundsSh || roundsSh.getLastRow() < 2) return 0;
-  const ids = roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, 1).getValues();
-  return new Set(ids.map(r => String(r[0]))).size;
+  // Read cols 1 (Round_ID) + 16 (Pending); exclude pending 9-hole rounds
+  const rows = roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, 16).getValues();
+  const completedIds = rows
+    .filter(r => r[15] !== 'TRUE' && r[15] !== true)
+    .map(r => String(r[0]));
+  return new Set(completedIds).size;
 }
 
 function isTruthy_(val) {
