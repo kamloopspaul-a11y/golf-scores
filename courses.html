@@ -39,23 +39,10 @@ v1.0 — 2026-05-11
 <title>Add Course</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="shared.js"></script>
+<link rel="stylesheet" href="shared.css">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   button, input, select, textarea { font: inherit; }
-  :root {
-    --green:          #377f09;
-    --green-hover:    #2e6b07;
-    --green-deep:     #1f4d05;
-    --green-pale:     #eaf4e1;
-    --card:           #ffffff;
-    --text-primary:   #1a1a1a;
-    --text-secondary: #6b7280;
-    --text-muted:     #9ca3af;
-    --bogey:          #dc2626;
-    --border:         rgba(0,0,0,0.10);
-    --yellow:         #f5c842;
-    --row-alt:        #f2f2f2;
-  }
   html, body { height: 100%; overflow-x: hidden; overscroll-behavior: none; }
   body {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -75,31 +62,7 @@ v1.0 — 2026-05-11
   .screen.active { display: flex; }
 
   /* ── MASTHEAD ──────────────────────────────────────── */
-  .masthead {
-    background: transparent;
-    padding: calc(44px + env(safe-area-inset-top)) 20px 28px;
-    color: white;
-    height: calc(248px + env(safe-area-inset-top));
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  .header-upper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    row-gap: 3px;
-    margin-bottom: 14px;
-  }
-  .hu-breadcrumb { font-size: 13px; color: var(--yellow); font-weight: 500;
-              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hu-weather { font-size: 13px; color: rgba(255,255,255,0.8); text-align: right; }
-  .hu-date  { font-size: 12px; color: rgba(255,255,255,0.5); }
-  .hu-duration { font-size: 12px; color: rgba(255,255,255,0.5); text-align: right; }
-  .header-lower     { display: flex; flex-direction: column; }
-  .header-lower-top { min-height: 86px; display: flex; align-items: flex-end; }
-  .header-lower-bot { min-height: 38px; display: flex; align-items: center; }
-  .header-lower-title {
+
     font-size: 56px; font-weight: 600; letter-spacing: -2px;
     color: white; line-height: 1; white-space: nowrap;
   }
@@ -129,36 +92,6 @@ v1.0 — 2026-05-11
     min-height: calc(52px + env(safe-area-inset-bottom));
     padding: 10px 16px calc(env(safe-area-inset-bottom) + 10px);
     flex: 0 0 auto;
-  }
-  /* Footer nav — 4×2 utility link grid (rendered by shared.js) */
-  .footer-nav-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .fnav-btn {
-    background: none;
-    border: none;
-    color: var(--yellow);
-    font-size: 12px;
-    font-weight: 500;
-    min-height: 34px;
-    padding: 4px 8px;
-    text-align: center;
-    cursor: pointer;
-    width: 100%;
-    -webkit-tap-highlight-color: transparent;
-    text-decoration: none;
-  }
-  .fnav-btn:active { color: white; }
-  .footer-version {
-    text-align: center;
-    color: white;
-    font-size: 13px;
-    font-weight: 500;
-    margin-top: 6px;
-    opacity: 0.7;
-    letter-spacing: 0.03em;
   }
 
   /* ── 3D BUTTONS ────────────────────────────────────── */
@@ -322,20 +255,7 @@ v1.0 — 2026-05-11
 
   /* ── SMALL-SCREEN ADJUSTMENTS ──────────────────────── */
   @media (max-height: 750px) {
-    .masthead {
-      height: calc(170px + env(safe-area-inset-top));
-      padding: calc(20px + env(safe-area-inset-top)) 20px 4px;
-    }
-    .header-upper { margin-bottom: 4px; }
-    .header-lower-top { min-height: 74px; }
-    .header-lower-bot { min-height: 32px; }
-    .header-lower-title { font-size: 46px; }
-  }
-
-  .hidden { display: none !important; }
-
-  /* ── Screen 0: Course Library ─────────────────────── */
-  .lib-list { display: flex; flex-direction: column; gap: 0; }
+  
   .lib-item {
     display: flex;
     align-items: center;
