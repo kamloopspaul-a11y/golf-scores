@@ -39,13 +39,38 @@
 // Single source of truth for all footer nav links.
 // Change label or order here — every page updates automatically.
 const NAV_LINKS = [
-  { id: 'settings',   label: 'Settings'   },
-  { id: 'add-scores', label: 'Add Scores' },
-  { id: 'my-stats',   label: 'My Stats'   },
-  { id: 'courses',    label: 'Courses'    },
+  { id: 'settings',   label: 'Settings',   title: 'Settings'   },
+  { id: 'add-scores', label: 'Add Scores', title: 'Add Scores' },
+  { id: 'my-stats',   label: 'My Stats',   title: 'My Stats'   },
+  { id: 'courses',    label: 'Courses',    title: 'Courses'    },
 ];
 
-const APP_VERSION = 'v9.63';
+/**
+ * Returns the NAV_LINKS entry for a given id, or null if not found.
+ * @param {string} id
+ */
+function getNavEntry(id) {
+  return NAV_LINKS.find(function(l) { return l.id === id; }) || null;
+}
+
+/**
+ * Applies a nav entry's title to document.title, .header-lower-title,
+ * and .hu-breadcrumb. Called automatically for pages with data-page-id on <body>.
+ * Can also be called manually: applyPageMeta('courses') to override.
+ * @param {string} id
+ */
+function applyPageMeta(id) {
+  const entry = getNavEntry(id);
+  if (!entry) return;
+  const t = entry.title || entry.label;
+  document.title = t;
+  var titleEl = document.querySelector('.header-lower-title');
+  if (titleEl && !titleEl.dataset.noMeta) titleEl.textContent = t;
+  var crumbEl = document.querySelector('.hu-breadcrumb');
+  if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
+}
+
+const APP_VERSION = 'v9.64';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
@@ -71,6 +96,10 @@ function showPanel(name) {
   // Universal cross-page navigation
   const page = window.location.pathname.split('/').pop() || 'index.html';
 
+  if (name === 'settings') {
+    if (page !== 'settings.html') window.location.href = 'settings.html';
+    return;
+  }
   if (name === 'courses') {
     if (page !== 'courses.html') window.location.href = 'courses.html';
     return;
@@ -82,7 +111,6 @@ function showPanel(name) {
 
   // Stub — panels not yet built
   const stubs = {
-    'settings':      'Settings — coming soon',
     'add-scores':    'Add Scores — coming soon',
     'pro-tips':      'Pro Tips — coming soon',
     'penalty-rules': 'Penalty Rules — coming soon',
@@ -220,4 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderFooterNav(el);
   });
   renderPlayerName();
+  // Auto-apply page meta (title + breadcrumb) if body carries data-page-id
+  var pageId = document.body && document.body.dataset.pageId;
+  if (pageId) applyPageMeta(pageId);
 });

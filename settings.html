@@ -1,0 +1,419 @@
+<!--
+  My Golf Scores — Settings
+  settings.html
+  v1.0 — 2026-05-14
+  - Record Stats toggle (SHOW/HIDE) — persisted to localStorage profile.recordStats
+  - Send Report button — calls doGet?action=report on Apps Script URL
+  - Courses link — navigates to courses.html
+  - Email — editable, saved to profile.reportEmail
+  - Analytics — placeholder (Dashboard Phase 2)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golf Scores">
+<link rel="manifest" href="manifest.json">
+<title>Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  button, input, select, textarea { font: inherit; }
+  :root {
+    --green:          #377f09;
+    --green-hover:    #2e6b07;
+    --green-deep:     #1f4d05;
+    --green-pale:     #eaf4e1;
+    --card:           #ffffff;
+    --text-primary:   #1a1a1a;
+    --text-secondary: #6b7280;
+    --text-muted:     #9ca3af;
+    --bogey:          #dc2626;
+    --border:         rgba(0,0,0,0.10);
+    --yellow:         #f5c842;
+    --row-alt:        #f2f2f2;
+  }
+  html, body { height: 100%; overflow-x: hidden; overscroll-behavior: none; }
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--green);
+    color: var(--text-primary);
+    min-height: 100dvh;
+    width: 100%;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+  @media (min-width: 600px) {
+    body { max-width: 320px; box-shadow: 0 0 40px rgba(0,0,0,0.3); }
+  }
+
+  /* ── 5-ZONE LAYOUT ── */
+  .screen {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    background: transparent;
+    padding: calc(44px + env(safe-area-inset-top)) 20px 4px;
+    color: white;
+    height: calc(208px + env(safe-area-inset-top));
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  @media (max-height: 700px) {
+    .masthead { height: calc(150px + env(safe-area-inset-top)); padding-top: calc(20px + env(safe-area-inset-top)); }
+  }
+  .header-upper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    min-height: 28px;
+  }
+  .hu-breadcrumb { color: var(--yellow); text-align: left; align-self: center; }
+  .hu-weather    { text-align: right; align-self: center; }
+  .hu-date       { text-align: left;  align-self: center; }
+  .hu-duration   { text-align: right; align-self: center; }
+  .header-lower  { display: flex; flex-direction: column; }
+  .header-lower-top {
+    display: flex; align-items: flex-end;
+    min-height: 86px;
+  }
+  @media (max-height: 700px) { .header-lower-top { min-height: 74px; } }
+  .header-lower-title {
+    font-size: 56px; font-weight: 600; color: white; line-height: 1;
+  }
+  @media (max-height: 700px) { .header-lower-title { font-size: 46px; } }
+  .header-lower-bot { min-height: 38px; }
+  @media (max-height: 700px) { .header-lower-bot { min-height: 32px; } }
+
+  /* ── STAGE SCROLLS ── */
+  .stage-scrolls {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    background: var(--card);
+    padding: 0 0 12px;
+  }
+
+  /* ── SETTINGS ROWS ── */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .setting-sublabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .setting-left { display: flex; flex-direction: column; flex: 1; }
+
+  /* ── TOGGLE SWITCH (shared pattern) ── */
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .toggle-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+  .toggle-label.active { color: var(--green); }
+  .switch { position: relative; display: inline-block; width: 48px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider-bg {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #d1d5db; border-radius: 26px;
+    transition: background 0.2s;
+  }
+  .slider-bg::before {
+    content: ''; position: absolute;
+    width: 20px; height: 20px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .switch input:checked + .slider-bg { background: var(--green); }
+  .switch input:checked + .slider-bg::before { transform: translateX(22px); }
+
+  /* ── EMAIL INPUT ── */
+  .setting-input {
+    font-size: 14px;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    width: 100%;
+    margin-top: 8px;
+    background: var(--card);
+  }
+  .setting-input:focus { outline: none; border-color: var(--green); }
+
+  /* ── CHEVRON LINK ROW ── */
+  .setting-row.link { cursor: pointer; }
+  .setting-row.link:active { background: var(--row-alt); }
+  .chevron { color: var(--text-muted); font-size: 18px; flex-shrink: 0; }
+
+  /* ── MUTED ROW (coming soon) ── */
+  .setting-row.muted .setting-label { color: var(--text-muted); }
+  .setting-row.muted .setting-sublabel { color: var(--text-muted); }
+  .coming-soon {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    color: var(--text-muted); background: var(--row-alt);
+    padding: 2px 8px; border-radius: 10px; flex-shrink: 0;
+  }
+
+  /* ── SEND REPORT BUTTON ── */
+  .report-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--green); color: white;
+    border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 14px; font-weight: 600;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .report-btn:active { background: var(--green-hover); }
+  .report-btn:disabled { background: #9ca3af; cursor: default; }
+  .report-status {
+    font-size: 12px; color: var(--text-secondary);
+    margin-top: 6px; min-height: 16px;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-muted);
+    padding: 16px 20px 6px;
+    background: var(--row-alt);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── NAV BAR ── */
+  .nav-bar {
+    flex: 0 0 auto;
+    background: var(--card);
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+  }
+  .btn-3d {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--green-deep);
+    transition: box-shadow 0.1s, transform 0.1s;
+    text-transform: uppercase;
+  }
+  .btn-3d:active { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(3px); }
+
+  /* ── FOOTER ── */
+  .footer {
+    flex: 0 0 auto;
+    background: transparent;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+  .footer-nav-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+  }
+  .fnav-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--yellow); font-size: 11px; font-weight: 500;
+    padding: 4px 2px; text-align: center; line-height: 1.3;
+  }
+  .footer-version {
+    text-align: center; font-size: 10px;
+    color: rgba(255,255,255,0.4); margin-top: 4px;
+  }
+</style>
+</head>
+<body data-page-id="settings">
+<div class="screen">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <div class="header-upper">
+      <div class="hu-breadcrumb">Settings</div>
+      <div class="hu-weather"></div>
+      <div class="hu-date" id="settings-date"></div>
+      <div class="hu-duration"></div>
+    </div>
+    <div class="header-lower">
+      <div class="header-lower-top">
+        <div class="header-lower-title">Settings</div>
+      </div>
+      <div class="header-lower-bot"></div>
+    </div>
+  </div>
+
+  <!-- STAGE SCROLLS -->
+  <div class="stage-scrolls">
+
+    <div class="section-header">Gameplay</div>
+
+    <!-- Record Stats toggle -->
+    <div class="setting-row">
+      <div class="setting-left">
+        <div class="setting-label">Record Stats</div>
+        <div class="setting-sublabel">Track FIR, GIR, Putts, and more per hole</div>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label" id="stats-label-hide">HIDE</span>
+        <label class="switch">
+          <input type="checkbox" id="toggle-stats" onchange="onStatsToggle(this)">
+          <span class="slider-bg"></span>
+        </label>
+        <span class="toggle-label" id="stats-label-show">SHOW</span>
+      </div>
+    </div>
+
+    <div class="section-header">Reports</div>
+
+    <!-- Send Report -->
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+      <div class="setting-left">
+        <div class="setting-label">Performance Report</div>
+        <div class="setting-sublabel">Sent automatically every 20 rounds · includes GPI, stats, strokes lost</div>
+      </div>
+      <button class="report-btn" id="report-btn" onclick="sendReport()">Send Report Now</button>
+      <div class="report-status" id="report-status"></div>
+    </div>
+
+    <div class="section-header">Account</div>
+
+    <!-- Email -->
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
+      <div class="setting-label">Report Email</div>
+      <input type="email" id="inp-email" class="setting-input"
+             placeholder="your@email.com"
+             onblur="saveEmail(this.value)">
+    </div>
+
+    <div class="section-header">Tools</div>
+
+    <!-- Courses -->
+    <div class="setting-row link" onclick="showPanel('courses')">
+      <div class="setting-left">
+        <div class="setting-label">Courses</div>
+        <div class="setting-sublabel">Add or edit local and away courses</div>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="setting-row muted">
+      <div class="setting-left">
+        <div class="setting-label">Analytics</div>
+        <div class="setting-sublabel">Dashboard — performance trends over time</div>
+      </div>
+      <div class="coming-soon">COMING SOON</div>
+    </div>
+
+  </div><!-- /stage-scrolls -->
+
+  <!-- NAV BAR -->
+  <div class="nav-bar">
+    <button class="btn-3d" onclick="showPanel('home')">DONE</button>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer" data-nav></div>
+
+</div><!-- /screen -->
+
+<script>
+  // ── Profile ────────────────────────────────────────────────────────────────
+  function getProfile() {
+    try { return JSON.parse(localStorage.getItem('profile') || '{}'); } catch(e) { return {}; }
+  }
+  function saveProfile(updates) {
+    const p = getProfile();
+    Object.assign(p, updates);
+    localStorage.setItem('profile', JSON.stringify(p));
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  (function init() {
+    const p = getProfile();
+
+    // Date
+    const dateEl = document.getElementById('settings-date');
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric' });
+
+    // Stats toggle — default ON if not set
+    const statsOn = p.recordStats !== false;
+    const tog = document.getElementById('toggle-stats');
+    if (tog) tog.checked = statsOn;
+    updateStatsLabels(statsOn);
+
+    // Email
+    const emailEl = document.getElementById('inp-email');
+    if (emailEl && p.reportEmail) emailEl.value = p.reportEmail;
+  })();
+
+  // ── Stats toggle ───────────────────────────────────────────────────────────
+  function onStatsToggle(el) {
+    saveProfile({ recordStats: el.checked });
+    updateStatsLabels(el.checked);
+  }
+  function updateStatsLabels(on) {
+    const show = document.getElementById('stats-label-show');
+    const hide = document.getElementById('stats-label-hide');
+    if (show) show.classList.toggle('active', on);
+    if (hide) hide.classList.toggle('active', !on);
+  }
+
+  // ── Save email ─────────────────────────────────────────────────────────────
+  function saveEmail(val) {
+    const v = val.trim();
+    if (!v) return;
+    saveProfile({ reportEmail: v });
+  }
+
+  // ── Send Report ────────────────────────────────────────────────────────────
+  async function sendReport() {
+    const p   = getProfile();
+    const url = p.sheetsUrl;
+    const btn = document.getElementById('report-btn');
+    const sta = document.getElementById('report-status');
+    if (!url) {
+      sta.textContent = 'Apps Script URL not configured.';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    sta.textContent = '';
+    try {
+      const res = await fetch(url + '?action=report', { method: 'GET', redirect: 'follow' });
+      const data = await res.json();
+      if (data.ok) {
+        sta.textContent = 'Report sent ✓';
+        btn.textContent = 'Send Report Now';
+      } else {
+        sta.textContent = 'Error: ' + (data.error || 'unknown');
+        btn.textContent = 'Send Report Now';
+      }
+    } catch(err) {
+      sta.textContent = 'Could not reach server. Check internet.';
+      btn.textContent = 'Send Report Now';
+    }
+    btn.disabled = false;
+  }
+</script>
+</body>
+</html>

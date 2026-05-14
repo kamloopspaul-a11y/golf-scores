@@ -1448,8 +1448,9 @@ function adjustScore(delta){
 }
 // ── NAVIGATION ────────────────────────────────────────
 function nextHole(){
-  // Go to stats entry screen (unless historical mode — stats not tracked there)
-  if(!state.historicalMode){
+  // Skip stats screen if: historical mode, or player has stats turned off in Settings
+  const statsOn = (function(){ try { return JSON.parse(localStorage.getItem('profile')||'{}').recordStats !== false; } catch(e){ return true; } })();
+  if(!state.historicalMode && statsOn){
     showStatsScreen();
   } else {
     advanceHole();
