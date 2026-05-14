@@ -696,9 +696,10 @@
   /* Nine-hole "Continue | Post Now" toggle */
   .nine-hole-toggle-wrap {
     display: flex; align-items: center; justify-content: center;
-    gap: 12px; padding: 10px 0 4px;
+    gap: 12px; padding: 14px 0 6px;
+    width: fit-content; margin: 0 auto;
   }
-  .nht-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .nht-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
   .nht-switch .slider-bg { background: #d1d5db; }
   .nht-switch input:checked + .slider-bg { background: var(--green); }
   .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
@@ -1113,14 +1114,14 @@
   </div>
   <div class="midround-wrap">
     <div class="sc-section"><table class="sc-table" id="sc-midround"></table></div>
-  </div>
-  <div class="nine-hole-toggle-wrap">
-    <span class="nht-label">Continue</span>
-    <label class="switch nht-switch">
-      <input type="checkbox" id="post-now-toggle" onchange="onPostNowToggle(this)">
-      <span class="slider-bg"></span>
-    </label>
-    <span class="nht-label">Post Now</span>
+    <div class="nine-hole-toggle-wrap">
+      <span class="nht-label">Continue</span>
+      <label class="switch nht-switch">
+        <input type="checkbox" id="post-now-toggle" onchange="onPostNowToggle(this)">
+        <span class="slider-bg"></span>
+      </label>
+      <span class="nht-label">Post Now</span>
+    </div>
   </div>
   <div class="hole-actions">
     <button class="btn-3d nav-btn" onclick="goBackFromMidround()">Back</button>
