@@ -812,13 +812,47 @@
 
   /* ── COURSE SELECT ──────────────────────────────────── */
 
-  .change-course-link {
-    display: block; margin-top: 14px;
-    font-size: 13px; color: var(--green); text-align: center;
-    cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
-    background: none; border: none; width: 100%; padding: 4px;
-    font-family: inherit;
+  /* ── SETUP COURSE CARD ── */
+  .setup-course-card {
+    margin-top: 20px;
+    padding: 16px 18px;
+    background: var(--green-pale);
+    border-radius: 12px;
+    border: 1px solid rgba(55,127,9,0.15);
   }
+  .setup-course-name {
+    font-size: 18px; font-weight: 700; color: var(--green);
+    text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2;
+  }
+  .setup-course-meta {
+    font-size: 13px; color: var(--text-secondary);
+    margin-top: 5px;
+  }
+  /* ── SETUP TWO-BUTTON ROW ── */
+  .setup-actions {
+    display: flex; gap: 12px; margin-top: 28px;
+  }
+  .btn-outline {
+    flex: 1;
+    background: none; color: var(--green);
+    border: 2px solid var(--green); border-radius: 8px;
+    padding: 12px 10px; font-size: 14px; font-weight: 600;
+    cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-outline:active { background: var(--green-pale); }
+  .btn-start {
+    flex: 1;
+    background: var(--green); color: white;
+    border: none; border-radius: 8px;
+    padding: 12px 10px; font-size: 14px; font-weight: 600;
+    cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em;
+    box-shadow: 0 5px 0 var(--green-deep);
+    transition: box-shadow 0.1s, transform 0.1s;
+    margin-bottom: 4px;
+  }
+  .btn-start:active { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(4px); }
   .course-search-row {
     display: flex; gap: 8px; margin-bottom: 12px;
   }
@@ -922,6 +956,10 @@
     <div class="player-row">
       <span class="player-input player-name-display" id="player-name" data-player-name>Paul</span>
     </div>
+    <div class="setup-course-card">
+      <div class="setup-course-name" id="setup-course-display">Select a Course</div>
+      <div class="setup-course-meta" id="setup-tee-display"></div>
+    </div>
     <div id="pending-banner" class="pending-banner hidden">
       <span id="pending-banner-msg"></span>
       <div class="pending-banner-btns">
@@ -930,12 +968,10 @@
       </div>
     </div>
     <div id="pending-quiet" class="pending-quiet hidden">Post when internet is available.</div>
-    <button class="change-course-link" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
-
-
-  </div>
-  <div class="hole-actions">
-    <button class="btn-3d nav-btn" onclick="startRound()">START ROUND</button>
+    <div class="setup-actions">
+      <button class="btn-outline" onclick="showCourseSelect()" id="setup-course-link">Change Course</button>
+      <button class="btn-start" onclick="startRound()">Start Round</button>
+    </div>
   </div>
   <div class="footer" data-nav></div>
 </div>
@@ -1970,10 +2006,24 @@ function updateCourseNameDisplay() {
     const el = document.getElementById(id); if (el) el.textContent = label;
   });
   // Update Change Course link text to show active course
-  const lnk = document.getElementById('setup-course-link');
-  if (lnk) lnk.textContent = activeCourseData
-    ? 'Playing: ' + activeCourseData.name + ' (' + activeCourseData.teeName + ') — Change'
-    : 'Change Course';
+  // Populate new setup course card
+  const nameEl = document.getElementById('setup-course-display');
+  const metaEl = document.getElementById('setup-tee-display');
+  if (nameEl && metaEl) {
+    if (activeCourseData) {
+      const totalYards = activeCourseData.holes
+        ? activeCourseData.holes.reduce((a, h) => a + (h.yards || 0), 0) : 0;
+      const ydsStr = totalYards > 0 ? ' — ' + totalYards + ' Yds' : '';
+      nameEl.textContent = activeCourseData.name.toUpperCase() + ydsStr;
+      const cr = activeCourseData.cr || '';
+      const sr = activeCourseData.sr || '';
+      const tee = activeCourseData.teeName || '';
+      metaEl.textContent = tee + (cr && sr ? ' · ' + cr + ' / ' + sr : '');
+    } else {
+      nameEl.textContent = 'Select a Course';
+      metaEl.textContent = '';
+    }
+  }
 }
 
 // ── REGIONAL COURSE SEED (from courses.json) ─────────

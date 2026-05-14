@@ -256,16 +256,17 @@ v1.0 — 2026-05-11
     align-items: center;
     justify-content: space-between;
     padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(0,0,0,0.12);
     background: #fff;
     gap: 10px;
   }
+  .lib-info { flex: 1; min-width: 0; }
   .lib-item:first-child { border-radius: 12px 12px 0 0; }
   .lib-item:last-child  { border-radius: 0 0 12px 12px; border-bottom: none; }
   .lib-item:only-child  { border-radius: 12px; }
-  .lib-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .lib-name { font-size: 17px; font-weight: 700; color: var(--text-primary); }
   .lib-sub  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-  .lib-phone a { color: var(--green); text-decoration: none; }
+  .lib-phone a { color: var(--green); text-decoration: none; font-size: 13px; }
   .lib-edit {
     flex-shrink: 0;
     background: none;
