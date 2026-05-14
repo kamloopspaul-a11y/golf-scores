@@ -699,9 +699,9 @@
     gap: 12px; padding: 14px 0 6px;
     width: fit-content; margin: 0 auto;
   }
-  .nht-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-  .nht-switch .slider-bg { background: #9ca3af; }
-  .nht-switch input:checked + .slider-bg { background: var(--green); }
+  .nht-label { font-size: 15px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+  .switch.nht-switch .slider-bg { background: #9ca3af; }
+  .switch.nht-switch input:checked + .slider-bg { background: var(--yellow); }
   .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
   /* Non-hole screens don't have stat sliders — release the 220px floor */
@@ -1696,6 +1696,7 @@ async function submitRound(){
     roundId:      roundId,
     date:         state.date,
     course:       courseName,
+    courseId:     activeCourseData ? activeCourseData.id : null,
     tees:         teeName,
     courseRating: cr,
     slopeRating:  sr,

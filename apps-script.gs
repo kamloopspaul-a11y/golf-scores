@@ -50,7 +50,8 @@ function roundsHeader_() {
   return [
     'Round_ID', 'Date', 'Course', 'Tees', 'Hole',
     'Par', 'Stroke_Index', 'Score', 'Putts',
-    'FIR', 'GIR', 'UD', 'X_UD', 'Penalties', 'Net_Score'
+    'FIR', 'GIR', 'UD', 'X_UD', 'Penalties', 'Net_Score',
+    'Pending', 'Pairing_ID', 'Round_Type'
   ];
 }
 
@@ -58,7 +59,8 @@ function diagnosticsHeader_() {
   return [
     'Round_ID', 'Date', 'Course', 'Score', 'FIR', 'GIR', 'UD', 'Putts', 'Penalties',
     'BallStrikingGap', 'ShortGameOpp', 'MissedOpp', 'ShortGameEff',
-    'PuttsPerGIR', 'DiagnosticScore', 'BSCost', 'SGCost', 'PuttingCost', 'TotalStrokesLost'
+    'PuttsPerGIR', 'DiagnosticScore', 'BSCost', 'SGCost', 'PuttingCost', 'TotalStrokesLost',
+    'Round_Type'
   ];
 }
 
@@ -172,6 +174,14 @@ function doPost(e) {
     const isPending = p.pending === true;
     const pairingId = p.pairingId || '';
 
+    // Round_Type: Home / Local / Away
+    const homeCourse_ = String((getSettings_(ss.getSheetByName(SETTINGS))['Home Course'] || 'Mt. Paul')).trim().toLowerCase();
+    const courseId_   = (p.courseId != null) ? Number(p.courseId) : NaN;
+    const roundType   = isNaN(courseId_)   ? 'Local'
+                      : courseId_ < 0      ? 'Away'
+                      : sanitize_(course).trim().toLowerCase() === homeCourse_ ? 'Home'
+                      : 'Local';
+
     const holes = Array.isArray(p.holes) ? p.holes : [];
     const rows  = [];
 
@@ -198,7 +208,7 @@ function doPost(e) {
         roundId, sanitize_(date), sanitize_(course), sanitize_(tees), num,
         hPar, hIdx, hScore, hPutts,
         hFir, hGir, hUd, hXud, hPen, netScore,
-        isPending ? 'TRUE' : '', pairingId
+        isPending ? 'TRUE' : '', pairingId, roundType
       ]);
     }
 
@@ -260,10 +270,11 @@ function buildDiagnostics_(ss) {
     if (!byRound[id]) {
       order.push(id);
       byRound[id] = {
-        Round_ID: id,
-        Date:     row[1],
-        Course:   row[2],
-        holes:    []
+        Round_ID:   id,
+        Date:       row[1],
+        Course:     row[2],
+        Round_Type: row[17] || '',
+        holes:      []
       };
     }
     byRound[id].holes.push({
@@ -323,7 +334,8 @@ function buildDiagnostics_(ss) {
       bsCost,
       sgCost,
       puttCost,
-      totalSL
+      totalSL,
+      r.Round_Type || ''
     ];
   });
 

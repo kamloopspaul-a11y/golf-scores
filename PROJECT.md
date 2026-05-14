@@ -425,6 +425,7 @@ These apply to every form and every Apps Script write in this project.
 - **Cache-bust pattern for testing:** append `?v=N` to the live URL, bump N each test. Pre-launch, switch to filename-based cache-busting (`index-v912.html`) to silence iOS tracking-protection banners (`?v=N` looks like a tracking parameter).
 - **iOS Safari cache stickiness:** SW is now network-first for HTML (since v9.12 / SW v13+). Deploys reach iPhones on next page load. Don't recommend "clear website data" anymore.
 - **Schema v2 (vertical):** Scorecard and Stats tabs are gone. Single `Rounds` tab. Apps Script `setup()` must be re-run once on the Sheet after pasting new code.
+- **Publish verification (standing routine):** After every push to GitHub Pages, confirm the deploy landed by checking the footer version number in the live app. The version string (e.g. `v9.58`) is rendered by `renderFooterNav()` from the `APP_VERSION` constant in `shared.js`. If the footer still shows the old version, the SW or CDN cache has not refreshed yet — wait and retry rather than assuming success. This replaces the old "clear website data" workaround.
 - **Live URL fetch:** sandbox is firewalled from `kamloopspaul-a11y.github.io` and `raw.githubusercontent.com`. Use Chrome MCP (Paul's browser) or ask Paul for screenshots when verifying live deploys.
 - **Don't re-litigate:** Sheets schema (now v2 vertical — decided 2026-05-04), 1/null flags, single-player-per-sheet, leaderboard removal, layout architecture.
 
