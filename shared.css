@@ -1,10 +1,14 @@
 /**
  * shared.css — Golf PWA global styles
- * v1.0 — 2026-05-14
+ * v1.1 — 2026-05-14
  *
  * Linked by every HTML page. Covers the two zones rendered
  * by shared.js (renderMasthead + renderFooterNav) so CSS is
  * defined once and never duplicated per-page.
+ *
+ * ⚠️  SW CACHE NOTE: shared.css is precached in sw.js.
+ *    Any change here requires a CACHE_NAME bump in sw.js (e.g. golf-scores-v52 → v53)
+ *    or the old version will be served to returning users.
  *
  * Zones:
  *   1. Masthead  — .masthead, .header-upper, .header-lower-*
@@ -172,3 +176,6 @@
 }
 .setting-row:last-child { border-bottom: none; }
 .setting-left { display: flex; flex-direction: column; flex: 1; }
+
+/* Section header — suppress the border-bottom of the row immediately above it */
+.setting-row:has(+ .section-header) { border-bottom: none; }

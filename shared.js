@@ -70,7 +70,7 @@ function applyPageMeta(id) {
   if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
 }
 
-const APP_VERSION = 'v9.76';
+const APP_VERSION = 'v9.77';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────

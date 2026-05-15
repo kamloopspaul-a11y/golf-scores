@@ -1,7 +1,7 @@
 <!--
   My Golf Scores — Settings
   settings.html
-  v1.3 — 2026-05-14
+  v1.4 — 2026-05-14
   - Record Stats toggle (SHOW/HIDE) — persisted to localStorage profile.recordStats
   - Send Report button — calls doGet?action=report on Apps Script URL
   - Courses link — navigates to courses.html
@@ -140,13 +140,13 @@
   <!-- STAGE SCROLLS -->
   <div class="stage-scrolls">
 
-    <div class="section-header">Gameplay</div>
+    <div class="section-header">Score Card</div>
 
     <!-- Record Stats toggle -->
     <div class="setting-row">
       <div class="setting-left">
-        <div class="setting-label">Record Stats</div>
-        <div class="setting-sublabel">Track FIR, GIR, Putts, and more per hole</div>
+        <div class="setting-label">Track Stats</div>
+        <div class="setting-sublabel">FIRs, GIRs, PEN, UDs, X-UDs, PUTTs</div>
       </div>
       <div class="toggle-wrap">
         <span class="toggle-label" id="stats-label-hide">HIDE</span>
@@ -158,13 +158,13 @@
       </div>
     </div>
 
-    <div class="section-header">Reports</div>
+    <div class="section-header">Feedback</div>
 
     <!-- Send Report -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
       <div class="setting-left">
         <div class="setting-label">Performance Report</div>
-        <div class="setting-sublabel">Sent automatically every 20 rounds · includes GPI, stats, strokes lost</div>
+        <div class="setting-sublabel">An email is sent every 20th round to review where you lost strokes based on your Stats and handicap range.</div>
       </div>
       <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <button class="btn-3d" id="send-report-btn" onclick="sendReport()">Send Report Now</button>
