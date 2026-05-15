@@ -933,7 +933,7 @@
       <span class="player-input player-name-display" id="player-name" data-player-name>Paul</span>
     </div>
     <div class="setup-course-card">
-      <div class="setup-course-name" id="setup-course-display">Select a Course</div>
+      <div class="setup-course-name" id="setup-course-display" onclick="showPanel('courses')" style="cursor:pointer;">Select a Course</div>
       <div class="setup-course-meta" id="setup-tee-display"></div>
     </div>
     <div id="pending-banner" class="pending-banner hidden">
@@ -945,8 +945,7 @@
     </div>
     <div id="pending-quiet" class="pending-quiet hidden">Post when internet is available.</div>
   </div>
-  <div class="hole-actions">
-    <button class="btn-3d nav-btn" id="setup-course-link" onclick="showCourseSelect()">Change Course</button>
+  <div class="hole-actions" style="justify-content:center;">
     <button class="btn-3d nav-btn" onclick="startRound()">START ROUND</button>
   </div>
   <div class="footer" data-nav></div>
