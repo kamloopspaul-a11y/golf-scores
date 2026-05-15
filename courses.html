@@ -90,7 +90,13 @@ v1.0 — 2026-05-11
   }
 
   /* ── 3D BUTTONS ────────────────────────────────────── */
-  /* .btn-3d and .btn-grey — defined in shared.css */
+  /* .btn-3d — local overrides for courses layout (flex:1, padding) */
+  .btn-3d { padding: 15px; flex: 1; }
+  .btn-grey {
+    background: linear-gradient(180deg, #888 0%, #666 50%, #444 100%);
+    box-shadow: 0 6px 0 #222, 0 8px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  .btn-grey:active { box-shadow: 0 2px 0 #222, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18); }
 
   /* ── FORM ELEMENTS ─────────────────────────────────── */
   .form-section { margin-bottom: 24px; }
