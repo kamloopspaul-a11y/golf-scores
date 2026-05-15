@@ -1,7 +1,7 @@
 <!--
   My Golf Scores — Settings
   settings.html
-  v1.2 — 2026-05-14
+  v1.3 — 2026-05-14
   - Record Stats toggle (SHOW/HIDE) — persisted to localStorage profile.recordStats
   - Send Report button — calls doGet?action=report on Apps Script URL
   - Courses link — navigates to courses.html
@@ -54,28 +54,6 @@
     padding: 0 0 20px;
   }
 
-  /* ── SETTINGS ROWS ── */
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .setting-row:last-child { border-bottom: none; }
-  .setting-label {
-    font-size: 19px;
-    font-weight: 700;
-    color: var(--green);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .setting-sublabel {
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-  }
-  .setting-left { display: flex; flex-direction: column; flex: 1; }
-
   /* ── TOGGLE SWITCH (shared pattern) ── */
   .toggle-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .toggle-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
@@ -122,58 +100,21 @@
     color: var(--text-muted); background: var(--row-alt);
     padding: 2px 8px; border-radius: 10px; flex-shrink: 0;
   }
-
-  /* ── SEND REPORT BUTTON ── */
-  .report-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    background: var(--green); color: white;
-    border: none; border-radius: 8px;
-    padding: 12px 28px; font-size: 15px; font-weight: 600;
-    cursor: pointer; flex-shrink: 0;
-    text-transform: uppercase;
-    box-shadow: 0 5px 0 var(--green-deep);
-    transition: box-shadow 0.1s, transform 0.1s;
-    margin-bottom: 4px;
-  }
-  .report-btn:active { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(4px); }
-  .report-btn:disabled { background: #9ca3af; box-shadow: 0 5px 0 #6b7280; cursor: default; transform: none; }
   .report-status {
     font-size: 12px; color: var(--text-secondary);
     margin-top: 6px; min-height: 16px;
   }
 
-  /* ── SECTION HEADER ── */
-  .section-header {
-    font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--text-secondary);
-    padding: 16px 20px 6px;
-    background: var(--row-alt);
-    border-bottom: 1px solid var(--border);
-  }
 
   /* ── NAV BAR ── */
   .nav-bar {
     flex: 0 0 auto;
     background: var(--card);
-    padding: 12px 20px;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: center;
   }
-  .btn-3d {
-    background: var(--green);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 28px;
-    font-size: 15px; font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 5px 0 var(--green-deep);
-    transition: box-shadow 0.1s, transform 0.1s;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .btn-3d:active { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(4px); }
 
 </style>
 </head>
@@ -226,7 +167,7 @@
         <div class="setting-sublabel">Sent automatically every 20 rounds · includes GPI, stats, strokes lost</div>
       </div>
       <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <button class="report-btn" id="report-btn" onclick="sendReport()">Send Report Now</button>
+        <button class="btn-3d" id="send-report-btn" onclick="sendReport()">Send Report Now</button>
         <div class="report-status" id="report-status"></div>
       </div>
     </div>
@@ -317,7 +258,7 @@
   async function sendReport() {
     const p   = getProfile();
     const url = p.sheetsUrl;
-    const btn = document.getElementById('report-btn');
+    const btn = document.getElementById('send-report-btn');
     const sta = document.getElementById('report-status');
     if (!url) {
       sta.textContent = 'Apps Script URL not configured.';

@@ -126,3 +126,49 @@
   opacity: 0.7;
   letter-spacing: 0.03em;
 }
+
+/* ── SHARED COMPONENTS ───────────────────────────────────────────────────── */
+
+/* 3D Button — single source, used on every page */
+.btn-3d {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--green); color: white;
+  border: none; border-radius: 8px;
+  padding: 12px 28px; font-size: 15px; font-weight: 600;
+  cursor: pointer; text-transform: uppercase;
+  box-shadow: 0 5px 0 var(--green-deep);
+  transition: box-shadow 0.1s, transform 0.1s;
+  margin-bottom: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-3d:active  { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(4px); }
+.btn-3d:disabled { background: #9ca3af; box-shadow: 0 5px 0 #6b7280; cursor: default; transform: none; }
+
+/* Section header — GAMEPLAY / REPORTS / ACCOUNT etc. */
+.section-header {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-secondary);
+  padding: 16px 20px 6px;
+  background: var(--row-alt);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Setting row heading (matches .lib-name in courses) */
+.setting-label {
+  font-size: 19px; font-weight: 700; color: var(--green);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.setting-sublabel {
+  font-size: 12px; color: var(--text-secondary); margin-top: 2px;
+}
+
+/* ── SETTING ROWS ────────────────────────────────────────────────────────── */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-left { display: flex; flex-direction: column; flex: 1; }
