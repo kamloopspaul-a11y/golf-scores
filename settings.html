@@ -1,7 +1,7 @@
 <!--
   My Golf Scores — Settings
   settings.html
-  v1.0 — 2026-05-14
+  v1.1 — 2026-05-14
   - Record Stats toggle (SHOW/HIDE) — persisted to localStorage profile.recordStats
   - Send Report button — calls doGet?action=report on Apps Script URL
   - Courses link — navigates to courses.html
@@ -64,9 +64,10 @@
   }
   .setting-row:last-child { border-bottom: none; }
   .setting-label {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text-primary);
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--green);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .setting-sublabel {
     font-size: 12px;
@@ -132,10 +133,10 @@
     text-transform: uppercase;
     box-shadow: 0 5px 0 var(--green-deep);
     transition: box-shadow 0.1s, transform 0.1s;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .report-btn:active { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(4px); }
-  .report-btn:disabled { background: #9ca3af; box-shadow: 0 5px 0 #6b7280; cursor: default; }
+  .report-btn:disabled { background: #9ca3af; box-shadow: 0 5px 0 #6b7280; cursor: default; transform: none; }
   .report-status {
     font-size: 12px; color: var(--text-secondary);
     margin-top: 6px; min-height: 16px;
@@ -143,7 +144,7 @@
 
   /* ── SECTION HEADER ── */
   .section-header {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--text-muted);
     padding: 16px 20px 6px;
     background: var(--row-alt);
@@ -219,13 +220,15 @@
     <div class="section-header">Reports</div>
 
     <!-- Send Report -->
-    <div class="setting-row" style="flex-direction: column; align-items: center; gap: 8px;">
-      <div class="setting-left" style="text-align: center;">
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+      <div class="setting-left">
         <div class="setting-label">Performance Report</div>
         <div class="setting-sublabel">Sent automatically every 20 rounds · includes GPI, stats, strokes lost</div>
       </div>
-      <button class="report-btn" id="report-btn" onclick="sendReport()">Send Report Now</button>
-      <div class="report-status" id="report-status"></div>
+      <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <button class="report-btn" id="report-btn" onclick="sendReport()">Send Report Now</button>
+        <div class="report-status" id="report-status"></div>
+      </div>
     </div>
 
     <div class="section-header">Account</div>
