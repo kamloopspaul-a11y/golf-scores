@@ -1,21 +1,20 @@
 /**
  * shared.css — Golf PWA global styles
- * v1.1 — 2026-05-14
+ * v1.3 — 2026-05-14
  *
- * Linked by every HTML page. Covers the two zones rendered
- * by shared.js (renderMasthead + renderFooterNav) so CSS is
- * defined once and never duplicated per-page.
+ * Linked by every HTML page. Single source of truth for shared components.
  *
  * ⚠️  SW CACHE NOTE: shared.css is precached in sw.js.
- *    Any change here requires a CACHE_NAME bump in sw.js (e.g. golf-scores-v52 → v53)
+ *    Any change here requires a CACHE_NAME bump in sw.js (e.g. v53 → v54)
  *    or the old version will be served to returning users.
  *
  * Zones:
- *   1. Masthead  — .masthead, .header-upper, .header-lower-*
- *   2. Footer    — .footer (nav zone), .footer-nav-grid, .fnav-btn, .footer-version
+ *   1. Masthead   — .masthead, .header-upper, .header-lower-*
+ *   2. Footer     — .footer, .footer-nav-grid, .fnav-btn, .footer-version
+ *   3. Components — .btn-3d, .btn-grey, .section-header, .setting-row, .setting-label
  */
 
-/* ── CSS VARIABLES (page may override locally if needed) ─────────────────── */
+/* ── CSS VARIABLES ───────────────────────────────────────────────────────── */
 :root {
   --green:          #377f09;
   --green-hover:    #2e6b07;
@@ -42,54 +41,29 @@
   flex-direction: column;
   justify-content: space-between;
 }
-
-/* Upper strip — 2-col grid: breadcrumb|weather / date|duration */
 .header-upper {
   display: grid;
   grid-template-columns: 1fr 1fr;
   row-gap: 3px;
   margin-bottom: 14px;
 }
-.hu-breadcrumb {
-  font-size: 13px; color: var(--yellow); font-weight: 500;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.hu-weather {
-  font-size: 13px; color: rgba(255,255,255,0.8);
-  text-align: right; white-space: nowrap;
-}
-.hu-date {
-  font-size: 12px; color: rgba(255,255,255,0.5);
-  white-space: nowrap;
-}
-.hu-duration {
-  font-size: 12px; color: rgba(255,255,255,0.5);
-  text-align: right; white-space: nowrap;
-}
+.hu-breadcrumb { font-size: 13px; color: var(--yellow); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hu-weather    { font-size: 13px; color: rgba(255,255,255,0.8); text-align: right; white-space: nowrap; }
+.hu-date       { font-size: 12px; color: rgba(255,255,255,0.5); white-space: nowrap; }
+.hu-duration   { font-size: 12px; color: rgba(255,255,255,0.5); text-align: right; white-space: nowrap; }
 
-/* Lower strip — 2-row: title / subtitle */
 .header-lower     { display: flex; flex-direction: column; position: relative; }
 .header-lower-top { min-height: 86px; display: flex; align-items: flex-end; }
-.header-lower-bot { min-height: 38px; display: flex; align-items: center;
-                    justify-content: space-between; }
-.header-lower-title {
-  font-size: 56px; font-weight: 600; letter-spacing: -2px;
-  color: white; line-height: 1; white-space: nowrap;
-}
-.header-lower-subtitle {
-  font-size: 16px; color: white;
-}
+.header-lower-bot { min-height: 38px; display: flex; align-items: center; justify-content: space-between; }
+.header-lower-title { font-size: 56px; font-weight: 600; letter-spacing: -2px; color: white; line-height: 1; white-space: nowrap; }
+.header-lower-subtitle { font-size: 16px; color: white; }
 .header-lower-subtitle:empty { display: none; }
 
-/* Small-screen masthead */
 @media (max-height: 750px) {
-  .masthead {
-    height: calc(170px + env(safe-area-inset-top));
-    padding: calc(20px + env(safe-area-inset-top)) 20px 4px;
-  }
-  .header-upper { margin-bottom: 4px; }
-  .header-lower-top { min-height: 74px; }
-  .header-lower-bot { min-height: 32px; }
+  .masthead           { height: calc(170px + env(safe-area-inset-top)); padding: calc(20px + env(safe-area-inset-top)) 20px 4px; }
+  .header-upper       { margin-bottom: 4px; }
+  .header-lower-top   { min-height: 74px; }
+  .header-lower-bot   { min-height: 32px; }
   .header-lower-title { font-size: 46px; }
 }
 
@@ -100,55 +74,54 @@
   padding: 20px 20px calc(env(safe-area-inset-bottom) + 12px);
   color: white;
 }
-.footer-nav-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 8px;
-}
+.footer-nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .fnav-btn {
-  background: none;
-  border: none;
-  color: var(--yellow);
-  font-size: 12px;
-  font-weight: 500;
-  min-height: 34px;
-  padding: 4px 8px;
-  text-align: center;
-  cursor: pointer;
-  width: 100%;
-  -webkit-tap-highlight-color: transparent;
-  text-decoration: none;
+  background: none; border: none; color: var(--yellow);
+  font-size: 12px; font-weight: 500; min-height: 34px;
+  padding: 4px 8px; text-align: center; cursor: pointer;
+  width: 100%; -webkit-tap-highlight-color: transparent; text-decoration: none;
 }
 .fnav-btn:active { color: white; }
-.footer-version {
-  text-align: center;
-  color: white;
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: 6px;
-  opacity: 0.7;
-  letter-spacing: 0.03em;
-}
+.footer-version { text-align: center; color: white; font-size: 13px; font-weight: 500; margin-top: 6px; opacity: 0.7; letter-spacing: 0.03em; }
 
-/* ── SHARED COMPONENTS ───────────────────────────────────────────────────── */
+/* ── ZONE 3 — SHARED COMPONENTS ─────────────────────────────────────────── */
 
-/* 3D Button — single source, used on every page */
+/* 3D Button — canonical definition, single source of truth */
 .btn-3d {
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--green); color: white;
-  border: none; border-radius: 8px;
-  padding: 12px 28px; font-size: 15px; font-weight: 600;
-  cursor: pointer; text-transform: uppercase;
-  box-shadow: 0 5px 0 var(--green-deep);
-  transition: box-shadow 0.1s, transform 0.1s;
-  margin-bottom: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  background: linear-gradient(180deg, #4a9e0d 0%, var(--green) 50%, var(--green-deep) 100%);
+  box-shadow: 0 6px 0 #164803, 0 8px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+  transition: transform 0.08s, box-shadow 0.08s, color 0.15s;
+  position: relative;
+  top: 0;
+  padding: 12px 28px;
+  margin-bottom: 6px;
   -webkit-tap-highlight-color: transparent;
+  text-transform: uppercase;
 }
-.btn-3d:active  { box-shadow: 0 1px 0 var(--green-deep); transform: translateY(4px); }
-.btn-3d:disabled { background: #9ca3af; box-shadow: 0 5px 0 #6b7280; cursor: default; transform: none; }
+.btn-3d:hover  { color: var(--yellow); }
+.btn-3d:active { transform: translateY(4px); top: 4px; box-shadow: 0 2px 0 #164803, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18); }
+.btn-3d:disabled { background: linear-gradient(180deg, #aaa 0%, #888 100%); box-shadow: 0 6px 0 #555; cursor: default; transform: none; top: 0; }
 
-/* Section header — GAMEPLAY / REPORTS / ACCOUNT etc. */
+/* Grey variant — used for secondary/cancel actions */
+.btn-grey {
+  background: linear-gradient(180deg, #888 0%, #666 50%, #444 100%);
+  box-shadow: 0 6px 0 #222, 0 8px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.btn-grey:active { box-shadow: 0 2px 0 #222, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18); }
+
+/* Section headers — SCORE CARD / FEEDBACK / ACCOUNT / TOOLS */
 .section-header {
   font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text-secondary);
@@ -156,26 +129,17 @@
   background: var(--row-alt);
   border-bottom: 1px solid var(--border);
 }
+/* Suppress border on the row immediately above a section header */
+.setting-row:has(+ .section-header) { border-bottom: none; }
 
-/* Setting row heading (matches .lib-name in courses) */
-.setting-label {
-  font-size: 19px; font-weight: 700; color: var(--green);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.setting-sublabel {
-  font-size: 12px; color: var(--text-secondary); margin-top: 2px;
-}
-
-/* ── SETTING ROWS ────────────────────────────────────────────────────────── */
+/* Setting rows */
 .setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
 }
 .setting-row:last-child { border-bottom: none; }
 .setting-left { display: flex; flex-direction: column; flex: 1; }
 
-/* Section header — suppress the border-bottom of the row immediately above it */
-.setting-row:has(+ .section-header) { border-bottom: none; }
+/* Setting labels — matches .lib-name in courses */
+.setting-label { font-size: 19px; font-weight: 700; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.setting-sublabel { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }

@@ -90,28 +90,7 @@ v1.0 — 2026-05-11
   }
 
   /* ── 3D BUTTONS ────────────────────────────────────── */
-  .btn-3d {
-    touch-action: manipulation;
-    font-size: 16px; font-weight: 600;
-    color: white; border: none; border-radius: 14px; cursor: pointer;
-    background: linear-gradient(180deg, #4a9e0d 0%, var(--green) 50%, var(--green-deep) 100%);
-    box-shadow: 0 6px 0 #164803, 0 8px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
-    transition: transform 0.08s, box-shadow 0.08s, color 0.15s;
-    position: relative; top: 0; padding: 15px; flex: 1;
-  }
-  .btn-3d:hover  { color: var(--yellow); }
-  .btn-3d:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 #164803, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
-    top: 4px;
-  }
-  .btn-grey {
-    background: linear-gradient(180deg, #888 0%, #666 50%, #444 100%);
-    box-shadow: 0 6px 0 #222, 0 8px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
-  }
-  .btn-grey:active {
-    box-shadow: 0 2px 0 #222, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
-  }
+  /* .btn-3d and .btn-grey — defined in shared.css */
 
   /* ── FORM ELEMENTS ─────────────────────────────────── */
   .form-section { margin-bottom: 24px; }
