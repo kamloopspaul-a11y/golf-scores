@@ -273,22 +273,21 @@ v1.0 — 2026-05-11
   }
   .lib-info:active { background: var(--green-pale); }
   .lib-name {
-    font-size: 17px; font-weight: 700; color: var(--green);
+    font-size: 19px; font-weight: 700; color: var(--green);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .lib-sub  { font-size: 12px; color: var(--text-secondary); }
   .lib-phone { margin-top: 4px; }
   .lib-phone a {
-    color: var(--green); text-decoration: none; font-size: 13px;
+    color: var(--green); text-decoration: none; font-size: 15px;
   }
 
   /* Right: action buttons stacked vertically */
   .lib-actions {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 6px;
-    padding: 10px 12px;
-    border-left: 1px solid rgba(0,0,0,0.07);
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: flex-end;
+    gap: 8px;
+    padding: 0 14px 0 10px;
     flex-shrink: 0;
   }
   .lib-edit {
@@ -819,8 +818,7 @@ function renderLibrary() {
   el.innerHTML = courses.map(c => {
     const rawTees = ((c.tees || {}).male || []).map(t => t.tee_name);
     const teeStr  = filterDisplayTees(rawTees).map(toTitleCase).join(', ');
-    const cityStr = (c.location || {}).city || '';
-    const meta    = [teeStr, cityStr].filter(Boolean).join(' · ');
+    const meta = teeStr;
     const phoneHtml = c.phone
       ? `<div class="lib-phone"><a href="tel:${esc(c.phone)}">${esc(c.phone)}</a></div>` : '';
     const isUserAdded = Number(c.id) < 0;
