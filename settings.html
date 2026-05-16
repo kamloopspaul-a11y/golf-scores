@@ -279,43 +279,51 @@
       </div>
     </div>
 
-    <!-- Stat toggles — 2-col, no labels, default Off -->
+    <!-- Master toggle -->
     <div class="stat-row">
       <span class="stat-row-label">Track Your Stats</span>
-      <label class="switch"><input type="checkbox" id="tog-recordStats" onchange="saveStatPref('recordStats',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">FIR</span>
-      <label class="switch"><input type="checkbox" id="tog-statFIR" onchange="saveStatPref('statFIR',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">GIR</span>
-      <label class="switch"><input type="checkbox" id="tog-statGIR" onchange="saveStatPref('statGIR',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">PEN</span>
-      <label class="switch"><input type="checkbox" id="tog-statPEN" onchange="saveStatPref('statPEN',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">UD</span>
-      <label class="switch"><input type="checkbox" id="tog-statUD" onchange="saveStatPref('statUD',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">X-UD</span>
-      <label class="switch"><input type="checkbox" id="tog-statXUD" onchange="saveStatPref('statXUD',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">PUTTs</span>
-      <label class="switch"><input type="checkbox" id="tog-statPUTTS" onchange="saveStatPref('statPUTTS',this)"><span class="slider-bg"></span></label>
+      <label class="switch"><input type="checkbox" id="tog-recordStats" onchange="onMasterStatToggle(this)"><span class="slider-bg"></span></label>
     </div>
 
-    <div class="stat-row">
-      <span class="stat-row-label">Include GPI (Strokes Gained)</span>
-      <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">Include PPC (Record Weather with Scores)</span>
-      <label class="switch"><input type="checkbox" id="tog-statPPC" onchange="saveStatPref('statPPC',this)"><span class="slider-bg"></span></label>
+    <!-- Sub-panel: description + metric toggles — hidden until master is ON -->
+    <div id="stat-sub-panel" style="display: none;">
+      <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0;">
+        <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
+          When ON, metric columns appear on your score card and are recorded each round. Select only the metrics you want to focus on — for short game, enable GIR and PUTTs. For ball striking, enable FIR and GIR. Unselected metrics stay hidden during play.
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">FIR</span>
+        <label class="switch"><input type="checkbox" id="tog-statFIR" onchange="saveStatPref('statFIR',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">GIR</span>
+        <label class="switch"><input type="checkbox" id="tog-statGIR" onchange="saveStatPref('statGIR',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">PEN</span>
+        <label class="switch"><input type="checkbox" id="tog-statPEN" onchange="saveStatPref('statPEN',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">UD</span>
+        <label class="switch"><input type="checkbox" id="tog-statUD" onchange="saveStatPref('statUD',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">X-UD</span>
+        <label class="switch"><input type="checkbox" id="tog-statXUD" onchange="saveStatPref('statXUD',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">PUTTs</span>
+        <label class="switch"><input type="checkbox" id="tog-statPUTTS" onchange="saveStatPref('statPUTTS',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">Include GPI (Strokes Gained)</span>
+        <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">Include PPC (Record Weather with Scores)</span>
+        <label class="switch"><input type="checkbox" id="tog-statPPC" onchange="saveStatPref('statPPC',this)"><span class="slider-bg"></span></label>
+      </div>
     </div>
 
     <div class="section-header">Performance Reports</div>
@@ -415,6 +423,11 @@
         if (el) el.checked = !!p[key];
       });
 
+    // Show sub-panel if master was already on
+    if (p.recordStats) {
+      document.getElementById('stat-sub-panel').style.display = 'block';
+    }
+
     // Email
     const emailEl = document.getElementById('inp-email');
     if (emailEl && p.reportEmail) emailEl.value = p.reportEmail;
@@ -428,7 +441,13 @@
     more.style.display = open ? 'none' : 'inline-block';
   }
 
-  // ── Stat toggle ────────────────────────────────────────────────────────────
+  // ── Master stat toggle ─────────────────────────────────────────────────────
+  function onMasterStatToggle(el) {
+    saveProfile({ recordStats: el.checked });
+    document.getElementById('stat-sub-panel').style.display = el.checked ? 'block' : 'none';
+  }
+
+  // ── Individual stat toggle ─────────────────────────────────────────────────
   function saveStatPref(key, el) {
     saveProfile({ [key]: el.checked });
   }
