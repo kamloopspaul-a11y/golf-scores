@@ -223,7 +223,7 @@
     <div class="section-header">Tracking Your Stats</div>
 
     <!-- Track Your Stats — info card with expandable benchmarks -->
-    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0;">
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
         We suggest logging at least five rounds — golf has too much variance for a small sample to be reliable. Ten rounds is better. Twenty gives you real signal.
       </div>
@@ -329,14 +329,22 @@
     <div class="section-header">Performance Reports</div>
 
     <!-- Performance Reports description -->
-    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0;">
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
         Your stats are used to create a report on your performance using the key metrics you've selected. Please select how often you would like to have reports sent via email.
       </div>
     </div>
 
-    <div class="stat-row">
-      <span class="stat-row-label">Every 5 Rounds</span>
+    <!-- Receive Reports master toggle — no rule below -->
+    <div class="stat-row" style="border-bottom: none;">
+      <span class="stat-row-label">Receive Reports</span>
+      <label class="switch"><input type="checkbox" id="tog-receiveReports" onchange="onMasterReportToggle(this)"><span class="slider-bg"></span></label>
+    </div>
+
+    <!-- Report sub-panel: frequency toggles + send button — hidden until Receive Reports is ON -->
+    <div id="report-sub-panel" style="display: none;">
+      <div class="stat-row">
+        <span class="stat-row-label">Every 5 Rounds</span>
       <label class="switch"><input type="checkbox" id="tog-freqEvery5" onchange="saveStatPref('freqEvery5',this)"><span class="slider-bg"></span></label>
     </div>
     <div class="stat-row">
@@ -360,11 +368,12 @@
       <label class="switch"><input type="checkbox" id="tog-freqYearEnd" onchange="saveStatPref('freqYearEnd',this)"><span class="slider-bg"></span></label>
     </div>
 
-    <!-- Send Report Now -->
-    <div class="setting-row" style="flex-direction: column; align-items: center; gap: 6px;">
-      <button class="btn-3d" id="send-report-btn" onclick="sendReport()">Send Report Now</button>
-      <div class="report-status" id="report-status"></div>
-    </div>
+      <!-- Send Report Now -->
+      <div class="setting-row" style="flex-direction: column; align-items: center; gap: 6px;">
+        <button class="btn-3d" id="send-report-btn" onclick="sendReport()">Send Report Now</button>
+        <div class="report-status" id="report-status"></div>
+      </div>
+    </div><!-- /report-sub-panel -->
 
     <div class="section-header">Admin</div>
 
@@ -417,16 +426,15 @@
 
     // Stat toggles — all default Off (undefined = false)
     ['recordStats','statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS','statGPI','statPPC',
-     'freqEvery5','freqEvery10','freqEvery20','freqBiWeekly','freqMonthly','freqYearEnd']
+     'receiveReports','freqEvery5','freqEvery10','freqEvery20','freqBiWeekly','freqMonthly','freqYearEnd']
       .forEach(key => {
         const el = document.getElementById('tog-' + key);
         if (el) el.checked = !!p[key];
       });
 
-    // Show sub-panel if master was already on
-    if (p.recordStats) {
-      document.getElementById('stat-sub-panel').style.display = 'block';
-    }
+    // Restore sub-panels if masters were already on
+    if (p.recordStats)    document.getElementById('stat-sub-panel').style.display   = 'block';
+    if (p.receiveReports) document.getElementById('report-sub-panel').style.display = 'block';
 
     // Email
     const emailEl = document.getElementById('inp-email');
@@ -445,6 +453,12 @@
   function onMasterStatToggle(el) {
     saveProfile({ recordStats: el.checked });
     document.getElementById('stat-sub-panel').style.display = el.checked ? 'block' : 'none';
+  }
+
+  // ── Master report toggle ───────────────────────────────────────────────────
+  function onMasterReportToggle(el) {
+    saveProfile({ receiveReports: el.checked });
+    document.getElementById('report-sub-panel').style.display = el.checked ? 'block' : 'none';
   }
 
   // ── Individual stat toggle ─────────────────────────────────────────────────
