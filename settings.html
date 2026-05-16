@@ -137,8 +137,10 @@
     font-weight: 700;
     font-size: 12px;
     color: var(--text-secondary);
+    background: var(--row-alt);
+    border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    padding: 3px 3px 5px;
+    padding: 4px 3px 5px;
   }
   .bench-table td {
     padding: 5px 3px;
@@ -149,7 +151,7 @@
   .bench-table tbody tr:nth-child(even) { background: var(--row-alt); }
   .bench-table td:first-child,
   .bench-table th:first-child { width: 42%; }
-  .bench-hcp-sub { font-size: 11px; color: var(--text-muted); display: block; }
+  .bench-hcp-sub { font-size: 11px; color: var(--text-muted); display: inline; }
   .bench-close-row {
     display: flex;
     justify-content: space-between;
@@ -220,7 +222,7 @@
         <table class="bench-table">
           <thead>
             <tr>
-              <th>Handicap</th>
+              <th>HANDICAP</th>
               <th>FIR %</th>
               <th>GIR %</th>
               <th>PEN</th>
@@ -239,10 +241,10 @@
         <table class="bench-table">
           <thead>
             <tr>
-              <th>Handicap</th>
+              <th>HANDICAP</th>
               <th>UD %</th>
               <th>X-UD %</th>
-              <th>Putts</th>
+              <th>PUTTS</th>
             </tr>
           </thead>
           <tbody>
