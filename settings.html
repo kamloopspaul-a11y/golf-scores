@@ -107,6 +107,20 @@
   }
 
 
+  /* ── STAT TOGGLE ROWS — 2-col, label left / switch right ── */
+  .stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-row-label {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
   /* ── BENCHMARK EXPAND ── */
   .bench-expand-link {
     font-size: 12px;
@@ -265,20 +279,41 @@
       </div>
     </div>
 
-    <!-- Track Stats toggle -->
-    <div class="setting-row">
-      <div class="setting-left">
-        <div class="setting-label">Track Your Stats</div>
-        <div class="setting-sublabel">FIRs, GIRs, PEN, UDs, X-UDs, PUTTs</div>
-      </div>
-      <div class="toggle-wrap">
-        <span class="toggle-label" id="stats-label-hide">HIDE</span>
-        <label class="switch">
-          <input type="checkbox" id="toggle-stats" onchange="onStatsToggle(this)">
-          <span class="slider-bg"></span>
-        </label>
-        <span class="toggle-label" id="stats-label-show">SHOW</span>
-      </div>
+    <!-- Stat toggles — 2-col, no labels, default Off -->
+    <div class="stat-row">
+      <span class="stat-row-label">Track Your Stats</span>
+      <label class="switch"><input type="checkbox" id="tog-recordStats" onchange="saveStatPref('recordStats',this)"><span class="slider-bg"></span></label>
+    </div>
+    <div class="stat-row">
+      <span class="stat-row-label">FIR</span>
+      <label class="switch"><input type="checkbox" id="tog-statFIR" onchange="saveStatPref('statFIR',this)"><span class="slider-bg"></span></label>
+    </div>
+    <div class="stat-row">
+      <span class="stat-row-label">GIR</span>
+      <label class="switch"><input type="checkbox" id="tog-statGIR" onchange="saveStatPref('statGIR',this)"><span class="slider-bg"></span></label>
+    </div>
+    <div class="stat-row">
+      <span class="stat-row-label">PEN</span>
+      <label class="switch"><input type="checkbox" id="tog-statPEN" onchange="saveStatPref('statPEN',this)"><span class="slider-bg"></span></label>
+    </div>
+    <div class="stat-row">
+      <span class="stat-row-label">UD</span>
+      <label class="switch"><input type="checkbox" id="tog-statUD" onchange="saveStatPref('statUD',this)"><span class="slider-bg"></span></label>
+    </div>
+    <div class="stat-row">
+      <span class="stat-row-label">X-UD</span>
+      <label class="switch"><input type="checkbox" id="tog-statXUD" onchange="saveStatPref('statXUD',this)"><span class="slider-bg"></span></label>
+    </div>
+    <div class="stat-row">
+      <span class="stat-row-label">PUTTs</span>
+      <label class="switch"><input type="checkbox" id="tog-statPUTTS" onchange="saveStatPref('statPUTTS',this)"><span class="slider-bg"></span></label>
+    </div>
+
+    <div class="section-header">Strokes Gained</div>
+
+    <div class="stat-row">
+      <span class="stat-row-label">Include GPI</span>
+      <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
     </div>
 
     <div class="section-header">Feedback</div>
@@ -344,11 +379,12 @@
     const dateEl = document.getElementById('settings-date');
     if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric' });
 
-    // Stats toggle — default ON if not set
-    const statsOn = p.recordStats !== false;
-    const tog = document.getElementById('toggle-stats');
-    if (tog) tog.checked = statsOn;
-    updateStatsLabels(statsOn);
+    // Stat toggles — all default Off (undefined = false)
+    ['recordStats','statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS','statGPI']
+      .forEach(key => {
+        const el = document.getElementById('tog-' + key);
+        if (el) el.checked = !!p[key];
+      });
 
     // Email
     const emailEl = document.getElementById('inp-email');
@@ -363,16 +399,9 @@
     more.style.display = open ? 'none' : 'inline-block';
   }
 
-  // ── Stats toggle ───────────────────────────────────────────────────────────
-  function onStatsToggle(el) {
-    saveProfile({ recordStats: el.checked });
-    updateStatsLabels(el.checked);
-  }
-  function updateStatsLabels(on) {
-    const show = document.getElementById('stats-label-show');
-    const hide = document.getElementById('stats-label-hide');
-    if (show) show.classList.toggle('active', on);
-    if (hide) hide.classList.toggle('active', !on);
+  // ── Stat toggle ────────────────────────────────────────────────────────────
+  function saveStatPref(key, el) {
+    saveProfile({ [key]: el.checked });
   }
 
   // ── Save email ─────────────────────────────────────────────────────────────
