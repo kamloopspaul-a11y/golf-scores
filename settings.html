@@ -121,7 +121,7 @@
   .benchmarks { display: none; margin-top: 10px; }
   .benchmarks.open { display: block; }
   .bench-intro {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
     line-height: 1.5;
     margin-bottom: 12px;
@@ -165,11 +165,10 @@
   }
   .bench-footnote a { color: var(--text-muted); text-decoration: underline; }
   .bench-callout {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-secondary);
     line-height: 1.5;
     margin-bottom: 10px;
-    font-style: italic;
   }
 
   /* ── NAV BAR ── */
@@ -206,13 +205,12 @@
   <!-- STAGE SCROLLS -->
   <div class="stage-scrolls">
 
-    <div class="section-header">Player Preferences</div>
+    <div class="section-header">Tracking Your Stats</div>
 
     <!-- Track Your Stats — info card with expandable benchmarks -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0;">
-      <div class="setting-label">Track Your Stats</div>
-      <div class="setting-sublabel" style="margin-top: 6px; line-height: 1.5;">
-        Log at least five rounds — golf has too much variance for a small sample to be reliable. Ten rounds is better. Twenty gives you real signal.
+      <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
+        We suggest logging at least five rounds — golf has too much variance for a small sample to be reliable. Ten rounds is better. Twenty gives you real signal.
       </div>
       <span class="bench-expand-link" id="bench-more" onclick="toggleBench()">More ›</span>
 
@@ -260,7 +258,7 @@
         <div class="bench-callout">If any one of your numbers falls significantly below the benchmark for your handicap range, that's where your practice attention should go. If multiple numbers are off, prioritize the one that represents the most strokes lost — generally, GIR and penalty strokes tend to have the largest impact at the amateur level.</div>
 
         <div class="bench-close-row">
-          <div class="bench-footnote">Src: <a href="https://thegolfinglad.com/how-to-track-golf-stats/" target="_blank">thegolfinglad.com</a></div>
+          <div class="bench-footnote"><em>Src:</em> <a href="https://thegolfinglad.com/how-to-track-golf-stats/" target="_blank">thegolfinglad.com</a></div>
           <span class="bench-expand-link" style="margin-top: 0;" onclick="toggleBench()">‹ Close</span>
         </div>
       </div>
