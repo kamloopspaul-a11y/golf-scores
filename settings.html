@@ -309,11 +309,13 @@
       <label class="switch"><input type="checkbox" id="tog-statPUTTS" onchange="saveStatPref('statPUTTS',this)"><span class="slider-bg"></span></label>
     </div>
 
-    <div class="section-header">Strokes Gained</div>
-
     <div class="stat-row">
-      <span class="stat-row-label">Include GPI</span>
+      <span class="stat-row-label">Include GPI (Strokes Gained)</span>
       <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
+    </div>
+    <div class="stat-row">
+      <span class="stat-row-label">Include PPC (Weather Conditions)</span>
+      <label class="switch"><input type="checkbox" id="tog-statPPC" onchange="saveStatPref('statPPC',this)"><span class="slider-bg"></span></label>
     </div>
 
     <div class="section-header">Feedback</div>
@@ -380,7 +382,7 @@
     if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric' });
 
     // Stat toggles — all default Off (undefined = false)
-    ['recordStats','statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS','statGPI']
+    ['recordStats','statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS','statGPI','statPPC']
       .forEach(key => {
         const el = document.getElementById('tog-' + key);
         if (el) el.checked = !!p[key];
