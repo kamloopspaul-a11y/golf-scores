@@ -297,6 +297,33 @@
     row-gap: 3px;
     margin-bottom: 14px;
   }
+  /* PCC dropdown in header-upper */
+  .hu-pcc {
+    grid-column: 1;
+    display: none;
+    padding-top: 3px;
+  }
+  .hu-pcc select {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.25);
+    color: var(--yellow);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 0;
+    width: 100%;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+  .hu-pcc select option {
+    background: #2a6307;
+    color: white;
+  }
+  .hole-masthead.pcc-active {
+    height: calc(232px + env(safe-area-inset-top));
+  }
   .hu-breadcrumb {
     font-size: 13px; color: var(--yellow); font-weight: 500;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -892,6 +919,7 @@
     .header-lower-bot { min-height: 32px; }
     .success-body { padding: 24px; }
     .ss-hero .ss-val { font-size: 46px; }
+    .hole-masthead.pcc-active { height: calc(196px + env(safe-area-inset-top)); }
   }
 </style>
 <link rel="stylesheet" href="shared.css">
@@ -1004,6 +1032,16 @@
       <div class="hu-weather" id="weather-hole">—</div>
       <div class="hu-date" id="hole-date-display"></div>
       <div class="hu-duration" id="hole-duration">00:00</div>
+      <div class="hu-pcc" id="pcc-row">
+        <select id="pcc-select" onchange="pccChanged(this.value)">
+          <option value="">Conditions…</option>
+          <option value="-1">Easier than normal (firm, helpful wind)</option>
+          <option value="0">Normal / calm</option>
+          <option value="1">Light breeze / mild</option>
+          <option value="2">Steady wind or rain</option>
+          <option value="3">Extreme (gale, torrential rain)</option>
+        </select>
+      </div>
     </div>
     <div class="header-lower">
       <div class="header-lower-top">
@@ -1285,7 +1323,8 @@ let state = {
   scores:[], holeList:[], totalHoles:18, weatherStr:"—",
   roundStartTime: null, midroundSeen: false,
   pendingRound: false, pairingId: null,
-  stats: [], historicalMode: false
+  stats: [], historicalMode: false,
+  pccSelected: null
 };
 let durationTimer = null;
 // ── WEATHER ──────────────────────────────────────────
@@ -1340,6 +1379,7 @@ function startRound() {
   state.stats  = Array.from({length: state.totalHoles}, () =>
     ({fir:null, gir:null, pen:null, ud:null, xud:null, putts:2}));
   state.currentHole=0; state.activePlayer=0;
+  state.pccSelected = null;
   state.roundStartTime = Date.now();
   localStorage.setItem('roundStartTime', state.roundStartTime);
   if(durationTimer) clearInterval(durationTimer);
@@ -1386,6 +1426,7 @@ function showHole(index){
   document.getElementById('next-btn').textContent='NEXT';
   updateScoreDisplay(index);
   syncStatSliders(index);
+  applyPccVisibility();
 }
 // ── STATS ─────────────────────────────────────────────
 function syncStatSliders(index){
@@ -1497,6 +1538,24 @@ function applyMetricVisibility(){
   });
 }
 function statsBack(){ showScreen('hole'); }
+
+// ── PCC ───────────────────────────────────────────────
+function pccChanged(val) {
+  state.pccSelected = val === '' ? null : parseInt(val, 10);
+}
+function applyPccVisibility() {
+  let prefs = {};
+  try { prefs = JSON.parse(localStorage.getItem('profile') || '{}'); } catch(e) {}
+  const pccOn = prefs.statPCC === true;
+  const row      = document.getElementById('pcc-row');
+  const masthead = document.querySelector('#screen-hole .hole-masthead');
+  if (row)      row.style.display = pccOn ? 'block' : 'none';
+  if (masthead) masthead.classList.toggle('pcc-active', pccOn);
+  if (pccOn) {
+    const sel = document.getElementById('pcc-select');
+    if (sel) sel.value = state.pccSelected != null ? String(state.pccSelected) : '';
+  }
+}
 
 function statsNext(){ advanceHole(); }
 function prevHole(){
@@ -1716,7 +1775,8 @@ async function submitRound(){
     slopeRating:  sr,
     par:          totalPar,
     holes:        holePayload,
-    ...(state.pendingRound ? { pending: true, pairingId: state.pairingId } : {})
+    ...(state.pendingRound ? { pending: true, pairingId: state.pairingId } : {}),
+    ...(state.pccSelected != null ? { pccSelected: state.pccSelected } : {})
   };
   const spinner=document.getElementById('success-spinner');
   const title=document.getElementById('success-title');
