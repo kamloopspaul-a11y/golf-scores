@@ -691,6 +691,7 @@
     background: var(--card); border: 1px solid var(--border);
   }
   #screen-stats .putts-btn { background: transparent; color: var(--green); }
+  .sg-row { display: contents; }
   #screen-stats #putts-value { color: var(--text-primary); }
 
   /* Nine-hole "Continue | Post Now" toggle */
@@ -1059,18 +1060,30 @@
   <div class="stageScrolls">
     <div class="player-row"><span class="player-name-display" data-player-name>Paul</span></div>
     <div class="stats-grid">
-      <div class="sg-label">FIR</div>
-      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
-      <div class="sg-label">GIR</div>
-      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-gir" onchange="statChanged('gir')"><span class="slider-bg"></span></label></div>
-      <div class="sg-label">PEN</div>
-      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-pen" onchange="statChanged('pen')"><span class="slider-bg"></span></label></div>
-      <div class="sg-label">UD</div>
-      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-ud" onchange="statChanged('ud')"><span class="slider-bg"></span></label></div>
-      <div class="sg-label">X-UD</div>
-      <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-xud" onchange="statChanged('xud')"><span class="slider-bg"></span></label></div>
-      <div class="sg-label">PUTTS</div>
-      <div class="sg-control"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
+      <div class="sg-row" data-metric="fir">
+        <div class="sg-label">FIR</div>
+        <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-fir" onchange="statChanged('fir')"><span class="slider-bg"></span></label></div>
+      </div>
+      <div class="sg-row" data-metric="gir">
+        <div class="sg-label">GIR</div>
+        <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-gir" onchange="statChanged('gir')"><span class="slider-bg"></span></label></div>
+      </div>
+      <div class="sg-row" data-metric="pen">
+        <div class="sg-label">PEN</div>
+        <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-pen" onchange="statChanged('pen')"><span class="slider-bg"></span></label></div>
+      </div>
+      <div class="sg-row" data-metric="ud">
+        <div class="sg-label">UD</div>
+        <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-ud" onchange="statChanged('ud')"><span class="slider-bg"></span></label></div>
+      </div>
+      <div class="sg-row" data-metric="xud">
+        <div class="sg-label">X-UD</div>
+        <div class="sg-control"><label class="switch"><input type="checkbox" id="slider-xud" onchange="statChanged('xud')"><span class="slider-bg"></span></label></div>
+      </div>
+      <div class="sg-row" data-metric="putts">
+        <div class="sg-label">PUTTS</div>
+        <div class="sg-control"><div class="putts-counter"><button class="putts-btn" type="button" onclick="adjustPutts(-1)">−</button><span id="putts-value">2</span><button class="putts-btn" type="button" onclick="adjustPutts(1)">+</button></div></div>
+      </div>
     </div>
   </div>
   <div class="hole-actions">
@@ -1465,7 +1478,23 @@ function showStatsScreen(){
   document.getElementById('stats-yards-display').textContent = hole.yards;
   renderPlayerName(state.players[state.activePlayer]);
   syncStatSliders(i);
+  applyMetricVisibility();
   showScreen('stats');
+}
+function applyMetricVisibility(){
+  let prefs = {};
+  try { prefs = JSON.parse(localStorage.getItem('profile') || '{}'); } catch(e){}
+  const map = {
+    fir:'statFIR', gir:'statGIR', pen:'statPEN',
+    ud:'statUD',  xud:'statXUD', putts:'statPUTTS'
+  };
+  Object.entries(map).forEach(([metric, key]) => {
+    const row = document.querySelector('.sg-row[data-metric="'+metric+'"]');
+    if(!row) return;
+    // Default true if key has never been set (fresh install shows all metrics)
+    const on = prefs[key] !== false;
+    row.style.display = on ? 'contents' : 'none';
+  });
 }
 function statsBack(){ showScreen('hole'); }
 
@@ -1474,8 +1503,11 @@ function prevHole(){
   if(state.currentHole===0) showScreen('setup');
   else if(state.currentHole===9 && state.midroundSeen){
     buildMidroundCard(); showScreen('midround');
+  } else {
+    state.currentHole--; showHole(state.currentHole);
+    const statsOn = (function(){ try { return JSON.parse(localStorage.getItem('profile')||'{}').recordStats !== false; } catch(e){ return true; } })();
+    if(!state.historicalMode && statsOn){ showStatsScreen(); } else { showScreen('hole'); }
   }
-  else { state.currentHole--; showHole(state.currentHole); }
 }
 function continueToBack9(){
   state.currentHole=9; showHole(9); showScreen('hole');
