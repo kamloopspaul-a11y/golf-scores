@@ -279,6 +279,7 @@
   }
   .screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
   .screen.active { display: flex; }
+  .hu-pcc { display: none; } /* hidden until PCC enabled in Settings */
   /* ── MASTHEADS ─────────────────────────────────────── */
   .masthead, .hole-masthead, .card-masthead {
     background: transparent;
@@ -297,32 +298,24 @@
     row-gap: 3px;
     margin-bottom: 14px;
   }
-  /* PCC dropdown in header-upper */
-  .hu-pcc {
-    grid-column: 1;
+  /* PCC conditions dropdown — setup stage */
+  .pcc-setup-row {
     display: none;
-    padding-top: 3px;
+    margin-top: 12px;
   }
-  .hu-pcc select {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.25);
-    color: var(--yellow);
-    font-size: 11px;
-    font-weight: 500;
-    padding: 2px 0;
+  .pcc-setup-select {
     width: 100%;
+    padding: 10px 14px;
+    background: var(--card);
+    border: 1px solid rgba(55,127,9,0.25);
+    border-radius: 12px;
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
     outline: none;
-    -webkit-appearance: none;
-    appearance: none;
     cursor: pointer;
-  }
-  .hu-pcc select option {
-    background: #2a6307;
-    color: white;
-  }
-  .hole-masthead.pcc-active {
-    height: calc(232px + env(safe-area-inset-top));
+    -webkit-appearance: auto;
+    appearance: auto;
   }
   .hu-breadcrumb {
     font-size: 13px; color: var(--yellow); font-weight: 500;
@@ -919,7 +912,7 @@
     .header-lower-bot { min-height: 32px; }
     .success-body { padding: 24px; }
     .ss-hero .ss-val { font-size: 46px; }
-    .hole-masthead.pcc-active { height: calc(196px + env(safe-area-inset-top)); }
+
   }
 </style>
 <link rel="stylesheet" href="shared.css">
@@ -964,6 +957,16 @@
     <div class="setup-course-card">
       <div class="setup-course-name" id="setup-course-display" onclick="showPanel('courses')" style="cursor:pointer;">Select a Course</div>
       <div class="setup-course-meta" id="setup-tee-display"></div>
+    </div>
+    <div class="pcc-setup-row" id="pcc-row">
+      <select id="pcc-select" class="pcc-setup-select" onchange="pccChanged(this.value)">
+        <option value="">Conditions today…</option>
+        <option value="-1">Easier than normal (firm, helpful wind)</option>
+        <option value="0">Normal / calm</option>
+        <option value="1">Light breeze / mild</option>
+        <option value="2">Steady wind or rain</option>
+        <option value="3">Extreme (gale, torrential rain)</option>
+      </select>
     </div>
     <div id="pending-banner" class="pending-banner hidden">
       <span id="pending-banner-msg"></span>
@@ -1032,16 +1035,6 @@
       <div class="hu-weather" id="weather-hole">—</div>
       <div class="hu-date" id="hole-date-display"></div>
       <div class="hu-duration" id="hole-duration">00:00</div>
-      <div class="hu-pcc" id="pcc-row">
-        <select id="pcc-select" onchange="pccChanged(this.value)">
-          <option value="">Conditions…</option>
-          <option value="-1">Easier than normal (firm, helpful wind)</option>
-          <option value="0">Normal / calm</option>
-          <option value="1">Light breeze / mild</option>
-          <option value="2">Steady wind or rain</option>
-          <option value="3">Extreme (gale, torrential rain)</option>
-        </select>
-      </div>
     </div>
     <div class="header-lower">
       <div class="header-lower-top">
@@ -1342,6 +1335,7 @@ function updateAllWeather() {
     const el=document.getElementById(id); if(el) el.textContent=state.weatherStr;
   });
   updateCourseNameDisplay();
+  applyPccVisibility();
   const dateStr=state.date?formatDate(state.date):'';
   ["setup-date-display","hole-date-display","stats-date-display","midround-date-display","card-date-display","success-date-display","as-date-display"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=dateStr;
@@ -1426,7 +1420,6 @@ function showHole(index){
   document.getElementById('next-btn').textContent='NEXT';
   updateScoreDisplay(index);
   syncStatSliders(index);
-  applyPccVisibility();
 }
 // ── STATS ─────────────────────────────────────────────
 function syncStatSliders(index){
@@ -1547,10 +1540,8 @@ function applyPccVisibility() {
   let prefs = {};
   try { prefs = JSON.parse(localStorage.getItem('profile') || '{}'); } catch(e) {}
   const pccOn = prefs.statPCC === true;
-  const row      = document.getElementById('pcc-row');
-  const masthead = document.querySelector('#screen-hole .hole-masthead');
-  if (row)      row.style.display = pccOn ? 'block' : 'none';
-  if (masthead) masthead.classList.toggle('pcc-active', pccOn);
+  const row = document.getElementById('pcc-row');
+  if (row) row.style.display = pccOn ? 'block' : 'none';
   if (pccOn) {
     const sel = document.getElementById('pcc-select');
     if (sel) sel.value = state.pccSelected != null ? String(state.pccSelected) : '';
