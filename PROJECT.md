@@ -4,11 +4,11 @@
 
 ## Status
 
-**Version:** v9.58 — May 13, 2026
+**Version:** v9.63 — May 14, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
-**Service Worker:** v37 (network-first for HTML, cache-first for assets)
+**Service Worker:** v42 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
 ## Core Spec
@@ -361,7 +361,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 12, 2026 (evening)
+**Last worked:** May 16, 2026
 
 ### What was completed this session
 - **shared.js v1.1** — added `getPlayerName()` + `renderPlayerName()` + `[data-player-name]` injection pattern; auto-calls on DOMContentLoaded alongside `renderFooterNav()`
@@ -375,12 +375,24 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ### Resume here next session
 
+**Last worked:** May 16, 2026
+**Version:** v9.84 / SW v57
+
+**Completed this session:**
+- Stats screen (screen-stats) — 2-step score → stats flow per hole, skipped in historicalMode
+- Add Scores screen — historical round entry with date picker, course/tee selector, 9/18 toggle
+- 9-hole widow/pairing — Front 9 Post Now toggle, client-side trim, Apps Script widow match/pair logic
+- Rounds schema: Pending, Pairing_ID, Round_Type columns added
+- Apps Script refactor: Post / Diagnose / Rebuild now three separate concerns
+
 **Build queue (in order):**
-1. **Add Scores screen** ← NEXT — entry setup (date picker + course selector defaulting to Mt. Paul + tees) → existing hole screens → post to Sheets. Stats footer hidden for historical rounds (`state.historicalMode`).
-2. **Record Stats toggle** on Setup screen — ON/OFF before round starts; persisted in Player Profile.
-3. **Settings panel** — name, home tees, HI, email, Track Stats toggle, Stat Reports toggle.
-4. **Auto-calculate HI from entered rounds** (WHS formula, best 8 of 20); display "—" until 20 rounds.
-5. Remove Dev buttons (Jump to Post Screen, Simulate Failure) before release.
+1. **Course card tap cue** — add "Change Course ›" sublabel under course name on Setup screen ← NEXT
+2. **shared.css — HOME button standard width** — one class, all pages consistent
+3. **shared.css — Toggle switch canonical** — yellow track on checked; translucent white on green bg, grey on white bg
+4. **shared.css — Font type scale** — locked rules: page title / section header / row label / sublabel / body
+5. **Settings panel** — name, home tees, HI. Track Stats + Stat Reports toggles already in settings.html.
+6. **Auto-calculate HI** (WHS formula, best 8 of 20); display "—" until 20 rounds.
+7. Remove Dev buttons before release.
 
 #### Other pre-release tasks
 - Touch-target review for mobile
@@ -556,3 +568,130 @@ Every screen in this app — current and future — uses a five-zone flex-column
 5. Remove duplicated footer nav grids from each screen in `index.html`
 6. Build per-hole stat screen using the template
 
+
+---
+
+## PCC — Playing Conditions Calculation (Planned, 2026-05-15)
+
+### Concept
+An informal, opt-in conditions tag applied per round. Not a scoring adjustment and not applied to any official handicap. Sole purpose: to flag whether weather was a likely factor in a poor round. Because it is player-toggled and self-reported, it cannot be applied consistently across all rounds — meaning it cannot be trusted as a performance metric. It is context only, not analysis. If the toggle is Off for any round, that round has no PCC data and the integrity of any weather-based pattern is compromised. This is understood and accepted.
+
+### Player Preference
+- Toggle in Settings: **Enable PCC Tracking** — default **Off**
+- When Off, nothing changes in the round flow
+- When On, a post-round prompt appears in the Final Score screen (stageScrolls zone, below the scorecard)
+
+### Post-Round Prompt — Conditions Dropdown
+Player selects how conditions actually felt during the round. Options map to PCC values but are phrased as experience, not numbers:
+
+| Dropdown Label | PCC Value |
+|---|---|
+| Easier than normal (firm, helpful wind) | −1 |
+| Normal / calm | 0 |
+| Light breeze / mild | +1 |
+| Steady wind or rain | +2 |
+| Extreme (gale, torrential rain) | +3 |
+
+Player never sees the numeric value — they describe the day. Backend converts to PCC.
+
+### Score Cross-Reference (Backend)
+At submission, the app compares today's gross score against the player's rolling average (sourced from Sheets). If the score is meaningfully above average (threshold TBD — likely 3+ strokes), the system flags the round as a potential weather-affected outlier regardless of the PCC selection. This creates a second, independent signal.
+
+Three data points stored per round:
+1. **PCC_Selected** — player's dropdown choice (mapped to −1/0/+1/+2/+3)
+2. **PCC_ScoreDelta** — today's score minus rolling average (+ = worse than average)
+3. **PCC_Flag** — boolean: true if score delta ≥ threshold AND PCC_Selected ≥ +1
+
+Discrepancies (e.g., player selects Normal but score delta is +8) are stored and visible in Sheets — not surfaced in the app UI.
+
+### Silent Pre-Round Weather Capture (Optional Enhancement)
+At round start, silently fetch current conditions via weather API (OpenWeatherMap free tier) using course GPS coordinates. Store wind speed, temperature, precipitation code. Not displayed to player. Used as a fourth reference point in Sheets diagnostics.
+
+### Sheets Integration
+New columns added to the round log:
+- `PCC_Selected` | `PCC_ScoreDelta` | `PCC_Flag` | `Weather_Fetched` (optional)
+
+Enables queries like:
+- "Show all rounds where PCC_Flag = TRUE"
+- "What is my average score on PCC +2 days vs. calm days?"
+- "Why was my score high on 2026-06-10?" → drill into PCC columns
+
+### Open Questions / Design Threads
+- Exact score delta threshold for PCC_Flag (3 strokes? 4?)
+- Whether to surface a pre-round weather summary to the player (informational only, not interactive)
+- Prompt copy/wording for the post-round dropdown in the Stage area
+- Whether PCC_Selected should be skippable (dismiss with no selection) or required when PCC is On
+
+### Status
+Design thread — spec complete. Build after Add Course panel (courses.html) and Stat Entry screen are shipped.
+
+---
+
+## Settings Screen Redesign (Design Thread, 2026-05-15)
+
+### Direction
+Replace button-based settings with a full toggle layout. Two-column design consistent with the existing "Track Your Stats" row. The only button remaining is a SAVE at the bottom — retained for user affirmation, not functional necessity. Admin section stays below the toggle layout, untouched, pending a future decision on whether it gets its own screen.
+
+### Toggle Architecture (proposed)
+
+**Player Preferences (always visible)**
+- PCC Tracking — Off / On
+
+**Stats Tracking**
+- Track Your Stats — Off / On (master switch; rows below are dependent on this being On)
+
+**Metric Toggles** (greyed out if Track Stats = Off)
+- FIR — Off / On
+- GIR — Off / On
+- PEN — Off / On
+- UD — Off / On
+- X-UD — Off / On
+- PUTTs — Off / On
+
+### Performance Reports Description — Sample Report Link
+> The description in settings.html needs a text link to a Sample Report, styled like the *Src:* footnote used in the Tracking Your Stats card. The Sample Report is a static archived file for distribution to new accounts — not generated from user data. It should be created once and hosted alongside the app. See TODO_LIST.md: "Make Sample Report".
+
+**Performance Reports — Frequency** (greyed out if Track Stats = Off)
+- After 5 Rounds — Off / On
+- After 10 Rounds — Off / On
+- After 20 Rounds — Off / On
+- BiWeekly — Off / On
+- Monthly — Off / On
+- Season Summary (Nov 15) — Off / On
+
+Toggle labels (Off/On) are not displayed — toggle state is visually self-evident.
+
+### Combined Trigger Logic
+When multiple frequency thresholds are satisfied on the same round, one email is sent — not multiple. Round 10 satisfies both the 5-round and 10-round triggers: a single report is generated with clearly labelled sections for each window. Calendar and round-count triggers that coincide are folded the same way. **One email per trigger event, however many sections are warranted.**
+
+### Report Architecture (four tiers)
+
+| Report | Trigger | Content |
+|---|---|---|
+| 5-Round | Every 5th round | Score-based overview + all active metrics |
+| 10-Round | Every 10th round | Wider trend + all active metrics |
+| Monthly | Calendar | Trend summary + rotating metric spotlight |
+| Season Summary | Nov 15 | Full retrospective — all metrics, all trends |
+
+### Rotating Monthly Spotlight
+- Cycles automatically through active metrics in order (FIR → GIR → PEN → etc.)
+- Only activates if **2 or more** metrics are tracked
+- If only 1 metric tracked: spotlight deepens score analysis instead of rotating
+- Spotlight leads with a plain-language verdict: improvement noted or needs attention
+
+### Score-Based Foundation (always present)
+Every report starts with score-derived observations regardless of stat tracking — scoring average, best/worst round, handicap trend. Stats layer on top as available context, not prerequisites. A player tracking nothing still gets a meaningful score report.
+
+### Narrative Tone
+Plain language, not tables. Coach voice, not spreadsheet. Example: *"Your putting average is down 0.3 per hole over the last month. Your scoring average has improved by 2 strokes compared to the same period last season."* Season-over-season reach-back comparisons are a core feature — single data points gain meaning when placed in historical context.
+
+### Open Questions / To Do's
+- Decide: do toggles auto-save instantly, or hold until SAVE is tapped? Must be consistent.
+- Decide: future home for Admin section — likely broken out into a dedicated onboarding process (email, Apps Script URL, player profile). Not a toggle-style section.
+- Confirm score delta threshold for PCC_Flag (likely 3+ strokes above average)
+- **Resolved #4:** Combined report order is incremental, smallest window first — 5 Rounds before 10, BiWeekly before Monthly. Most recent data leads, longer trends follow.
+- **Resolved #5:** Report generates regardless of round count. When data is insufficient, a warm welcome report is delivered instead — reiterates what is being tracked, sets expectations for when reports become more robust, and encourages continued tracking. Framed as onboarding, not an apology. Player may import historical rounds later (separate discussion).
+- **Resolved #6:** Season Summary date fixed at Nov 15 in Settings (placeholder value). Player can adjust in their profile via the Admin section.
+
+### Status
+Design thread — fully explored, not yet spec'd for build. Build after Add Course panel, Stat Entry screen, and Settings toggle layout are shipped.

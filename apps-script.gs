@@ -25,9 +25,11 @@ const ROUNDS      = 'Rounds';
 const SETTINGS    = 'Settings';
 const DIAGNOSTICS = 'Diagnostics';
 
-const REPORT_EMAIL          = 'kamloopspaul@gmail.com';
-const REPORT_EVERY_N_ROUNDS = 5;   // send after every 5th round
-const REPORT_LAST_N_ROUNDS  = 5;   // how many rounds to include in report
+const REPORT_EMAIL   = 'kamloopspaul@gmail.com';
+
+// Round-count windows (rounds). A report fires when totalRounds % n === 0 for any window.
+// Smallest first — combined email sections appear in this order.
+const ROUND_WINDOWS  = [5, 10, 20];
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 //
@@ -78,6 +80,16 @@ function setup() {
   if (!existing['Home Course'])    settingsSh.appendRow(['Home Course',    'Mt. Paul']);
   if (!existing['Handicap_Index']) settingsSh.appendRow(['Handicap_Index', 20]);
 
+  // Migrate Rounds header — add any columns that are in roundsHeader_() but missing from row 1
+  const roundsSh = ss.getSheetByName(ROUNDS);
+  if (roundsSh && roundsSh.getLastRow() >= 1) {
+    const fullHeader = roundsHeader_();
+    const existingHeader = roundsSh.getRange(1, 1, 1, roundsSh.getLastColumn()).getValues()[0];
+    fullHeader.forEach((col, i) => {
+      if (!existingHeader[i]) roundsSh.getRange(1, i + 1).setValue(col);
+    });
+  }
+
   // Style the Diagnostics tab
   styleDiagnosticsSheet_(ss.getSheetByName(DIAGNOSTICS));
 
@@ -112,6 +124,15 @@ function doGet(e) {
         return obj;
       });
       return json_({ ok: true, rounds: rounds });
+    } catch (err) {
+      return json_({ ok: false, error: String(err) });
+    }
+  }
+
+  if (action === 'report') {
+    try {
+      sendReport_(SpreadsheetApp.getActive(), REPORT_LAST_N_ROUNDS);
+      return json_({ ok: true, message: 'Report sent.' });
     } catch (err) {
       return json_({ ok: false, error: String(err) });
     }
@@ -218,14 +239,64 @@ function doPost(e) {
         .setValues(rows);
     }
 
-    // Rebuild the Diagnostics tab after each posted round (skip pending 9-hole rounds)
-    if (!isPending) {
-      buildDiagnostics_(ss);
+    // ── Widow pairing ───────────────────────────────────────────────────────
+    // If this is a pending 9-hole round, check whether an unmatched pending
+    // round already exists.  If so, merge them into one 18-hole record:
+    //   • renumber the new holes 10–18
+    //   • reassign their Round_ID to the widow's Round_ID
+    //   • clear the Pending flag on all rows for both halves
+    //   • rebuild Diagnostics on the completed 18-hole round
+    if (isPending) {
+      const allData = roundsSh.getLastRow() > 1
+        ? roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, 16).getValues()
+        : [];
+
+      // Find the oldest pending round that isn't this submission
+      let widowId = null;
+      for (let i = 0; i < allData.length; i++) {
+        const rId      = String(allData[i][0]);
+        const rPending = allData[i][15];
+        if ((rPending === 'TRUE' || rPending === true) && rId !== roundId) {
+          widowId = rId;
+          break;
+        }
+      }
+
+      if (widowId) {
+        // Update the 9 rows we just appended: new Round_ID, holes 10-18, clear Pending
+        const lastRow     = roundsSh.getLastRow();
+        const newRowStart = lastRow - rows.length + 1;
+        for (let i = 0; i < rows.length; i++) {
+          const sheetRow = newRowStart + i;
+          roundsSh.getRange(sheetRow, 1).setValue(widowId);   // Round_ID
+          roundsSh.getRange(sheetRow, 5).setValue(i + 10);    // Hole number 10-18
+          roundsSh.getRange(sheetRow, 16).setValue('');        // clear Pending
+        }
+
+        // Clear Pending on the widow's original 9 rows
+        const refreshed = roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, 16).getValues();
+        for (let i = 0; i < refreshed.length; i++) {
+          if (String(refreshed[i][0]) === widowId &&
+              (refreshed[i][15] === 'TRUE' || refreshed[i][15] === true)) {
+            roundsSh.getRange(i + 2, 16).setValue('');
+          }
+        }
+
+        // Full 18-hole round is now complete — append one Diagnostics row
+        appendDiagnosticsRow_(ss, widowId, hi);
+        const totalRounds = countRounds_(roundsSh);
+        checkRoundTriggers_(ss, totalRounds, hi);
+        return json_({ ok: true, roundId: widowId, paired: true, courseHandicap: ch, totalRounds: totalRounds });
+      }
+
+      // No widow found — stored as pending, nothing more to do
+      return json_({ ok: true, roundId: roundId, pending: true, pairingId: pairingId, courseHandicap: ch, totalRounds: countRounds_(roundsSh) });
     }
 
-    // Count total distinct completed rounds and send report every N rounds
+    // Full 18-hole round — append one Diagnostics row, check report trigger
+    appendDiagnosticsRow_(ss, roundId, hi);
     const totalRounds = countRounds_(roundsSh);
-    if (!isPending && totalRounds > 0 && totalRounds % REPORT_EVERY_N_ROUNDS === 0) {
+    if (totalRounds > 0 && totalRounds % REPORT_EVERY_N_ROUNDS === 0) {
       sendReport_(ss, REPORT_LAST_N_ROUNDS);
     }
 
@@ -238,11 +309,67 @@ function doPost(e) {
   }
 }
 
-// ── Diagnostics Builder ────────────────────────────────────────────────────
+// ── Diagnostics: append one row for a completed round ─────────────────────
 //
-//  Reads all rows from Rounds, groups by Round_ID, computes per-round
-//  stats and diagnostic fields, then rewrites the Diagnostics tab.
-//  One call rebuilds everything — safe to call after every post.
+//  Called by doPost after each completed 18-hole record (direct post or
+//  widow pairing). Reads only the rows for roundId, computes stats,
+//  appends one row to Diagnostics, and refreshes conditional format rules.
+//  Never called for pending 9-hole rounds.
+//
+// ───────────────────────────────────────────────────────────────────────────
+
+function appendDiagnosticsRow_(ss, roundId, hi) {
+  const roundsSh = ss.getSheetByName(ROUNDS);
+  const diagSh   = ss.getSheetByName(DIAGNOSTICS);
+  if (!roundsSh || !diagSh) return;
+
+  const headers  = roundsHeader_();
+  const allData  = roundsSh.getLastRow() > 1
+    ? roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, headers.length).getValues()
+    : [];
+
+  const roundRows = allData.filter(r => String(r[0]) === roundId);
+  if (!roundRows.length) return;
+
+  const date      = roundRows[0][1];
+  const course    = roundRows[0][2];
+  const roundType = roundRows[0][17] || '';
+
+  const score = roundRows.reduce((s, h) => s + (Number(h[7]) || 0), 0);
+  const putts = roundRows.reduce((s, h) => s + (Number(h[8]) || 0), 0);
+  const fir   = roundRows.filter(h => isTruthy_(h[9])).length;
+  const gir   = roundRows.filter(h => isTruthy_(h[10])).length;
+  const ud    = roundRows.filter(h => isTruthy_(h[11])).length;
+  const pen   = roundRows.reduce((s, h) => s + (Number(h[13]) || 0), 0);
+
+  const bsGap     = 18 - gir;
+  const sgOpp     = 18 - gir;
+  const missed    = sgOpp - ud;
+  const sgEff     = sgOpp > 0 ? parseFloat((ud / sgOpp).toFixed(3)) : 0;
+  const ppGir     = gir   > 0 ? parseFloat((putts / gir).toFixed(2)) : 0;
+  const diagScore = bsGap + missed + putts;
+
+  const bsCost        = parseFloat((bsGap * 0.5).toFixed(2));
+  const sgMultiplier  = hi >= 29 ? 0.55 : hi >= 19 ? 0.60 : hi >= 10 ? 0.65 : 0.75;
+  const sgCost        = parseFloat((missed * sgMultiplier).toFixed(2));
+  const puttBenchmark = hi >= 29 ? 36 : hi >= 19 ? 34 : hi >= 10 ? 32 : 30;
+  const puttCost      = putts - puttBenchmark;
+  const totalSL       = parseFloat((bsCost + sgCost + puttCost + pen).toFixed(2));
+
+  diagSh.appendRow([
+    roundId, date, course, score, fir, gir, ud, putts, pen,
+    bsGap, sgOpp, missed, sgEff, ppGir, diagScore,
+    bsCost, sgCost, puttCost, totalSL, roundType
+  ]);
+
+  applyDiagnosticsColours_(diagSh, diagSh.getLastRow() - 1);
+}
+
+// ── Diagnostics: full rebuild (manual utility only) ────────────────────────
+//
+//  Rewrites the entire Diagnostics tab from Rounds data.
+//  Call from the Script Editor menu after setup() or to repair drift.
+//  NOT called by doPost — use appendDiagnosticsRow_() for live posts.
 //
 // ───────────────────────────────────────────────────────────────────────────
 
@@ -250,6 +377,9 @@ function buildDiagnostics_(ss) {
   const roundsSh = ss.getSheetByName(ROUNDS);
   const diagSh   = ss.getSheetByName(DIAGNOSTICS);
   if (!roundsSh || !diagSh) return;
+
+  // Read HI from Settings so rebuild works correctly outside of doPost scope
+  const hi = parseFloat(getSettings_(ss.getSheetByName(SETTINGS))['Handicap_Index'] || 0);
 
   ensureSheet_(ss, DIAGNOSTICS, diagnosticsHeader_());
 
@@ -362,292 +492,14 @@ function rebuildDiagnostics() {
 
 /**
  * sendReport — callable from the Script Editor menu.
- * Reads the last REPORT_LAST_N_ROUNDS rows from Diagnostics and sends
- * an HTML email to REPORT_EMAIL.
+ * Sends a last-20-rounds report manually. Same as the 20-round window in the auto triggers.
+ * Run → sendReport()
  */
 function sendReport() {
-  sendReport_(SpreadsheetApp.getActive(), REPORT_LAST_N_ROUNDS);
+  const ss = SpreadsheetApp.getActive();
+  const hi = parseFloat(getSettings_(ss.getSheetByName(SETTINGS))['Handicap_Index'] || 20);
+  sendCombinedReport_(ss, [20], hi);
   Logger.log('Report sent to ' + REPORT_EMAIL);
-}
-
-function sendReport_(ss, n) {
-  const diagSh = ss.getSheetByName(DIAGNOSTICS);
-  if (!diagSh || diagSh.getLastRow() < 2) return;
-
-  const headers = diagnosticsHeader_();
-  const lastRow = diagSh.getLastRow();
-  const startRow = Math.max(2, lastRow - n + 1);
-  const numRows  = lastRow - startRow + 1;
-
-  const raw = diagSh.getRange(startRow, 1, numRows, headers.length).getValues();
-
-  // Parse into objects
-  const rounds = raw.map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
-  });
-
-  const count = rounds.length;
-  if (count === 0) return;
-
-  // Read settings
-  const settingsSh = ss.getSheetByName(SETTINGS);
-  const settings   = getSettings_(settingsSh);
-  const hi         = parseFloat(settings['Handicap_Index'] || 20);
-  const homeCourse = String(settings['Home Course'] || 'Mt. Paul').trim();
-
-  // Course Handicap — Mt. Paul Mens Blue (update when tee selector is wired)
-  const teeRatings = { cr: 59.0, sr: 86, par: 64 };
-  const ch = Math.round(hi * (teeRatings.sr / 113) + (teeRatings.cr - teeRatings.par));
-
-  // Compute averages (raw floats — formatted on output)
-  const avg = key => {
-    const vals = rounds.map(r => Number(r[key]) || 0);
-    return vals.reduce((a, b) => a + b, 0) / vals.length;
-  };
-
-  const avgScore    = avg('Score');
-  const avgFIR      = avg('FIR');
-  const avgGIR      = avg('GIR');
-  const avgUD       = avg('UD');
-  const avgXUD      = avg('MissedOpp');      // Failed Up & Downs (X-UD)
-  const avgPutts    = avg('Putts');
-  const avgPen      = avg('Penalties');
-  const avgSGOpp    = avg('ShortGameOpp');
-  const avgBSCost   = avg('BSCost');
-  const avgSGCost   = avg('SGCost');
-  const avgPuttCost = avg('PuttingCost');
-  const avgTSL      = avg('TotalStrokesLost');
-
-  const netAvg = (avgScore - ch).toFixed(1);
-
-  // Format helpers
-  const f1   = v  => parseFloat(v.toFixed(1));    // 1 decimal
-  const fInt = v  => Math.round(v);               // integer
-  const fPc  = v  => Math.round(v * 100);         // percent (0–100)
-
-  // Colour helpers — green = good, amber = watch, red = needs work
-  function scoreColour(val, low, high) {
-    if (val <= low)  return '#2d7a09';
-    if (val <= high) return '#e07b00';
-    return '#c0392b';
-  }
-  function effColour(val, high, low) {
-    if (val >= high) return '#2d7a09';
-    if (val >= low)  return '#e07b00';
-    return '#c0392b';
-  }
-
-  const dateRange = count > 1
-    ? formatDate_(rounds[0].Date) + ' – ' + formatDate_(rounds[count - 1].Date)
-    : formatDate_(rounds[0].Date);
-  const rowBg = '';
-
-  // ── Round-by-round rows ────────────────────────────────────────────────────
-  const roundRows = rounds.map((r, i) => {
-    const isAway = String(r.Course).trim() !== homeCourse;
-    const rowStyle = isAway
-      ? ` style="background:#fef3cd" title="${r.Course}"`
-      : (i % 2 === 1 ? ' style="background:#f5f9f0"' : '');
-    return `
-    <tr${rowStyle}>
-      <td style="text-align:center;font-weight:bold;white-space:nowrap">${r.Score}</td>
-      <td style="text-align:center">${fInt(r.FIR)}</td>
-      <td style="text-align:center">${fInt(r.GIR)}</td>
-      <td style="text-align:center">${fInt(r.Penalties || 0)}</td>
-      <td style="text-align:center">${fInt(r.UD)}</td>
-      <td style="text-align:center">${fInt(r.MissedOpp || 0)}</td>
-      <td style="text-align:center">${fInt(r.Putts)}</td>
-      <td style="text-align:center;color:${scoreColour(r.TotalStrokesLost, 8, 15)};font-weight:bold">${f1(r.TotalStrokesLost)}</td>
-    </tr>`;
-  }).join('');
-
-  // ── N Round Average rows — order: FIR, GIR, PEN, UD, X-UD, PUTTS ──────────
-  const avgTableRows = [
-    { lbl: 'FIR',   val: f1(avgFIR),   col: effColour(avgFIR, 7, 4),       note: avgFIR >= 7  ? 'Solid tee play'           : avgFIR >= 4  ? 'Serviceable'              : 'Focus on tee ball'         },
-    { lbl: 'GIR',   val: f1(avgGIR),   col: effColour(avgGIR, 5, 3),       note: avgGIR >= 5  ? 'Good ball striking'        : avgGIR >= 3  ? 'Room to improve'           : 'Iron play needs work'      },
-    { lbl: 'PEN',   val: f1(avgPen),   col: scoreColour(avgPen, 0.5, 2),   note: avgPen <= 0.5 ? 'Clean rounds'              : avgPen <= 2  ? 'Some costly holes'         : 'Course management priority'},
-    { lbl: 'UD',    val: f1(avgUD),    col: effColour(avgUD, 4, 2),        note: `${fInt(avgSGOpp)} opportunities to get up and down`                                                                   },
-    { lbl: 'X-UD',  val: f1(avgXUD),  col: scoreColour(avgXUD, 3, 7),     note: 'Failed up & downs — fewer is better'                                                                                  },
-    { lbl: 'PUTTS', val: f1(avgPutts), col: scoreColour(avgPutts, 32, 36), note: avgPutts <= 32 ? 'Strong on greens'          : avgPutts <= 34 ? 'Near benchmark'          : 'Work on lag putting'      }
-  ].map((r, i) => {
-    const bg = i % 2 === 1 ? ' style="background:#f5f9f0"' : '';
-    return `
-    <tr${bg}>
-      <td style="width:22%;font-weight:600">${r.lbl}</td>
-      <td style="width:13%;text-align:center;color:${r.col};font-weight:500">${r.val}</td>
-      <td style="width:65%;text-align:left;color:${r.col}">${r.note}</td>
-    </tr>`;
-  }).join('');
-
-  // ── HTML ───────────────────────────────────────────────────────────────────
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  body     { font-family: Arial, sans-serif; color: #222; background: #f4f7f0; margin: 0; padding: 16px; }
-  .wrap    { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
-  .hdr     { background: #377f09; color: #fff; padding: 18px 16px 30px; }
-  .hdr h1  { margin: 0; font-size: 20px; }
-  .hdr p   { margin: 4px 0 0; font-size: 12px; opacity: .85; }
-  .body    { padding: 14px 12px; }
-  /* Scoring summary grid */
-  .ss-wrap { background: #fff; border-radius: 10px; padding: 5px; margin-bottom: 14px; }
-  .ss      { width: 100%; border-collapse: separate; border-spacing: 4px; }
-  .ss td   { padding: 0; vertical-align: middle; }
-  .ss-card { background: #e8f3de; border-radius: 8px; padding: 10px 4px; text-align: center; }
-  .ss-val  { font-size: 22px; font-weight: bold; color: #377f09; }
-  .ss-lbl  { font-size: 10px; color: #555; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
-  .ss-hero { background: #e8f3de; border-radius: 8px; padding: 14px 8px; text-align: center; vertical-align: middle; }
-  .ss-big  { font-size: 34px; font-weight: bold; color: #377f09; line-height: 1; }
-  .ss-sub  { font-size: 11px; color: #666; margin-top: 5px; }
-  /* Collapsible sections */
-  details  { margin: 24px 0 0; }
-  summary  { cursor: pointer; color: #377f09; font-size: 10px; font-weight: bold;
-             padding: 6px 2px 6px; border-bottom: 1px solid #e0e8d8;
-             list-style: none; user-select: none; }
-  summary::-webkit-details-marker { display: none; }
-  summary::before      { content: '▶ '; font-size: 10px; vertical-align: middle; }
-  details[open] summary::before { content: '▼ '; }
-  details > *:not(summary) { margin-top: 8px; }
-  /* Tables */
-  table    { border-collapse: collapse; width: 100%; font-size: 12px; }
-  th       { background: #e8f3de; color: #2a5a06; text-align: center; padding: 5px 3px;
-             font-size: 11px; white-space: nowrap; }
-  th:first-child { text-align: left; padding-left: 4px; }
-  td       { padding: 5px 3px; border-bottom: 1px solid #f0f0f0; text-align: center; }
-  td:first-child { text-align: left; padding-left: 4px; }
-  tr:last-child td { border-bottom: none; }
-  .stat-tbl td:nth-child(3) { text-align: left; }
-  .insight { background: #fffbe6; padding: 10px 12px;
-             border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
-  .footer  { background: #f4f7f0; padding: 10px 14px; font-size: 11px; color: #888;
-             text-align: center; border-top: 1px solid #e0e8d8; margin-top: 14px; }
-</style>
-</head>
-<body>
-<div class="wrap">
-
-  <div class="hdr">
-    <h1>Golf Performance Index Report</h1>
-    <p>Average of last ${count} rounds</p>
-  </div>
-
-  <div class="body">
-
-    <!-- Scoring Summary: 2-row × 4-col grid matching App layout -->
-    <div class="ss-wrap">
-      <table class="ss">
-        <tr>
-          <td style="width:18%"><div class="ss-card"><div class="ss-val">${fInt(avgFIR)}</div><div class="ss-lbl">FIR</div></div></td>
-          <td style="width:18%"><div class="ss-card"><div class="ss-val">${fInt(avgGIR)}</div><div class="ss-lbl">GIR</div></div></td>
-          <td style="width:18%"><div class="ss-card"><div class="ss-val">${f1(avgPen)}</div><div class="ss-lbl">PEN</div></div></td>
-          <td rowspan="2" class="ss-hero" style="width:46%"><div class="ss-big">${f1(avgScore)}</div><div class="ss-sub">HI: ${hi} | Net: ${netAvg}</div></td>
-        </tr>
-        <tr>
-          <td><div class="ss-card"><div class="ss-val">${f1(avgUD)}</div><div class="ss-lbl">UD</div></div></td>
-          <td><div class="ss-card"><div class="ss-val">${f1(avgXUD)}</div><div class="ss-lbl">X-UD</div></div></td>
-          <td><div class="ss-card"><div class="ss-val">${f1(avgPutts)}</div><div class="ss-lbl">PUTTS</div></div></td>
-        </tr>
-      </table>
-    </div>
-
-    <!-- Round by Round -->
-    <div style="margin-top:28px">
-      <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">ROUND BY ROUND</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Score</th>
-            <th>FIR</th><th>GIR</th><th>PEN</th>
-            <th>UD</th><th>X-UD</th><th>PUTTS</th>
-            <th>COST</th>
-          </tr>
-          <tr>
-            <td colspan="8" style="font-size:10px;color:#666;font-style:italic;text-align:left;padding:4px 4px 6px;border-bottom:1px solid #e0e8d8">Cost = estimated strokes lost to missed greens, failed up &amp; downs, putting above benchmark, and penalties. Lower is better.</td>
-          </tr>
-        </thead>
-        <tbody>${roundRows}</tbody>
-      </table>
-    </div>
-
-    <!-- N Round Average -->
-    <div style="margin-top:28px">
-      <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">${count} ROUND AVERAGE</div>
-      <table class="stat-tbl">
-        <thead>
-          <tr>
-            <th style="text-align:left;width:22%">Stat</th>
-            <th style="width:13%">Avg</th>
-            <th style="text-align:left;width:65%">Reading</th>
-          </tr>
-        </thead>
-        <tbody>${avgTableRows}</tbody>
-      </table>
-    </div>
-
-    <!-- Cost Breakdown -->
-    <div style="margin-top:28px">
-      <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">COST BREAKDOWN</div>
-      <table class="stat-tbl">
-        <thead>
-          <tr>
-            <th style="text-align:left;width:22%">Category</th>
-            <th style="width:13%">Avg</th>
-            <th style="text-align:left;width:65%">What it means</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="font-weight:600">Ball Striking</td>
-            <td style="text-align:center;color:${scoreColour(avgBSCost,4,7)};font-weight:500">${f1(avgBSCost)}</td>
-            <td style="text-align:left">Missed greens × 0.5 — each green missed costs half a stroke on average</td>
-          </tr>
-          <tr style="background:#f5f9f0">
-            <td style="font-weight:600">Short Game</td>
-            <td style="text-align:center;color:${scoreColour(avgSGCost,3,6)};font-weight:500">${f1(avgSGCost)}</td>
-            <td style="text-align:left">Failed up &amp; downs × ${sgMultiplier} — HI-scaled cost per X-UD (0.75 / 0.65 / 0.60 / 0.55)</td>
-          </tr>
-          <tr>
-            <td style="font-weight:600">Putting</td>
-            <td style="text-align:center;color:${scoreColour(avgPuttCost,0,4)};font-weight:500">${avgPuttCost > 0 ? '+' + f1(avgPuttCost) : f1(avgPuttCost)}</td>
-            <td style="text-align:left">${avgPuttCost < 0 ? 'Saving strokes — below benchmark' : avgPuttCost === 0 ? 'At benchmark' : 'Above benchmark'}</td>
-          </tr>
-          <tr style="background:#f5f9f0">
-            <td style="font-weight:600">Penalties</td>
-            <td style="text-align:center;color:${scoreColour(avgPen,0.5,2)};font-weight:500">${f1(avgPen)}</td>
-            <td style="text-align:left">Direct stroke cost — each penalty adds one stroke</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700">GPI Rating</td>
-            <td style="text-align:center;color:${scoreColour(avgTSL,8,15)};font-weight:700">${f1(avgTSL)}</td>
-            <td style="text-align:left">Your GPI Rating is the estimated strokes lost per round based on the metrics above. The lower your GPI, the better.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Focus Areas -->
-    <div style="margin-top:14px">
-      <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">FOCUS AREAS</div>
-      ${buildInsights_(avgBSCost, avgSGCost, avgPuttCost, avgPen)}
-    </div>
-
-  </div>
-
-  <div class="footer">
-    My Golf Scores · ${new Date().toLocaleDateString('en-CA')}
-  </div>
-
-</div>
-</body>
-</html>`;
-
-  const subject = `Golf Performance Index Report`;
-  GmailApp.sendEmail(REPORT_EMAIL, subject, 'Your golf report (HTML email)', { htmlBody: html });
 }
 
 // ── Insights builder ───────────────────────────────────────────────────────
@@ -741,6 +593,506 @@ function removeWeeklyTrigger() {
     .filter(t => t.getHandlerFunction() === 'sendReport')
     .forEach(t => ScriptApp.deleteTrigger(t));
   Logger.log('Weekly trigger removed.');
+}
+
+// ── Round-count trigger dispatcher ─────────────────────────────────────────
+//
+//  Called from doPost after each completed 18-hole round.
+//  Determines which ROUND_WINDOWS fire for totalRounds, then sends one
+//  combined email covering all firing windows (smallest section first).
+//  No email is sent when no window fires.
+//
+// ───────────────────────────────────────────────────────────────────────────
+
+function checkRoundTriggers_(ss, totalRounds, hi) {
+  if (totalRounds < 1) return;
+  const firing = ROUND_WINDOWS.filter(n => totalRounds % n === 0);
+  if (firing.length === 0) return;
+  sendCombinedReport_(ss, firing, hi);
+}
+
+// ── Combined report sender ─────────────────────────────────────────────────
+//
+//  Builds one email with one section per window in `windows` array.
+//  windows: array of integers, e.g. [5] or [5, 10] or [5, 10, 20].
+//  Sections appear smallest first (ROUND_WINDOWS order is already smallest-first).
+//
+// ───────────────────────────────────────────────────────────────────────────
+
+function sendCombinedReport_(ss, windows, hi) {
+  const diagSh    = ss.getSheetByName(DIAGNOSTICS);
+  if (!diagSh || diagSh.getLastRow() < 2) return;
+
+  const settingsSh  = ss.getSheetByName(SETTINGS);
+  const settings    = getSettings_(settingsSh);
+  const hiVal       = hi != null ? hi : parseFloat(settings['Handicap_Index'] || 20);
+  const homeCourse  = String(settings['Home Course'] || 'Mt. Paul').trim();
+
+  const headers   = diagnosticsHeader_();
+  const lastRow   = diagSh.getLastRow();
+  const maxWindow = Math.max(...windows);
+  const startRow  = Math.max(2, lastRow - maxWindow + 1);
+  const numRows   = lastRow - startRow + 1;
+  const raw       = diagSh.getRange(startRow, 1, numRows, headers.length).getValues();
+  const allRounds = raw.map(row => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = row[i]; });
+    return obj;
+  });
+
+  if (allRounds.length === 0) return;
+
+  // Build one HTML section per window
+  const sections = windows.map(n => {
+    const slice = allRounds.slice(-n);
+    return buildReportSectionHtml_(slice, hiVal, homeCourse, n);
+  });
+
+  // Subject line
+  const windowLabels = windows.map(n => n + '-Round');
+  const subject = windows.length === 1
+    ? `Golf Performance Index — Last ${windows[0]} Rounds`
+    : `Golf Performance Index — ${windowLabels.join(' & ')} Report`;
+
+  // Assemble full email
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body     { font-family: Arial, sans-serif; color: #222; background: #f4f7f0; margin: 0; padding: 16px; }
+  .wrap    { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  .hdr     { background: #377f09; color: #fff; padding: 18px 16px 20px; }
+  .hdr h1  { margin: 0; font-size: 20px; }
+  .hdr p   { margin: 4px 0 0; font-size: 12px; opacity: .85; }
+  .body    { padding: 14px 12px; }
+  .section-divider { border: none; border-top: 2px solid #e0e8d8; margin: 32px 0 24px; }
+  .section-title { background: #f4f7f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 16px;
+                   font-size: 13px; font-weight: bold; color: #377f09; letter-spacing: .3px; }
+  .ss-wrap { background: #fff; border-radius: 10px; padding: 5px; margin-bottom: 14px; }
+  .ss      { width: 100%; border-collapse: separate; border-spacing: 4px; }
+  .ss td   { padding: 0; vertical-align: middle; }
+  .ss-card { background: #e8f3de; border-radius: 8px; padding: 10px 4px; text-align: center; }
+  .ss-val  { font-size: 22px; font-weight: bold; color: #377f09; }
+  .ss-lbl  { font-size: 10px; color: #555; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
+  .ss-hero { background: #e8f3de; border-radius: 8px; padding: 14px 8px; text-align: center; vertical-align: middle; }
+  .ss-big  { font-size: 34px; font-weight: bold; color: #377f09; line-height: 1; }
+  .ss-sub  { font-size: 11px; color: #666; margin-top: 5px; }
+  details  { margin: 24px 0 0; }
+  summary  { cursor: pointer; color: #377f09; font-size: 10px; font-weight: bold;
+             padding: 6px 2px 6px; border-bottom: 1px solid #e0e8d8;
+             list-style: none; user-select: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before      { content: '▶ '; font-size: 10px; vertical-align: middle; }
+  details[open] summary::before { content: '▼ '; }
+  details > *:not(summary) { margin-top: 8px; }
+  table    { border-collapse: collapse; width: 100%; font-size: 12px; }
+  th       { background: #e8f3de; color: #2a5a06; text-align: center; padding: 5px 3px;
+             font-size: 11px; white-space: nowrap; }
+  th:first-child { text-align: left; padding-left: 4px; }
+  td       { padding: 5px 3px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+  td:first-child { text-align: left; padding-left: 4px; }
+  tr:last-child td { border-bottom: none; }
+  .stat-tbl td:nth-child(3) { text-align: left; }
+  .insight { background: #fffbe6; padding: 10px 12px;
+             border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
+  .footer  { background: #f4f7f0; padding: 10px 14px; font-size: 11px; color: #888;
+             text-align: center; border-top: 1px solid #e0e8d8; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <h1>Golf Performance Index Report</h1>
+    <p>${windows.length > 1 ? windows.join('-Round · ') + '-Round combined report' : 'Last ' + windows[0] + ' rounds'}</p>
+  </div>
+  <div class="body">
+    ${sections.join('\n<hr class="section-divider">\n')}
+  </div>
+  <div class="footer">
+    My Golf Scores · ${new Date().toLocaleDateString('en-CA')}
+  </div>
+</div>
+</body>
+</html>`;
+
+  GmailApp.sendEmail(REPORT_EMAIL, subject, 'Your golf report (HTML email)', { htmlBody: html });
+}
+
+// ── Report section HTML builder ────────────────────────────────────────────
+//
+//  Builds the inner HTML for one report window.
+//  rounds: array of Diagnostics row objects for this window.
+//  Returns an HTML string (no <html>/<head>/<body> wrapper).
+//
+// ───────────────────────────────────────────────────────────────────────────
+
+function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
+  const count = rounds.length;
+  if (count === 0) return '<p style="color:#888;font-size:12px">No data for this window.</p>';
+
+  // Course Handicap — Mt. Paul Mens Blue (update when tee selector is wired)
+  const teeRatings = { cr: 59.0, sr: 86, par: 64 };
+  const ch = Math.round(hi * (teeRatings.sr / 113) + (teeRatings.cr - teeRatings.par));
+
+  const avg = key => {
+    const vals = rounds.map(r => Number(r[key]) || 0);
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  };
+
+  const avgScore    = avg('Score');
+  const avgFIR      = avg('FIR');
+  const avgGIR      = avg('GIR');
+  const avgUD       = avg('UD');
+  const avgXUD      = avg('MissedOpp');
+  const avgPutts    = avg('Putts');
+  const avgPen      = avg('Penalties');
+  const avgSGOpp    = avg('ShortGameOpp');
+  const avgBSCost   = avg('BSCost');
+  const avgSGCost   = avg('SGCost');
+  const avgPuttCost = avg('PuttingCost');
+  const avgTSL      = avg('TotalStrokesLost');
+  const netAvg      = (avgScore - ch).toFixed(1);
+
+  const f1   = v => parseFloat(v.toFixed(1));
+  const fInt = v => Math.round(v);
+
+  function scoreColour(val, low, high) {
+    if (val <= low)  return '#2d7a09';
+    if (val <= high) return '#e07b00';
+    return '#c0392b';
+  }
+  function effColour(val, high, low) {
+    if (val >= high) return '#2d7a09';
+    if (val >= low)  return '#e07b00';
+    return '#c0392b';
+  }
+
+  const sgMultiplier  = hi >= 29 ? 0.55 : hi >= 19 ? 0.60 : hi >= 10 ? 0.65 : 0.75;
+
+  const roundRows = rounds.map((r, i) => {
+    const isAway  = String(r.Course).trim() !== homeCourse;
+    const rowStyle = isAway
+      ? ` style="background:#fef3cd" title="${r.Course}"`
+      : (i % 2 === 1 ? ' style="background:#f5f9f0"' : '');
+    return `
+    <tr${rowStyle}>
+      <td style="text-align:center;font-weight:bold;white-space:nowrap">${r.Score}</td>
+      <td style="text-align:center">${fInt(r.FIR)}</td>
+      <td style="text-align:center">${fInt(r.GIR)}</td>
+      <td style="text-align:center">${fInt(r.Penalties || 0)}</td>
+      <td style="text-align:center">${fInt(r.UD)}</td>
+      <td style="text-align:center">${fInt(r.MissedOpp || 0)}</td>
+      <td style="text-align:center">${fInt(r.Putts)}</td>
+      <td style="text-align:center;color:${scoreColour(r.TotalStrokesLost, 8, 15)};font-weight:bold">${f1(r.TotalStrokesLost)}</td>
+    </tr>`;
+  }).join('');
+
+  const avgTableRows = [
+    { lbl: 'FIR',   val: f1(avgFIR),   col: effColour(avgFIR, 7, 4),       note: avgFIR >= 7  ? 'Solid tee play'            : avgFIR >= 4  ? 'Serviceable'              : 'Focus on tee ball'          },
+    { lbl: 'GIR',   val: f1(avgGIR),   col: effColour(avgGIR, 5, 3),       note: avgGIR >= 5  ? 'Good ball striking'         : avgGIR >= 3  ? 'Room to improve'           : 'Iron play needs work'       },
+    { lbl: 'PEN',   val: f1(avgPen),   col: scoreColour(avgPen, 0.5, 2),   note: avgPen <= 0.5 ? 'Clean rounds'              : avgPen <= 2  ? 'Some costly holes'          : 'Course management priority' },
+    { lbl: 'UD',    val: f1(avgUD),    col: effColour(avgUD, 4, 2),        note: `${fInt(avgSGOpp)} opportunities to get up and down`                                                                    },
+    { lbl: 'X-UD',  val: f1(avgXUD),  col: scoreColour(avgXUD, 3, 7),     note: 'Failed up & downs — fewer is better'                                                                                   },
+    { lbl: 'PUTTS', val: f1(avgPutts), col: scoreColour(avgPutts, 32, 36), note: avgPutts <= 32 ? 'Strong on greens'          : avgPutts <= 34 ? 'Near benchmark'           : 'Work on lag putting'       }
+  ].map((r, i) => {
+    const bg = i % 2 === 1 ? ' style="background:#f5f9f0"' : '';
+    return `
+    <tr${bg}>
+      <td style="width:22%;font-weight:600">${r.lbl}</td>
+      <td style="width:13%;text-align:center;color:${r.col};font-weight:500">${r.val}</td>
+      <td style="width:65%;text-align:left;color:${r.col}">${r.note}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <div class="section-title">LAST ${windowSize} ROUNDS</div>
+
+  <!-- Scoring summary -->
+  <div class="ss-wrap">
+    <table class="ss">
+      <tr>
+        <td style="width:18%"><div class="ss-card"><div class="ss-val">${fInt(avgFIR)}</div><div class="ss-lbl">FIR</div></div></td>
+        <td style="width:18%"><div class="ss-card"><div class="ss-val">${fInt(avgGIR)}</div><div class="ss-lbl">GIR</div></div></td>
+        <td style="width:18%"><div class="ss-card"><div class="ss-val">${f1(avgPen)}</div><div class="ss-lbl">PEN</div></div></td>
+        <td rowspan="2" class="ss-hero" style="width:46%"><div class="ss-big">${f1(avgScore)}</div><div class="ss-sub">HI: ${hi} | Net: ${netAvg}</div></td>
+      </tr>
+      <tr>
+        <td><div class="ss-card"><div class="ss-val">${f1(avgUD)}</div><div class="ss-lbl">UD</div></div></td>
+        <td><div class="ss-card"><div class="ss-val">${f1(avgXUD)}</div><div class="ss-lbl">X-UD</div></div></td>
+        <td><div class="ss-card"><div class="ss-val">${f1(avgPutts)}</div><div class="ss-lbl">PUTTS</div></div></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Round by Round -->
+  <div style="margin-top:28px">
+    <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">ROUND BY ROUND</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Score</th>
+          <th>FIR</th><th>GIR</th><th>PEN</th>
+          <th>UD</th><th>X-UD</th><th>PUTTS</th>
+          <th>COST</th>
+        </tr>
+        <tr>
+          <td colspan="8" style="font-size:10px;color:#666;font-style:italic;text-align:left;padding:4px 4px 6px;border-bottom:1px solid #e0e8d8">Cost = estimated strokes lost to missed greens, failed up &amp; downs, putting above benchmark, and penalties. Lower is better.</td>
+        </tr>
+      </thead>
+      <tbody>${roundRows}</tbody>
+    </table>
+  </div>
+
+  <!-- Round Average -->
+  <div style="margin-top:28px">
+    <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">${count} ROUND AVERAGE</div>
+    <table class="stat-tbl">
+      <thead>
+        <tr>
+          <th style="text-align:left;width:22%">Stat</th>
+          <th style="width:13%">Avg</th>
+          <th style="text-align:left;width:65%">Reading</th>
+        </tr>
+      </thead>
+      <tbody>${avgTableRows}</tbody>
+    </table>
+  </div>
+
+  <!-- Cost Breakdown -->
+  <div style="margin-top:28px">
+    <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">COST BREAKDOWN</div>
+    <table class="stat-tbl">
+      <thead>
+        <tr>
+          <th style="text-align:left;width:22%">Category</th>
+          <th style="width:13%">Avg</th>
+          <th style="text-align:left;width:65%">What it means</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:600">Ball Striking</td>
+          <td style="text-align:center;color:${scoreColour(avgBSCost,4,7)};font-weight:500">${f1(avgBSCost)}</td>
+          <td style="text-align:left">Missed greens × 0.5 — each green missed costs half a stroke on average</td>
+        </tr>
+        <tr style="background:#f5f9f0">
+          <td style="font-weight:600">Short Game</td>
+          <td style="text-align:center;color:${scoreColour(avgSGCost,3,6)};font-weight:500">${f1(avgSGCost)}</td>
+          <td style="text-align:left">Failed up &amp; downs × ${sgMultiplier} — HI-scaled cost per X-UD</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Putting</td>
+          <td style="text-align:center;color:${scoreColour(avgPuttCost,0,4)};font-weight:500">${avgPuttCost > 0 ? '+' + f1(avgPuttCost) : f1(avgPuttCost)}</td>
+          <td style="text-align:left">${avgPuttCost < 0 ? 'Saving strokes — below benchmark' : avgPuttCost === 0 ? 'At benchmark' : 'Above benchmark'}</td>
+        </tr>
+        <tr style="background:#f5f9f0">
+          <td style="font-weight:600">Penalties</td>
+          <td style="text-align:center;color:${scoreColour(avgPen,0.5,2)};font-weight:500">${f1(avgPen)}</td>
+          <td style="text-align:left">Direct stroke cost — each penalty adds one stroke</td>
+        </tr>
+        <tr>
+          <td style="font-weight:700">GPI Rating</td>
+          <td style="text-align:center;color:${scoreColour(avgTSL,8,15)};font-weight:700">${f1(avgTSL)}</td>
+          <td style="text-align:left">Estimated strokes lost per round. Lower is better.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Focus Areas -->
+  <div style="margin-top:14px">
+    <div style="color:#377f09;font-size:12px;font-weight:bold;padding:6px 2px 6px;border-bottom:1px solid #e0e8d8;margin-bottom:8px">FOCUS AREAS</div>
+    ${buildInsights_(avgBSCost, avgSGCost, avgPuttCost, avgPen)}
+  </div>`;
+}
+
+// ── Calendar-based trigger setup ───────────────────────────────────────────
+//
+//  BiWeekly — fires every two weeks (Apps Script approximates with 14-day intervals).
+//  Monthly  — fires on the 1st of each month at 8am.
+//  Season Summary — fires on the 15th of each month at 8am; handler checks for November.
+//
+//  Run each setup function ONCE from the Script Editor.
+//  The handler function sendScheduledReport() sends a ROUND_WINDOWS[last] report.
+//  checkSeasonSummary() sends the full season report only in November.
+//
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * Set up a biweekly (every 14 days) email trigger.
+ * Run once from Script Editor: Run → setupBiweeklyTrigger()
+ */
+function setupBiweeklyTrigger() {
+  removeTriggerByHandler_('sendScheduledReport_biweekly');
+  ScriptApp.newTrigger('sendScheduledReport_biweekly')
+    .timeBased()
+    .everyWeeks(2)
+    .onWeekDay(ScriptApp.WeekDay.SUNDAY)
+    .atHour(8)
+    .create();
+  Logger.log('Biweekly Sunday 8am trigger set.');
+}
+
+function removeBiweeklyTrigger() {
+  removeTriggerByHandler_('sendScheduledReport_biweekly');
+  Logger.log('Biweekly trigger removed.');
+}
+
+/**
+ * Set up a monthly trigger (1st of month, 8am).
+ * Run once from Script Editor: Run → setupMonthlyTrigger()
+ */
+function setupMonthlyTrigger() {
+  removeTriggerByHandler_('sendScheduledReport_monthly');
+  ScriptApp.newTrigger('sendScheduledReport_monthly')
+    .timeBased()
+    .onMonthDay(1)
+    .atHour(8)
+    .create();
+  Logger.log('Monthly 1st-of-month 8am trigger set.');
+}
+
+function removeMonthlyTrigger() {
+  removeTriggerByHandler_('sendScheduledReport_monthly');
+  Logger.log('Monthly trigger removed.');
+}
+
+/**
+ * Set up the Season Summary trigger — fires Nov 15 at 8am.
+ * Uses a monthly-on-15th trigger; handler checks for November.
+ * Run once from Script Editor: Run → setupSeasonSummaryTrigger()
+ */
+function setupSeasonSummaryTrigger() {
+  removeTriggerByHandler_('checkSeasonSummary');
+  ScriptApp.newTrigger('checkSeasonSummary')
+    .timeBased()
+    .onMonthDay(15)
+    .atHour(8)
+    .create();
+  Logger.log('Season Summary trigger set (fires monthly on 15th; sends only in November).');
+}
+
+function removeSeasonSummaryTrigger() {
+  removeTriggerByHandler_('checkSeasonSummary');
+  Logger.log('Season Summary trigger removed.');
+}
+
+/**
+ * BiWeekly scheduled send — last 10 rounds (ROUND_WINDOWS[1]).
+ * Called automatically by the biweekly trigger.
+ */
+function sendScheduledReport_biweekly() {
+  const ss  = SpreadsheetApp.getActive();
+  const hi  = parseFloat(getSettings_(ss.getSheetByName(SETTINGS))['Handicap_Index'] || 20);
+  sendCombinedReport_(ss, [10], hi);
+}
+
+/**
+ * Monthly scheduled send — last 20 rounds (ROUND_WINDOWS[2]).
+ * Called automatically by the monthly trigger.
+ */
+function sendScheduledReport_monthly() {
+  const ss  = SpreadsheetApp.getActive();
+  const hi  = parseFloat(getSettings_(ss.getSheetByName(SETTINGS))['Handicap_Index'] || 20);
+  sendCombinedReport_(ss, [20], hi);
+}
+
+/**
+ * Season Summary — fires monthly on the 15th; only sends in November.
+ * Covers all rounds in the Diagnostics tab (full season).
+ */
+function checkSeasonSummary() {
+  if (new Date().getMonth() !== 10) return;  // 10 = November (0-indexed)
+  const ss      = SpreadsheetApp.getActive();
+  const diagSh  = ss.getSheetByName(DIAGNOSTICS);
+  if (!diagSh || diagSh.getLastRow() < 2) return;
+
+  const settingsSh = ss.getSheetByName(SETTINGS);
+  const settings   = getSettings_(settingsSh);
+  const hi         = parseFloat(settings['Handicap_Index'] || 20);
+  const homeCourse = String(settings['Home Course'] || 'Mt. Paul').trim();
+
+  const headers  = diagnosticsHeader_();
+  const numRows  = diagSh.getLastRow() - 1;
+  const raw      = diagSh.getRange(2, 1, numRows, headers.length).getValues();
+  const allRounds = raw.map(row => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = row[i]; });
+    return obj;
+  });
+
+  if (allRounds.length === 0) return;
+
+  const sectionHtml = buildReportSectionHtml_(allRounds, hi, homeCourse, allRounds.length);
+  const year        = new Date().getFullYear();
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body     { font-family: Arial, sans-serif; color: #222; background: #f4f7f0; margin: 0; padding: 16px; }
+  .wrap    { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  .hdr     { background: #377f09; color: #fff; padding: 18px 16px 20px; }
+  .hdr h1  { margin: 0; font-size: 20px; }
+  .hdr p   { margin: 4px 0 0; font-size: 12px; opacity: .85; }
+  .body    { padding: 14px 12px; }
+  .section-title { background: #f4f7f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 16px;
+                   font-size: 13px; font-weight: bold; color: #377f09; letter-spacing: .3px; }
+  .ss-wrap { background: #fff; border-radius: 10px; padding: 5px; margin-bottom: 14px; }
+  .ss      { width: 100%; border-collapse: separate; border-spacing: 4px; }
+  .ss td   { padding: 0; vertical-align: middle; }
+  .ss-card { background: #e8f3de; border-radius: 8px; padding: 10px 4px; text-align: center; }
+  .ss-val  { font-size: 22px; font-weight: bold; color: #377f09; }
+  .ss-lbl  { font-size: 10px; color: #555; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
+  .ss-hero { background: #e8f3de; border-radius: 8px; padding: 14px 8px; text-align: center; vertical-align: middle; }
+  .ss-big  { font-size: 34px; font-weight: bold; color: #377f09; line-height: 1; }
+  .ss-sub  { font-size: 11px; color: #666; margin-top: 5px; }
+  table    { border-collapse: collapse; width: 100%; font-size: 12px; }
+  th       { background: #e8f3de; color: #2a5a06; text-align: center; padding: 5px 3px; font-size: 11px; white-space: nowrap; }
+  th:first-child { text-align: left; padding-left: 4px; }
+  td       { padding: 5px 3px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+  td:first-child { text-align: left; padding-left: 4px; }
+  tr:last-child td { border-bottom: none; }
+  .stat-tbl td:nth-child(3) { text-align: left; }
+  .insight { background: #fffbe6; padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
+  .footer  { background: #f4f7f0; padding: 10px 14px; font-size: 11px; color: #888;
+             text-align: center; border-top: 1px solid #e0e8d8; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <h1>${year} Season Summary</h1>
+    <p>Full season · ${allRounds.length} rounds recorded</p>
+  </div>
+  <div class="body">
+    ${sectionHtml}
+  </div>
+  <div class="footer">
+    My Golf Scores · ${new Date().toLocaleDateString('en-CA')}
+  </div>
+</div>
+</body>
+</html>`;
+
+  GmailApp.sendEmail(
+    REPORT_EMAIL,
+    `Golf ${year} Season Summary`,
+    'Your season summary (HTML email)',
+    { htmlBody: html }
+  );
+}
+
+// ── Internal: remove all triggers for a named handler ─────────────────────
+
+function removeTriggerByHandler_(handlerName) {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === handlerName)
+    .forEach(t => ScriptApp.deleteTrigger(t));
 }
 
 // ── Gemini Query Handler ────────────────────────────────────────────────────

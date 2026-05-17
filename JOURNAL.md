@@ -4,6 +4,63 @@
 
 ---
 
+## 2026-05-14 — Apps Script refactor: Post / Diagnose / Rebuild separated (apps-script.gs)
+
+**Did:**
+- Refactored Diagnostics logic — three concerns now cleanly separated:
+  - `appendDiagnosticsRow_(ss, roundId, hi)` — new function, appends ONE row per completed 18-hole record. Called by `doPost` only when a record is complete (full 18 or paired widow). Never called for pending 9-hole rounds.
+  - `buildDiagnostics_(ss)` — full rebuild, manual utility only. Now reads `hi` from Settings internally (was incorrectly relying on outer `doPost` scope — silent bug when called from `rebuildDiagnostics()`).
+  - `rebuildDiagnostics()` — unchanged, manual Script Editor call only. Run after deploy or HI change.
+- `doPost` flow now: Post 18 → append one Diagnostics row → count → report trigger. Post 9 + widow → pair → append one row → count → report. Post 9 + no widow → Diagnostics untouched.
+- `setup()` updated to migrate Rounds header — adds missing column labels without touching data.
+- Rounds sheet cols 16–18 (Pending, Pairing_ID, Round_Type) added via Claude in Chrome.
+- Deployed as new version. Execution successful.
+
+**Files changed:** `apps-script.gs`
+
+---
+
+## 2026-05-14 — 9-hole widow/pairing feature shipped (v9.63 / SW v42) — reconstructed from code
+
+**Note:** Journal entries for v9.40–v9.62 were not written during the sessions that built them. This entry is reconstructed from code inspection.
+
+**Stats screen (screen-stats) — 2-step per-hole flow:**
+- New screen between score entry and next hole: hole number + score badge in masthead; FIR/GIR/PEN/UD/X-UD toggles + PUTTS counter in stage
+- `showStatsScreen()`, `statsBack()`, `statsNext()` → `advanceHole()`
+- Skipped entirely in `historicalMode`
+
+**Add Scores screen (screen-add-scores) — historical round entry:**
+- Date picker, course selector (defaults to Mt. Paul), tee selector, 9/18 toggle for 9-hole courses
+- `initAddScoresScreen()`, `asOnCourseChange()`, `startHistoricalRound()`
+- Sets `state.historicalMode = true` — stats screen hidden, date overridden from picker
+
+**9-hole widow/pairing — client:**
+- Continue ↔ Post Now toggle on Front 9 scorecard; toggles NEXT button between `continueToBack9` and `postFront9`
+- `postFront9()` — trims state to 9 holes, stamps `pairingId` (UUID), sets `pendingRound = true`, calls `submitRound()`
+- Rain-out safety confirmed: incomplete Back 9 discarded client-side on Back → POST, never reaches server
+
+**9-hole widow/pairing — Apps Script:**
+- Rounds schema: added Pending (col 16), Pairing_ID (col 17), Round_Type (col 18 — Home/Local/Away)
+- Widow logic in `doPost`: find oldest pending row → pair (renumber holes 10–18, reassign Round_ID, clear Pending both halves) or store as new widow
+- Diagnostics only written on completed 18-hole records (direct or paired)
+
+**Verified:** Solo 9-hole round posted end-to-end successfully (2026-05-14).
+
+**Files changed:** `index.html`, `shared.js`, `sw.js`, `apps-script.gs`
+
+---
+
+## 2026-05-13 — v9.58: button and display polish
+
+**Did:**
+- START ROUND → all-caps
+- Player name on Setup: green pill removed, plain bold text
+
+**Files changed:** `index.html`
+
+---
+
+
 ## 2026-05-12 — UI polish + phone formatter (courses v1.3, index v9.39)
 
 **Did:**
@@ -753,3 +810,293 @@ index.html fix:
 **Files changed:** `index.html`, `shared.js`, `courses.html`, `sw.js`
 
 **Next session:** Add Scores screen — date picker + course selector (default Mt. Paul) + tees entry → existing hole screens → post to Sheets. `state.historicalMode` suppresses stats screen.
+
+---
+
+## 2026-05-14 — 9-hole posting, pairing scaffold, Round_Type classification (v9.61→v9.63)
+
+**Context:** Session started in Golf folder (not Studio root — reminder to connect at Studio level next time).
+
+**Security housekeeping:**
+- Confirmed GEMINI_API_KEY no longer in Script Properties (revoked May 6, history already scrubbed)
+- Paul deleted the activation email containing the key — no offsite storage needed; WEBHOOK_SECRET is the only active secret
+
+**GPI Report test:** Ran successfully — email received, no regressions from prior session changes.
+
+**Continue | Post Now toggle (screen-midround):**
+- Added `<div class="nine-hole-toggle-wrap">` inside `midround-wrap` with Continue / switch / Post Now layout
+- Default state = Continue (NEXT button behaviour); toggling to Post Now switches button label to POST and calls `postFront9()`
+- `postFront9()` slices holeList/scores/stats to 9, sets `state.pendingRound = true`, generates a UUID `state.pairingId`, then calls `submitRound()`
+- State init updated: `pendingRound: false, pairingId: null`; `newRound()` clears both; `buildMidroundCard()` resets toggle on entry
+- `submitRound()` payload now includes `courseId` and, if pending, `{ pending: true, pairingId }`
+
+**Toggle CSS fixes (three iterations):**
+1. Moved inside `midround-wrap` — was on green page background
+2. Width `fit-content`, dark label colour
+3. Default slider was white-on-white: specificity clash — global `.switch .slider-bg { background: rgba(255,255,255,0.25) }` overrode `.nht-switch .slider-bg`. Fixed by using `.switch.nht-switch .slider-bg { background: #9ca3af }` (higher specificity)
+4. Labels: grey (#9ca3af), all-caps, 15px
+
+**apps-script.gs — Pending + Pairing_ID + Round_Type:**
+- `roundsHeader_()`: added `Pending` (col 16), `Pairing_ID` (col 17), `Round_Type` (col 18)
+- `diagnosticsHeader_()`: added `Round_Type` (col 20)
+- `doPost()`: extracts `isPending`, `pairingId`, `courseId`; classifies `roundType` (negative courseId = Away, name matches Home Course setting = Home, else Local); appends all three to each row
+- `buildDiagnostics_()`: skips pending rows; reads `row[17]` for Round_Type; passes through to diagRows
+- `countRounds_()`: reads 16 cols, filters out pending rows
+- Response includes `pairingId` when pending
+
+**Versions:** v9.61 (toggle + pending scaffold) → v9.62 (toggle grey fix) → v9.63 (label styling) / SW v40→v42
+
+**Files changed:** `index.html`, `shared.js`, `sw.js`, `apps-script.gs`
+
+**Pending (next session):**
+- Paul to paste updated `apps-script.gs` into Apps Script editor and deploy new version
+- ~~Pairing UI (server-side)~~ ✓ DONE — widow detection, renumber holes 10-18, merge under widow Round_ID, clear Pending, rebuild diagnostics
+- Record Stats toggle on Setup screen
+- Settings panel (name, home tees, HI, email, toggles)
+- Auto-calculate HI (WHS formula, best 8 of 20)
+- Dev button cleanup before release
+
+
+---
+
+## 2026-05-14 — settings.html built + NAV_LINKS wiring (v9.65 / SW v44)
+
+**Did:**
+- Built `settings.html` (new file) — full 5-zone layout, green theme, DM Sans
+  - Record Stats toggle (SHOW/HIDE) → saves `profile.recordStats`
+  - Performance Report row — Send Report Now button → `fetch(sheetsUrl + '?action=report')`
+  - Report Email input → saves `profile.reportEmail` on blur
+  - Courses → `showPanel('courses')` chevron row
+  - DONE → `showPanel('home')`
+- UI polish pass: 3D shadow on all buttons (report-btn matches btn-3d), uniform height/size, DONE centred, Send Report Now uppercase + centred, chevron doubled (18px → 36px), footer grid fixed (repeat(4,1fr) → 1fr 1fr), footer background explicit green (overlap fix)
+- Removed Analytics placeholder from Settings — not a setting until built
+- NAV_LINKS wiring (shared.js):
+  - Added `title` field to each NAV_LINKS entry
+  - `getNavEntry(id)` helper
+  - `applyPageMeta(id)` — sets document.title, .header-lower-title, .hu-breadcrumb from NAV_LINKS
+  - DOMContentLoaded auto-init: reads `data-page-id` from body, calls `applyPageMeta` automatically
+  - settings.html body gets `data-page-id="settings"`
+- Renamed `my-stats` → `analytics` in NAV_LINKS (footer label, stub, id all updated)
+- APP_VERSION bumped v9.64 → v9.65; SW v43 → v44
+
+**Files changed:** `settings.html` (new), `shared.js`, `sw.js`
+
+---
+
+## 2026-05-14 — shared.css extracted; global zone styles (v9.66 / SW v45)
+
+**Did:**
+- Created `shared.css` (new file) — single source of truth for masthead and footer nav zones:
+  - CSS variables (:root)
+  - Masthead: .masthead, .header-upper, .hu-*, .header-lower, .header-lower-*, small-screen media query
+  - Footer nav: .footer, .footer-nav-grid, .fnav-btn, .fnav-btn:active, .footer-version
+- Linked `shared.css` into all pages: index.html, settings.html, courses.html
+- Stripped duplicate masthead + footer CSS from settings.html and courses.html
+- Stripped footer-nav CSS from index.html (masthead kept — complex hole-screen variants layer on top)
+- Added shared.css to SW ASSETS cache
+- APP_VERSION v9.65 → v9.66; SW v44 → v45
+
+**Why:** Footer height/style inconsistency (settings.html vs index.html) exposed that each page hand-copied the zone CSS. Now one file governs both zones for all pages.
+
+**Files changed:** `shared.css` (new), `shared.js`, `sw.js`, `index.html`, `settings.html`, `courses.html`
+
+---
+
+## 2026-05-14 — CSS consolidation, settings rebuild, shared.css components (v9.72–v9.81)
+
+**Did:**
+
+**courses.json cleanup:**
+- Stripped city/province/postal from all `address` fields — street-only now stored
+- Added missing street addresses: Mt. Paul (615 Mt Paul Way), Meadow Creek (2975 Kimberland Dr)
+
+**shared.css — promoted to component library (v1.3):**
+- Added `.btn-3d` — canonical 3D button (gradient, multi-layer shadow, inset highlight, `-webkit-appearance:none`)
+- Added `.btn-grey` — secondary/cancel button variant
+- Added `.section-header` — uppercase section labels (13px/700/text-secondary)
+- Added `.setting-row`, `.setting-left` — row layout primitives
+- Added `.setting-label` (19px/700/green, matches `.lib-name`), `.setting-sublabel`
+- Added SW cache warning comment — any change requires CACHE_NAME bump in sw.js
+- courses.html: local `.btn-3d` visual styles removed; layout overrides (`flex:1`, `padding:15px`) kept locally
+
+**settings.html rebuild (v1.5):**
+- Section renamed: Gameplay → Score Card, Reports → Feedback, Tools → Admin; Account section removed
+- "Record Stats" → "Track Your Stats", description updated
+- "Performance Report" → "Performance Reports", description updated
+- "Report Email" → "Change Email"; moved from Account to Admin section
+- "Courses" → "Edit & Add Courses", description updated
+- DONE button → SAVE
+- Structure: Score Card / Feedback / Admin (Change Email + Edit & Add Courses)
+
+**index.html Setup screen:**
+- Removed Change Course button
+- Start Round button centred (sole button in hole-actions)
+- Course display card made tappable → `showPanel('courses')` (goes to listings, bypasses search)
+
+**SW cache bumps:** v51 → v56 (one bump per shared.css change to force fresh delivery)
+
+**Versions:** v9.72 (start of session) → v9.81 / SW v56
+
+**Files changed:** `courses.json`, `shared.css`, `shared.js`, `sw.js`, `settings.html`, `index.html`, `courses.html`
+
+**Queued for next session:**
+- Course card tap cue — add "Change Course ›" sublabel under course name on Setup screen
+- HOME button standard width — add to shared.css
+- Toggle switch canonical definition in shared.css — restore yellow track (checked), translucent white track on green bg context, grey on white bg context
+- Font type scale — define locked rules in shared.css (page title, section header, row label, sublabel, body)
+- Button standard confirmed: white text, uppercase, all pages
+
+---
+
+## 2026-05-15 — Design & Planning Session (no code changes)
+
+**Focus:** Settings screen redesign, Performance Reports architecture, PCC design thread, workflow & AI fluency discussion.
+
+**Did:**
+
+**PCC — Playing Conditions Calculation:**
+- Added full PCC design thread to PROJECT.md
+- Reframed PCC from a scoring adjustment to a conditions tag — context only, not a metric
+- Player toggle (default Off); post-round dropdown for weather descriptor (maps to −1/+3 scale)
+- Three data points stored per round: PCC_Selected, PCC_ScoreDelta, PCC_Flag
+- Integrity caveat documented: inconsistent use (toggle Off for some rounds) makes PCC untrustworthy as analysis — accepted and noted in spec
+- Silent pre-round weather fetch (OpenWeatherMap) noted as optional enhancement
+
+**Settings Screen Redesign:**
+- Full toggle layout replacing buttons; two-column design consistent with existing Track Stats row
+- SAVE button retained at bottom for user affirmation only
+- Admin section stays below toggle layout, untouched pending future home decision
+- Toggle groups: Player Preferences (PCC), Stats Tracking (master switch), Metric Toggles (FIR/GIR/PEN/UD/X-UD/PUTTs), Performance Reports Frequency
+
+**Performance Reports Architecture:**
+- Four-tier structure: 5-Round / 10-Round / Monthly / Season Summary (Nov 15)
+- Combined trigger logic: when multiple frequency thresholds coincide, one email — not multiple
+- Combined report order: incremental, smallest window first (5 before 10, BiWeekly before Monthly)
+- Rotating monthly spotlight cycles through active metrics — only activates if 2+ metrics tracked
+- Score-based foundation always present regardless of stat tracking
+- Narrative tone: plain language, coach voice — not tables or spreadsheet output
+- Season-over-season reach-back comparisons as a core feature
+- Welcome report for insufficient data — onboarding framed, not a warning
+- Season Summary date Nov 15 fixed in Settings; adjustable in Admin profile (placeholder)
+
+**Open Questions Resolved (4 of 6):**
+- #4 Combined report order — incremental, smallest first ✓
+- #5 Insufficient data — welcome/onboarding report ✓
+- #6 Season Summary date — fixed Nov 15, adjustable in Admin ✓
+- #3 PCC scope — conditions tag only, not a metric ✓ (conditional)
+
+**Still Open:**
+- #1 Toggle auto-save vs. hold until SAVE tapped
+- #2 Future home for Admin section
+
+**Workflow discussions:**
+- Glob confirmed unreliable on mounted Studio directories — CLAUDE.md updated to use bash ls -la for mount verification
+- Established optimal change batch size: 2–3 related changes per prompt, same file/section
+- AI fluency signals discussed: "TOL" / "Thinking out loud" = explore not act; direct verb = execute
+- Session close protocol established: always update JOURNAL, PROJECT, TODO before confirming done
+
+**Files changed:** `PROJECT.md` (PCC section, Settings redesign section, open questions resolved)
+
+**Queued for next session (carried from May 14):**
+- Course card tap cue — "Change Course ›" sublabel under course name on Setup screen
+- HOME button standard width — add to shared.css
+- Toggle switch canonical definition in shared.css
+- Font type scale — locked rules in shared.css
+- Settings screen toggle layout rebuild (when design questions #1 and #2 are resolved)
+
+---
+
+## 2026-05-16 — Settings UI Build Session
+
+**Focus:** settings.html restructure — Tracking Your Stats section, stat toggles, Performance Reports section.
+
+**Did:**
+
+**Tracking Your Stats section (new):**
+- Replaced "Score Card" section header with "Tracking Your Stats"
+- Added info card: introductory copy ("We suggest logging at least five rounds…") with expandable More/Close benchmark tables
+- Two 4-col benchmark tables (FIR/GIR/PEN and UD/X-UD/PUTTS) by handicap range, zebra-striped, no row rules, shaded header row
+- Source footnote with italic *Src:* label; callout paragraph (non-italic)
+- Info card border-bottom removed so it flows seamlessly into master toggle
+
+**Track Your Stats master toggle + sub-panel:**
+- Replaced old SHOW/HIDE toggle with clean 2-col no-label toggle (label left, switch right)
+- Sub-panel (hidden by default): description copy + 8 metric toggles (FIR, GIR, PEN, UD, X-UD, PUTTs, GPI, PPC)
+- Sub-panel reveals only when master is ON; persists state on reload
+- GPI (Strokes Gained) and PPC (Record Weather with Scores) included pending future scope decision
+- localStorage keys: `recordStats` (master), `statFIR/GIR/PEN/UD/XUD/PUTTS/GPI/PPC`
+
+**Performance Reports section (new):**
+- Replaced old Feedback section entirely
+- Description copy, border-bottom removed to flow into master toggle
+- "Receive Reports" master toggle (no border-bottom) gates the sub-panel
+- Sub-panel: 6 frequency toggles (Every 5/10/20 Rounds, BiWeekly, Monthly, Year End Summary) + Send Report Now button
+- localStorage keys: `receiveReports` (master), `freqEvery5/10/20/BiWeekly/Monthly/YearEnd`
+- All new toggles default Off; existing `recordStats` state preserved for returning users
+
+**Other:**
+- Sample Report noted in PROJECT.md and added to TODO_LIST.md (Medium priority)
+- Admin → onboarding direction noted in PROJECT.md open questions
+- APP_VERSION bumped to v9.84 / SW v57
+- SW bump done via bash (Edit tool had permission issue on sw.js)
+
+**Files changed:** `settings.html`, `shared.js`, `sw.js`, `PROJECT.md`, `TODO_LIST.md`
+
+**Open / Queued for next session:**
+- Server issues at session close — verify push landed cleanly next session
+- GPI/PPC final scope decision (reports-only vs. diagnostic)
+- Report metric groupings: Short Game, Ball Striking, Course Management
+- Apps Script combined trigger logic for frequency reports
+- Sample Performance Report (static, for new accounts)
+- Admin section → onboarding breakout (future)
+- Course card tap cue, HOME button width, toggle canonical in shared.css, font type scale (carried forward)
+
+---
+
+## 2026-05-16 — Apps Script Trigger Logic + Settings Radio Groups
+
+**Focus:** Apps Script multi-tier report triggers, frequency toggle radio behaviour, PCC typo fix.
+
+**Did:**
+
+**PCC typo fix (settings.html):**
+- Corrected PPC → PCC throughout settings.html (label text, toggle ID `tog-statPCC`, localStorage key `statPCC`)
+- JOURNAL historical entries left as-is (accurate record of what was typed at the time)
+
+**apps-script.gs — multi-tier report triggers:**
+- Removed single `REPORT_EVERY_N_ROUNDS = 20` constant
+- Added `ROUND_WINDOWS = [5, 10, 20]` — smallest first, combined email order
+- Added `checkRoundTriggers_(ss, totalRounds, hi)` — called from doPost; determines which windows fire and dispatches one combined email
+- Added `sendCombinedReport_(ss, windows, hi)` — builds one email with one section per firing window, sections separated by a horizontal rule
+- Added `buildReportSectionHtml_(rounds, hi, homeCourse, windowSize)` — extracted section builder, reusable by all senders
+- Removed old monolithic `sendReport_(ss, n)` private function (superseded)
+- Updated `sendReport()` (manual menu item) to call `sendCombinedReport_` with [20] window
+- Added calendar trigger functions: `setupBiweeklyTrigger`, `removeBiweeklyTrigger`, `setupMonthlyTrigger`, `removeMonthlyTrigger`, `setupSeasonSummaryTrigger`, `removeSeasonSummaryTrigger`
+- Added scheduled handlers: `sendScheduledReport_biweekly` (10-round window), `sendScheduledReport_monthly` (20-round window)
+- Added `checkSeasonSummary` — fires monthly on 15th via trigger; only sends in November; covers full season
+- Added `removeTriggerByHandler_` helper — cleans up triggers safely on re-run
+- Both doPost call sites updated to use `checkRoundTriggers_` (was inline modulo check)
+
+**settings.html — frequency toggle radio behaviour:**
+- Round-count group (Every 5 / 10 / 20 Rounds): radio behaviour via `selectFreqRound(key, el)`
+- Calendar group (BiWeekly / Monthly): radio behaviour via `selectFreqCalendar(key, el)`
+- Year End Summary: standalone toggle, `saveStatPref` — not part of either group
+- Added `selectFreqGroup`, `selectFreqRound`, `selectFreqCalendar` JS functions
+- Added `FREQ_ROUND_GROUP` and `FREQ_CALENDAR_GROUP` constants
+- Added `.stat-group-label` CSS class (green, uppercase, 11px) for group sublabels
+- Added group sublabels in HTML: "By Round Count (choose one)", "By Calendar (choose one)", "Annual"
+- Nov 15 date shown inline on Year End Summary label as advisory
+
+**Design decisions confirmed this session:**
+- "None selected" is valid — player can opt out of reports entirely
+- Year End Summary is fixed Nov 15, non-editable, standalone
+- All windows fire is too noisy — radio groups prevent inbox flooding
+- Settings bridge (localStorage → Sheets) deferred; noted as open gap
+
+**Files changed:** `apps-script.gs`, `settings.html`, `JOURNAL.md`, `PROJECT.md`
+
+**Open / Queued for next session:**
+- Settings bridge: write frequency preferences to Sheets Settings tab so Apps Script can filter active windows
+- Calendar trigger deduplication: if round-count and calendar fire same day, still one email
+- GPI/PCC final scope decision (reports-only vs. diagnostic)
+- Course card tap cue, HOME button width, toggle canonical in shared.css, font type scale (carried forward)

@@ -120,6 +120,14 @@
     font-weight: 500;
     color: var(--text-primary);
   }
+  .stat-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--green);
+    padding: 8px 20px 4px;
+  }
 
   /* ── BENCHMARK EXPAND ── */
   .bench-expand-link {
@@ -321,8 +329,8 @@
         <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
       </div>
       <div class="stat-row">
-        <span class="stat-row-label">Include PPC (Record Weather with Scores)</span>
-        <label class="switch"><input type="checkbox" id="tog-statPPC" onchange="saveStatPref('statPPC',this)"><span class="slider-bg"></span></label>
+        <span class="stat-row-label">Include PCC (Record Weather with Scores)</span>
+        <label class="switch"><input type="checkbox" id="tog-statPCC" onchange="saveStatPref('statPCC',this)"><span class="slider-bg"></span></label>
       </div>
     </div>
 
@@ -343,30 +351,39 @@
 
     <!-- Report sub-panel: frequency toggles + send button — hidden until Receive Reports is ON -->
     <div id="report-sub-panel" style="display: none;">
+
+      <!-- Round-count group — radio behaviour: selecting one clears the others -->
+      <div class="stat-group-label">By Round Count <span style="font-weight:400;color:#999">(choose one)</span></div>
       <div class="stat-row">
         <span class="stat-row-label">Every 5 Rounds</span>
-      <label class="switch"><input type="checkbox" id="tog-freqEvery5" onchange="saveStatPref('freqEvery5',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">Every 10 Rounds</span>
-      <label class="switch"><input type="checkbox" id="tog-freqEvery10" onchange="saveStatPref('freqEvery10',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">Every 20 Rounds</span>
-      <label class="switch"><input type="checkbox" id="tog-freqEvery20" onchange="saveStatPref('freqEvery20',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">BiWeekly</span>
-      <label class="switch"><input type="checkbox" id="tog-freqBiWeekly" onchange="saveStatPref('freqBiWeekly',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">Monthly</span>
-      <label class="switch"><input type="checkbox" id="tog-freqMonthly" onchange="saveStatPref('freqMonthly',this)"><span class="slider-bg"></span></label>
-    </div>
-    <div class="stat-row">
-      <span class="stat-row-label">Year End Summary</span>
-      <label class="switch"><input type="checkbox" id="tog-freqYearEnd" onchange="saveStatPref('freqYearEnd',this)"><span class="slider-bg"></span></label>
-    </div>
+        <label class="switch"><input type="checkbox" id="tog-freqEvery5" onchange="selectFreqRound('freqEvery5',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">Every 10 Rounds</span>
+        <label class="switch"><input type="checkbox" id="tog-freqEvery10" onchange="selectFreqRound('freqEvery10',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">Every 20 Rounds</span>
+        <label class="switch"><input type="checkbox" id="tog-freqEvery20" onchange="selectFreqRound('freqEvery20',this)"><span class="slider-bg"></span></label>
+      </div>
+
+      <!-- Calendar group — radio behaviour: selecting one clears the other -->
+      <div class="stat-group-label" style="margin-top:10px">By Calendar <span style="font-weight:400;color:#999">(choose one)</span></div>
+      <div class="stat-row">
+        <span class="stat-row-label">BiWeekly</span>
+        <label class="switch"><input type="checkbox" id="tog-freqBiWeekly" onchange="selectFreqCalendar('freqBiWeekly',this)"><span class="slider-bg"></span></label>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-label">Monthly</span>
+        <label class="switch"><input type="checkbox" id="tog-freqMonthly" onchange="selectFreqCalendar('freqMonthly',this)"><span class="slider-bg"></span></label>
+      </div>
+
+      <!-- Year End Summary — standalone, not part of either group -->
+      <div class="stat-group-label" style="margin-top:10px">Annual</div>
+      <div class="stat-row">
+        <span class="stat-row-label">Year End Summary <span style="font-size:11px;color:#999">(Nov 15)</span></span>
+        <label class="switch"><input type="checkbox" id="tog-freqYearEnd" onchange="saveStatPref('freqYearEnd',this)"><span class="slider-bg"></span></label>
+      </div>
 
       <!-- Send Report Now -->
       <div class="setting-row" style="flex-direction: column; align-items: center; gap: 6px;">
@@ -425,7 +442,7 @@
     if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric' });
 
     // Stat toggles — all default Off (undefined = false)
-    ['recordStats','statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS','statGPI','statPPC',
+    ['recordStats','statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS','statGPI','statPCC',
      'receiveReports','freqEvery5','freqEvery10','freqEvery20','freqBiWeekly','freqMonthly','freqYearEnd']
       .forEach(key => {
         const el = document.getElementById('tog-' + key);
@@ -465,6 +482,29 @@
   function saveStatPref(key, el) {
     saveProfile({ [key]: el.checked });
   }
+
+  // ── Frequency radio groups ─────────────────────────────────────────────────
+  // Within each group, turning one ON clears all others in that group.
+  // Turning one OFF just saves its own state — no group action needed.
+  // Player can have one round-count and one calendar option active simultaneously.
+
+  const FREQ_ROUND_GROUP    = ['freqEvery5', 'freqEvery10', 'freqEvery20'];
+  const FREQ_CALENDAR_GROUP = ['freqBiWeekly', 'freqMonthly'];
+
+  function selectFreqGroup(group, selectedKey, el) {
+    if (el.checked) {
+      group.forEach(key => {
+        if (key === selectedKey) return;
+        const tog = document.getElementById('tog-' + key);
+        if (tog) tog.checked = false;
+        saveProfile({ [key]: false });
+      });
+    }
+    saveProfile({ [selectedKey]: el.checked });
+  }
+
+  function selectFreqRound(key, el)    { selectFreqGroup(FREQ_ROUND_GROUP,    key, el); }
+  function selectFreqCalendar(key, el) { selectFreqGroup(FREQ_CALENDAR_GROUP, key, el); }
 
   // ── Save email ─────────────────────────────────────────────────────────────
   function saveEmail(val) {
