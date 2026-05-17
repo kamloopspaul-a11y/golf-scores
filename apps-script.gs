@@ -24,6 +24,7 @@
 const ROUNDS      = 'Rounds';
 const SETTINGS    = 'Settings';
 const DIAGNOSTICS = 'Diagnostics';
+const ROUND_META  = 'Round_Meta';
 
 const REPORT_EMAIL   = 'kamloopspaul@gmail.com';
 
@@ -33,14 +34,18 @@ const ROUND_WINDOWS  = [5, 10, 20];
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 //
-//  Rounds tab  (one row per hole per round — 18 rows per round)
-//  Round_ID | Date | Course | Tees | Hole | Par | Stroke_Index |
-//  Score | Putts | FIR | GIR | UD | X_UD | Penalties | Net_Score
+//  Rounds tab  (fact table — one row per hole per round, 18 rows per round)
+//  Round_ID | Hole | Par | Stroke_Index | Score | Putts |
+//  FIR | GIR | UD | X_UD | Penalties | Net_Score
+//
+//  Round_Meta tab  (dimension — one row per round)
+//  Round_ID | Date | Course | Tees | Round_Type | PCC_Selected | Pending | Pairing_ID
 //
 //  Diagnostics tab  (one row per round — computed by buildDiagnostics_)
 //  Round_ID | Date | Course | Score | FIR | GIR | UD | Putts | Penalties |
 //  BallStrikingGap | ShortGameOpp | MissedOpp | ShortGameEff |
-//  PuttsPerGIR | DiagnosticScore | BSCost | SGCost | PuttingCost | TotalStrokesLost
+//  PuttsPerGIR | DiagnosticScore | BSCost | SGCost | PuttingCost | TotalStrokesLost |
+//  PCC_Selected | PCC_ScoreDelta | PCC_Flag | Round_Type
 //
 //  Settings tab  (Key | Value)
 //  Home Course    | Mt. Paul
@@ -49,12 +54,17 @@ const ROUND_WINDOWS  = [5, 10, 20];
 // ───────────────────────────────────────────────────────────────────────────
 
 function roundsHeader_() {
+  // Fact table — hole-level data only. Round-level data lives in Round_Meta.
   return [
-    'Round_ID', 'Date', 'Course', 'Tees', 'Hole',
-    'Par', 'Stroke_Index', 'Score', 'Putts',
-    'FIR', 'GIR', 'UD', 'X_UD', 'Penalties', 'Net_Score',
-    'Pending', 'Pairing_ID', 'Round_Type'
+    'Round_ID', 'Hole', 'Par', 'Stroke_Index', 'Score', 'Putts',
+    'FIR', 'GIR', 'UD', 'X_UD', 'Penalties', 'Net_Score'
   ];
+}
+
+function roundMetaHeader_() {
+  // Dimension table — one row per round.
+  return ['Round_ID', 'Date', 'Course', 'Tees', 'Round_Type',
+          'PCC_Selected', 'Pending', 'Pairing_ID'];
 }
 
 function diagnosticsHeader_() {
@@ -62,7 +72,7 @@ function diagnosticsHeader_() {
     'Round_ID', 'Date', 'Course', 'Score', 'FIR', 'GIR', 'UD', 'Putts', 'Penalties',
     'BallStrikingGap', 'ShortGameOpp', 'MissedOpp', 'ShortGameEff',
     'PuttsPerGIR', 'DiagnosticScore', 'BSCost', 'SGCost', 'PuttingCost', 'TotalStrokesLost',
-    'Round_Type'
+    'PCC_Selected', 'PCC_ScoreDelta', 'PCC_Flag', 'Round_Type'
   ];
 }
 
@@ -72,6 +82,7 @@ function setup() {
   const ss = SpreadsheetApp.getActive();
 
   ensureSheet_(ss, ROUNDS,      roundsHeader_());
+  ensureSheet_(ss, ROUND_META,  roundMetaHeader_());
   ensureSheet_(ss, DIAGNOSTICS, diagnosticsHeader_());
   ensureSheet_(ss, SETTINGS,    ['Key', 'Value']);
 
@@ -80,15 +91,8 @@ function setup() {
   if (!existing['Home Course'])    settingsSh.appendRow(['Home Course',    'Mt. Paul']);
   if (!existing['Handicap_Index']) settingsSh.appendRow(['Handicap_Index', 20]);
 
-  // Migrate Rounds header — add any columns that are in roundsHeader_() but missing from row 1
-  const roundsSh = ss.getSheetByName(ROUNDS);
-  if (roundsSh && roundsSh.getLastRow() >= 1) {
-    const fullHeader = roundsHeader_();
-    const existingHeader = roundsSh.getRange(1, 1, 1, roundsSh.getLastColumn()).getValues()[0];
-    fullHeader.forEach((col, i) => {
-      if (!existingHeader[i]) roundsSh.getRange(1, i + 1).setValue(col);
-    });
-  }
+  // Migrate Rounds → Round_Meta (runs once; detects old schema automatically)
+  migrateRoundsToMeta_(ss);
 
   // Style the Diagnostics tab
   styleDiagnosticsSheet_(ss.getSheetByName(DIAGNOSTICS));
@@ -104,6 +108,96 @@ function setup() {
   if (sh1 && sh1.getLastRow() === 0) ss.deleteSheet(sh1);
 }
 
+// ── One-time migration: Rounds → Round_Meta ─────────────────────────────────
+//
+//  Detects the old denormalised schema (header[1] === 'Date') and splits it:
+//    • Round_Meta gets one row per round (round-level fields)
+//    • Rounds tab is rewritten as a clean fact table (hole-level fields only)
+//  Safe to call repeatedly — skips if old schema is not detected.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+function migrateRoundsToMeta_(ss) {
+  const roundsSh = ss.getSheetByName(ROUNDS);
+  if (!roundsSh || roundsSh.getLastRow() < 1) return;
+
+  // Detect old schema: col 2 header = 'Date'
+  const header = roundsSh.getRange(1, 1, 1, roundsSh.getLastColumn()).getValues()[0];
+  if (header[1] !== 'Date') {
+    Logger.log('migrateRoundsToMeta_: schema already current, skipping.');
+    return;
+  }
+
+  Logger.log('migrateRoundsToMeta_: old schema detected — migrating...');
+
+  // Read all existing Rounds data (old schema):
+  // [0]Round_ID [1]Date [2]Course [3]Tees [4]Hole [5]Par [6]Stroke_Index
+  // [7]Score [8]Putts [9]FIR [10]GIR [11]UD [12]X_UD [13]Penalties [14]Net_Score
+  // [15]Pending [16]Pairing_ID [17]Round_Type [18]PCC_Selected(if present)
+  const numCols = roundsSh.getLastColumn();
+  const oldData = roundsSh.getLastRow() > 1
+    ? roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, numCols).getValues()
+    : [];
+
+  // Build Round_Meta rows (unique per Round_ID, preserve insertion order)
+  const seen = {};
+  const metaRows = [];
+  oldData.forEach(row => {
+    const id = String(row[0]);
+    if (!seen[id]) {
+      seen[id] = true;
+      metaRows.push([
+        id,
+        row[1],                              // Date
+        row[2],                              // Course
+        row[3],                              // Tees
+        numCols > 17 ? (row[17] || '') : '', // Round_Type
+        numCols > 18 ? (row[18] != null ? row[18] : 0) : 0, // PCC_Selected
+        row[15] || '',                       // Pending
+        row[16] || ''                        // Pairing_ID
+      ]);
+    }
+  });
+
+  // Write Round_Meta
+  const metaSh = ss.getSheetByName(ROUND_META);
+  if (metaSh && metaRows.length > 0) {
+    metaSh.getRange(2, 1, metaRows.length, metaRows[0].length).setValues(metaRows);
+  }
+
+  // Build new hole-only Rounds rows
+  // New schema: [0]Round_ID [1]Hole [2]Par [3]Stroke_Index [4]Score [5]Putts
+  //             [6]FIR [7]GIR [8]UD [9]X_UD [10]Penalties [11]Net_Score
+  const newRows = oldData.map(row => [
+    row[0],  // Round_ID
+    row[4],  // Hole
+    row[5],  // Par
+    row[6],  // Stroke_Index
+    row[7],  // Score
+    row[8],  // Putts
+    row[9],  // FIR
+    row[10], // GIR
+    row[11], // UD
+    row[12], // X_UD
+    row[13], // Penalties
+    row[14]  // Net_Score
+  ]);
+
+  // Rewrite Rounds tab with new schema
+  roundsSh.clearContents();
+  const newHdr = roundsHeader_();
+  roundsSh.getRange(1, 1, 1, newHdr.length)
+    .setValues([newHdr])
+    .setFontWeight('bold')
+    .setBackground('#e8f3de');
+  roundsSh.setFrozenRows(1);
+  if (newRows.length > 0) {
+    roundsSh.getRange(2, 1, newRows.length, newRows[0].length).setValues(newRows);
+  }
+
+  Logger.log('migrateRoundsToMeta_: done — ' + metaRows.length + ' rounds, ' + newRows.length + ' hole rows migrated.');
+}
+
 // ── GET — returns rounds data or health check ──────────────────────────────
 
 function doGet(e) {
@@ -116,12 +210,32 @@ function doGet(e) {
       if (!sh || sh.getLastRow() < 2) {
         return json_({ ok: true, rounds: [] });
       }
-      const headers = roundsHeader_();
-      const raw     = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
-      const rounds  = raw.map(row => {
-        const obj = {};
-        headers.forEach((h, i) => { obj[h] = row[i]; });
-        return obj;
+      // Join Rounds (fact) + Round_Meta (dimension) — return combined shape
+      const metaSh   = ss.getSheetByName(ROUND_META);
+      const metaMap  = buildMetaMap_(metaSh);
+      const headers  = roundsHeader_();
+      const raw      = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
+      const rounds   = raw.map(row => {
+        const id   = String(row[0]);
+        const meta = metaMap[id] || {};
+        return {
+          Round_ID:     id,
+          Date:         meta.Date    || '',
+          Course:       meta.Course  || '',
+          Tees:         meta.Tees    || '',
+          Hole:         row[1],
+          Par:          row[2],
+          Stroke_Index: row[3],
+          Score:        row[4],
+          Putts:        row[5],
+          FIR:          row[6],
+          GIR:          row[7],
+          UD:           row[8],
+          X_UD:         row[9],
+          Penalties:    row[10],
+          Net_Score:    row[11],
+          Round_Type:   meta.Round_Type || ''
+        };
       });
       return json_({ ok: true, rounds: rounds });
     } catch (err) {
@@ -163,6 +277,7 @@ function doPost(e) {
     // ── Score submission branch ──────────────────────────────────────────
 
     ensureSheet_(ss, ROUNDS,      roundsHeader_());
+    ensureSheet_(ss, ROUND_META,  roundMetaHeader_());
     ensureSheet_(ss, DIAGNOSTICS, diagnosticsHeader_());
     ensureSheet_(ss, SETTINGS,    ['Key', 'Value']);
 
@@ -171,11 +286,12 @@ function doPost(e) {
     const course  = p.course || '';
     const tees    = p.tees   || '';
 
-    // Duplicate prevention
+    // Duplicate prevention — check Round_Meta (one row per round, faster than scanning Rounds)
     const roundsSh = ss.getSheetByName(ROUNDS);
-    if (roundsSh.getLastRow() > 1) {
-      const existing = roundsSh.createTextFinder(roundId).matchEntireCell(true).findAll();
-      if (existing.length > 0) {
+    const metaSh   = ss.getSheetByName(ROUND_META);
+    if (metaSh.getLastRow() > 1) {
+      const metaIds = metaSh.getRange(2, 1, metaSh.getLastRow() - 1, 1).getValues();
+      if (metaIds.some(r => String(r[0]) === roundId)) {
         return json_({ ok: true, roundId: roundId, duplicate: true });
       }
     }
@@ -194,6 +310,7 @@ function doPost(e) {
 
     const isPending = p.pending === true;
     const pairingId = p.pairingId || '';
+    const pccSelected = p.pccSelected != null ? parseInt(p.pccSelected, 10) : 0;
 
     // Round_Type: Home / Local / Away
     const homeCourse_ = String((getSettings_(ss.getSheetByName(SETTINGS))['Home Course'] || 'Mt. Paul')).trim().toLowerCase();
@@ -225,13 +342,13 @@ function doPost(e) {
         netScore = hScore - (hIdx <= ch ? 1 : 0);
       }
 
-      rows.push([
-        roundId, sanitize_(date), sanitize_(course), sanitize_(tees), num,
-        hPar, hIdx, hScore, hPutts,
-        hFir, hGir, hUd, hXud, hPen, netScore,
-        isPending ? 'TRUE' : '', pairingId, roundType
-      ]);
+      // Fact table — hole data only (round-level data goes to Round_Meta)
+      rows.push([roundId, num, hPar, hIdx, hScore, hPutts, hFir, hGir, hUd, hXud, hPen, netScore]);
     }
+
+    // Write round-level metadata — one row per round
+    metaSh.appendRow([roundId, sanitize_(date), sanitize_(course), sanitize_(tees),
+                      roundType, pccSelected, isPending ? 'TRUE' : '', pairingId]);
 
     if (rows.length > 0) {
       roundsSh
@@ -240,65 +357,62 @@ function doPost(e) {
     }
 
     // ── Widow pairing ───────────────────────────────────────────────────────
-    // If this is a pending 9-hole round, check whether an unmatched pending
-    // round already exists.  If so, merge them into one 18-hole record:
-    //   • renumber the new holes 10–18
+    // If this is a pending 9-hole round, check Round_Meta for an unmatched
+    // pending round. If found, merge into one 18-hole record:
+    //   • renumber new holes 10–18 in Rounds tab
     //   • reassign their Round_ID to the widow's Round_ID
-    //   • clear the Pending flag on all rows for both halves
-    //   • rebuild Diagnostics on the completed 18-hole round
+    //   • clear Pending on widow's Round_Meta row
+    //   • delete the new round's Round_Meta row (absorbed into widow)
     if (isPending) {
-      const allData = roundsSh.getLastRow() > 1
-        ? roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, 16).getValues()
+      const metaRows = metaSh.getLastRow() > 1
+        ? metaSh.getRange(2, 1, metaSh.getLastRow() - 1, roundMetaHeader_().length).getValues()
         : [];
 
-      // Find the oldest pending round that isn't this submission
-      let widowId = null;
-      for (let i = 0; i < allData.length; i++) {
-        const rId      = String(allData[i][0]);
-        const rPending = allData[i][15];
-        if ((rPending === 'TRUE' || rPending === true) && rId !== roundId) {
-          widowId = rId;
-          break;
+      // Find the oldest pending round in Round_Meta that isn't this submission
+      let widowId      = null;
+      let widowMetaRow = -1;
+      let newMetaRow   = -1;
+      for (let i = 0; i < metaRows.length; i++) {
+        const rId      = String(metaRows[i][0]);
+        const rPending = metaRows[i][6];
+        if (rId === roundId) newMetaRow = i + 2;
+        if ((rPending === 'TRUE' || rPending === true) && rId !== roundId && widowId === null) {
+          widowId      = rId;
+          widowMetaRow = i + 2;
         }
       }
 
       if (widowId) {
-        // Update the 9 rows we just appended: new Round_ID, holes 10-18, clear Pending
+        // Update hole rows: reassign Round_ID + renumber holes 10–18
         const lastRow     = roundsSh.getLastRow();
         const newRowStart = lastRow - rows.length + 1;
         for (let i = 0; i < rows.length; i++) {
           const sheetRow = newRowStart + i;
-          roundsSh.getRange(sheetRow, 1).setValue(widowId);   // Round_ID
-          roundsSh.getRange(sheetRow, 5).setValue(i + 10);    // Hole number 10-18
-          roundsSh.getRange(sheetRow, 16).setValue('');        // clear Pending
+          roundsSh.getRange(sheetRow, 1).setValue(widowId); // Round_ID (col 1)
+          roundsSh.getRange(sheetRow, 2).setValue(i + 10);  // Hole (col 2) → 10–18
         }
 
-        // Clear Pending on the widow's original 9 rows
-        const refreshed = roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, 16).getValues();
-        for (let i = 0; i < refreshed.length; i++) {
-          if (String(refreshed[i][0]) === widowId &&
-              (refreshed[i][15] === 'TRUE' || refreshed[i][15] === true)) {
-            roundsSh.getRange(i + 2, 16).setValue('');
-          }
-        }
+        // Clear Pending on widow's Round_Meta row
+        metaSh.getRange(widowMetaRow, 7).setValue('');
 
-        // Full 18-hole round is now complete — append one Diagnostics row
+        // Delete the new round's Round_Meta row (absorbed into widow)
+        if (newMetaRow > 0) metaSh.deleteRow(newMetaRow);
+
+        // Full 18-hole round is now complete
         appendDiagnosticsRow_(ss, widowId, hi);
-        const totalRounds = countRounds_(roundsSh);
+        const totalRounds = countRounds_(metaSh);
         checkRoundTriggers_(ss, totalRounds, hi);
         return json_({ ok: true, roundId: widowId, paired: true, courseHandicap: ch, totalRounds: totalRounds });
       }
 
       // No widow found — stored as pending, nothing more to do
-      return json_({ ok: true, roundId: roundId, pending: true, pairingId: pairingId, courseHandicap: ch, totalRounds: countRounds_(roundsSh) });
+      return json_({ ok: true, roundId: roundId, pending: true, pairingId: pairingId, courseHandicap: ch, totalRounds: countRounds_(metaSh) });
     }
 
     // Full 18-hole round — append one Diagnostics row, check report trigger
     appendDiagnosticsRow_(ss, roundId, hi);
-    const totalRounds = countRounds_(roundsSh);
-    if (totalRounds > 0 && totalRounds % REPORT_EVERY_N_ROUNDS === 0) {
-      sendReport_(ss, REPORT_LAST_N_ROUNDS);
-    }
+    const totalRounds = countRounds_(metaSh);
+    checkRoundTriggers_(ss, totalRounds, hi);
 
     const response = { ok: true, roundId: roundId, courseHandicap: ch, totalRounds: totalRounds };
     if (isPending) response.pairingId = pairingId;
@@ -321,7 +435,8 @@ function doPost(e) {
 function appendDiagnosticsRow_(ss, roundId, hi) {
   const roundsSh = ss.getSheetByName(ROUNDS);
   const diagSh   = ss.getSheetByName(DIAGNOSTICS);
-  if (!roundsSh || !diagSh) return;
+  const metaSh   = ss.getSheetByName(ROUND_META);
+  if (!roundsSh || !diagSh || !metaSh) return;
 
   const headers  = roundsHeader_();
   const allData  = roundsSh.getLastRow() > 1
@@ -331,16 +446,22 @@ function appendDiagnosticsRow_(ss, roundId, hi) {
   const roundRows = allData.filter(r => String(r[0]) === roundId);
   if (!roundRows.length) return;
 
-  const date      = roundRows[0][1];
-  const course    = roundRows[0][2];
-  const roundType = roundRows[0][17] || '';
+  // Round-level data from Round_Meta
+  const meta       = getMetaByRound_(metaSh, roundId);
+  const date       = meta ? meta[1] : '';
+  const course     = meta ? meta[2] : '';
+  const roundType  = meta ? meta[4] : '';
+  const pccSelected = meta ? (Number(meta[5]) || 0) : 0;
 
-  const score = roundRows.reduce((s, h) => s + (Number(h[7]) || 0), 0);
-  const putts = roundRows.reduce((s, h) => s + (Number(h[8]) || 0), 0);
-  const fir   = roundRows.filter(h => isTruthy_(h[9])).length;
-  const gir   = roundRows.filter(h => isTruthy_(h[10])).length;
-  const ud    = roundRows.filter(h => isTruthy_(h[11])).length;
-  const pen   = roundRows.reduce((s, h) => s + (Number(h[13]) || 0), 0);
+  // Hole-level aggregates — new fact-table indices
+  // [0]Round_ID [1]Hole [2]Par [3]StrokeIndex [4]Score [5]Putts
+  // [6]FIR [7]GIR [8]UD [9]X_UD [10]Penalties [11]Net_Score
+  const score = roundRows.reduce((s, h) => s + (Number(h[4]) || 0), 0);
+  const putts = roundRows.reduce((s, h) => s + (Number(h[5]) || 0), 0);
+  const fir   = roundRows.filter(h => isTruthy_(h[6])).length;
+  const gir   = roundRows.filter(h => isTruthy_(h[7])).length;
+  const ud    = roundRows.filter(h => isTruthy_(h[8])).length;
+  const pen   = roundRows.reduce((s, h) => s + (Number(h[10]) || 0), 0);
 
   const bsGap     = 18 - gir;
   const sgOpp     = 18 - gir;
@@ -356,10 +477,25 @@ function appendDiagnosticsRow_(ss, roundId, hi) {
   const puttCost      = putts - puttBenchmark;
   const totalSL       = parseFloat((bsCost + sgCost + puttCost + pen).toFixed(2));
 
+  // PCC — rolling average of all completed rounds already in Diagnostics
+  const PCC_DELTA_THRESHOLD = 3;
+  let pccScoreDelta = '';
+  let pccFlag = '';
+  if (diagSh.getLastRow() > 1) {
+    const diagCols = diagnosticsHeader_().length;
+    const diagData = diagSh.getRange(2, 1, diagSh.getLastRow() - 1, diagCols).getValues();
+    const prevScores = diagData.map(r => Number(r[3]) || 0).filter(s => s > 0);
+    if (prevScores.length > 0) {
+      const rollingAvg = prevScores.reduce((a, b) => a + b, 0) / prevScores.length;
+      pccScoreDelta = parseFloat((score - rollingAvg).toFixed(1));
+      pccFlag = (pccScoreDelta >= PCC_DELTA_THRESHOLD && pccSelected >= 1) ? 'TRUE' : '';
+    }
+  }
+
   diagSh.appendRow([
     roundId, date, course, score, fir, gir, ud, putts, pen,
     bsGap, sgOpp, missed, sgEff, ppGir, diagScore,
-    bsCost, sgCost, puttCost, totalSL, roundType
+    bsCost, sgCost, puttCost, totalSL, pccSelected, pccScoreDelta, pccFlag, roundType
   ]);
 
   applyDiagnosticsColours_(diagSh, diagSh.getLastRow() - 1);
@@ -389,36 +525,52 @@ function buildDiagnostics_(ss) {
   const headers = roundsHeader_();
   const raw = roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, headers.length).getValues();
 
-  // Group rows by Round_ID — preserve insertion order (rounds in date order)
-  const order  = [];
+  // Load Round_Meta for round-level fields (Date, Course, Round_Type, PCC_Selected, Pending)
+  const metaSh  = ss.getSheetByName(ROUND_META);
+  const metaMap = buildMetaMap_(metaSh);
+
+  // Pending round IDs — skip these in the Diagnostics rebuild
+  const pendingIds = new Set(
+    Object.values(metaMap)
+      .filter(m => m.Pending === 'TRUE' || m.Pending === true)
+      .map(m => m.Round_ID)
+  );
+
+  // Group hole rows by Round_ID — preserve insertion order (rounds in date order)
+  const order   = [];
   const byRound = {};
 
   raw.forEach(row => {
-    const id      = String(row[0]);
-    const pending = row[15];                          // col 16 = Pending
-    if (pending === 'TRUE' || pending === true) return; // skip pending 9-hole rounds
+    const id = String(row[0]);
+    if (pendingIds.has(id)) return; // skip pending 9-hole rounds
     if (!byRound[id]) {
+      const meta = metaMap[id] || {};
       order.push(id);
       byRound[id] = {
-        Round_ID:   id,
-        Date:       row[1],
-        Course:     row[2],
-        Round_Type: row[17] || '',
-        holes:      []
+        Round_ID:     id,
+        Date:         meta.Date        || '',
+        Course:       meta.Course      || '',
+        Round_Type:   meta.Round_Type  || '',
+        PCC_Selected: meta.PCC_Selected != null ? Number(meta.PCC_Selected) : 0,
+        holes:        []
       };
     }
+    // Fact-table indices: [0]Round_ID [1]Hole [2]Par [3]SI [4]Score [5]Putts
+    //                     [6]FIR [7]GIR [8]UD [9]X_UD [10]Penalties [11]Net_Score
     byRound[id].holes.push({
-      Score:    row[7],
-      Putts:    row[8],
-      FIR:      row[9],
-      GIR:      row[10],
-      UD:       row[11],
-      Pen:      row[13]
+      Score: row[4],
+      Putts: row[5],
+      FIR:   row[6],
+      GIR:   row[7],
+      UD:    row[8],
+      Pen:   row[10]
     });
   });
 
-  // Build computed rows
-  const diagRows = order.map(id => {
+  // Build computed rows — for loop (not map) so rolling avg can reference prior rows
+  const PCC_DELTA_THRESHOLD = 3;
+  const diagRows = [];
+  for (const id of order) {
     const r = byRound[id];
 
     const score    = r.holes.reduce((s, h) => s + (Number(h.Score) || 0), 0);
@@ -445,7 +597,16 @@ function buildDiagnostics_(ss) {
     const puttCost = putts - puttBenchmark;                             // Putting Cost (>0 = strokes lost)
     const totalSL  = parseFloat((bsCost + sgCost + puttCost + pen).toFixed(2));
 
-    return [
+    // PCC — from Round_Meta (via byRound entry), not hole rows
+    const pccSelected = Number(r.PCC_Selected) || 0;
+    const prevScores  = diagRows.map(dr => Number(dr[3]) || 0).filter(s => s > 0);
+    const rollingAvg  = prevScores.length > 0
+      ? prevScores.reduce((a, b) => a + b, 0) / prevScores.length
+      : null;
+    const pccScoreDelta = rollingAvg != null ? parseFloat((score - rollingAvg).toFixed(1)) : '';
+    const pccFlag       = (rollingAvg != null && pccScoreDelta >= PCC_DELTA_THRESHOLD && pccSelected >= 1) ? 'TRUE' : '';
+
+    diagRows.push([
       r.Round_ID,
       r.Date,
       r.Course,
@@ -465,9 +626,12 @@ function buildDiagnostics_(ss) {
       sgCost,
       puttCost,
       totalSL,
+      pccSelected,
+      pccScoreDelta,
+      pccFlag,
       r.Round_Type || ''
-    ];
-  });
+    ]);
+  }
 
   // Rewrite Diagnostics tab (keep header row)
   if (diagSh.getLastRow() > 1) {
@@ -526,7 +690,8 @@ function styleDiagnosticsSheet_(sh) {
   sh.setFrozenRows(1);
   sh.setFrozenColumns(3);
   // Column widths
-  const widths = [160, 90, 140, 55, 45, 45, 45, 55, 65, 100, 100, 85, 90, 85, 110, 65, 65, 80, 110];
+  // 23 columns: Round_ID…TotalStrokesLost + PCC_Selected + PCC_ScoreDelta + PCC_Flag + Round_Type
+  const widths = [160, 90, 140, 55, 45, 45, 45, 55, 65, 100, 100, 85, 90, 85, 110, 65, 65, 80, 110, 70, 80, 65, 70];
   widths.forEach((w, i) => sh.setColumnWidth(i + 1, w));
 }
 
@@ -1104,33 +1269,38 @@ function handleGeminiQuery_(ss, question) {
   let context = 'No rounds have been recorded yet.';
 
   if (sh && sh.getLastRow() >= 2) {
-    const headers = roundsHeader_();
-    const raw     = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
+    const headers  = roundsHeader_();
+    const raw      = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
+    const metaSh2  = ss.getSheetByName(ROUND_META);
+    const metaMap2 = buildMetaMap_(metaSh2);
 
     const byRound = {};
     raw.forEach(row => {
-      const id = row[0];
+      const id   = String(row[0]);
+      const meta = metaMap2[id] || {};
       if (!byRound[id]) {
         byRound[id] = {
           Round_ID: id,
-          Date:     row[1],
-          Course:   row[2],
-          Tees:     row[3],
+          Date:     meta.Date   || '',
+          Course:   meta.Course || '',
+          Tees:     meta.Tees   || '',
           holes:    []
         };
       }
+      // Fact-table indices: [1]Hole [2]Par [3]SI [4]Score [5]Putts
+      //                     [6]FIR [7]GIR [8]UD [9]X_UD [10]Penalties [11]Net_Score
       byRound[id].holes.push({
-        Hole:         row[4],
-        Par:          row[5],
-        Stroke_Index: row[6],
-        Score:        row[7],
-        Putts:        row[8],
-        FIR:          row[9],
-        GIR:          row[10],
-        UD:           row[11],
-        X_UD:         row[12],
-        Penalties:    row[13],
-        Net_Score:    row[14]
+        Hole:         row[1],
+        Par:          row[2],
+        Stroke_Index: row[3],
+        Score:        row[4],
+        Putts:        row[5],
+        FIR:          row[6],
+        GIR:          row[7],
+        UD:           row[8],
+        X_UD:         row[9],
+        Penalties:    row[10],
+        Net_Score:    row[11]
       });
     });
 
@@ -1213,14 +1383,49 @@ function getSettings_(sh) {
   return map;
 }
 
-function countRounds_(roundsSh) {
-  if (!roundsSh || roundsSh.getLastRow() < 2) return 0;
-  // Read cols 1 (Round_ID) + 16 (Pending); exclude pending 9-hole rounds
-  const rows = roundsSh.getRange(2, 1, roundsSh.getLastRow() - 1, 16).getValues();
-  const completedIds = rows
-    .filter(r => r[15] !== 'TRUE' && r[15] !== true)
-    .map(r => String(r[0]));
-  return new Set(completedIds).size;
+// ── Round_Meta helpers ────────────────────────────────────────────────────
+
+/**
+ * Build a Round_ID → meta object map from the Round_Meta sheet.
+ * Returns {} if the sheet is missing or empty.
+ */
+function buildMetaMap_(metaSh) {
+  const map = {};
+  if (!metaSh || metaSh.getLastRow() < 2) return map;
+  const headers = roundMetaHeader_();
+  const rows    = metaSh.getRange(2, 1, metaSh.getLastRow() - 1, headers.length).getValues();
+  rows.forEach(r => {
+    const id = String(r[0]);
+    map[id] = {
+      Round_ID:     id,
+      Date:         r[1],
+      Course:       r[2],
+      Tees:         r[3],
+      Round_Type:   r[4],
+      PCC_Selected: r[5],
+      Pending:      r[6],
+      Pairing_ID:   r[7]
+    };
+  });
+  return map;
+}
+
+/**
+ * Return the raw row array for a single Round_ID from Round_Meta.
+ * Returns null if not found.
+ */
+function getMetaByRound_(metaSh, roundId) {
+  if (!metaSh || metaSh.getLastRow() < 2) return null;
+  const headers = roundMetaHeader_();
+  const rows    = metaSh.getRange(2, 1, metaSh.getLastRow() - 1, headers.length).getValues();
+  return rows.find(r => String(r[0]) === roundId) || null;
+}
+
+function countRounds_(metaSh) {
+  // Count completed (non-pending) rounds from Round_Meta — one row per round
+  if (!metaSh || metaSh.getLastRow() < 2) return 0;
+  const rows = metaSh.getRange(2, 1, metaSh.getLastRow() - 1, roundMetaHeader_().length).getValues();
+  return rows.filter(r => r[6] !== 'TRUE' && r[6] !== true).length;
 }
 
 function isTruthy_(val) {
