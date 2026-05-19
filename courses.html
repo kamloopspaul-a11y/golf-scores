@@ -1,7 +1,7 @@
 <!--
   My Golf Scores — Add Course
   courses.html
-  v1.3 — 2026-05-12
+  v1.5 — 2026-05-19
   - ADD COURSE: btn-3d 3D styling
   - screen-basics: BACK|NEXT (green), removed Saved Courses section
   - screen-holes: BACK|SAVE COURSE (green), all-caps
@@ -89,12 +89,33 @@ v1.0 — 2026-05-11
   /* ── TEE CHIPS ─────────────────────────────────────── */
   .tee-chip-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
   .tee-chip {
+    display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 16px; border-radius: 20px;
     border: 1.5px solid var(--border); background: var(--card);
     font-size: 14px; font-weight: 600; color: var(--text-secondary);
     cursor: pointer; touch-action: manipulation; transition: all 0.15s;
   }
   .tee-chip.active { background: var(--green); color: white; border-color: var(--green); }
+  /* ✕ remove button inside active chip */
+  .tee-chip-x {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: rgba(255,255,255,0.25); font-size: 10px; line-height: 1;
+    pointer-events: none; /* click handled by chip button */
+  }
+  /* Shake animation when max tees reached */
+  @keyframes chip-shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-4px); }
+    40%      { transform: translateX(4px); }
+    60%      { transform: translateX(-3px); }
+    80%      { transform: translateX(3px); }
+  }
+  .tee-chip.shake { animation: chip-shake 0.35s ease; }
+  /* Tee count label */
+  .tee-count-hint {
+    font-size: 11px; color: var(--text-muted); margin-bottom: 10px;
+  }
 
   /* ── TEE DETAIL ROWS ───────────────────────────────── */
   .tee-detail {
@@ -381,7 +402,8 @@ v1.0 — 2026-05-11
 
     <!-- Tees -->
     <div class="form-section">
-      <label class="field-label">Tees</label>
+      <label class="field-label">Tees <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(max 3)</span></label>
+      <div class="tee-count-hint" id="tee-count-hint"></div>
       <div class="tee-chip-strip" id="tee-chips">
         <button class="tee-chip"        onclick="toggleTee('White')">White</button>
         <button class="tee-chip"        onclick="toggleTee('Gold')">Gold</button>
@@ -450,6 +472,10 @@ let teesState = TEE_ORDER.map(name => ({
   sr: ''
 }));
 
+// holeState — persists par/SI/yardages across Screen 1 ↔ Screen 2 navigation
+// keyed by hole number: { 1: { par:'4', si:'7', yds:{ Blue:'380', White:'350' } }, ... }
+let holeState = {};
+
 // ── Utility ────────────────────────────────────────────
 // ── Phone formatter ────────────────────────────────────
 function formatPhone(raw) {
@@ -493,17 +519,50 @@ function setHoles(n) {
 }
 
 // ── Tee management ─────────────────────────────────────
+const MAX_TEES = 3;
+
 function toggleTee(name) {
-  // Sync any typed values back to state before re-rendering
   syncTeeInputsToState();
   const t = teesState.find(t => t.name === name);
   if (!t) return;
+
+  // Enforce max 3 — shake the chip if already at limit and trying to add
+  if (!t.active && activeTees().length >= MAX_TEES) {
+    const idx = TEE_ORDER.indexOf(name);
+    const chip = document.querySelectorAll('#tee-chips .tee-chip')[idx];
+    if (chip) {
+      chip.classList.remove('shake');
+      void chip.offsetWidth; // reflow to restart animation
+      chip.classList.add('shake');
+      setTimeout(() => chip.classList.remove('shake'), 400);
+    }
+    return;
+  }
+
   t.active = !t.active;
-  // Update chip appearance
-  const idx = TEE_ORDER.indexOf(name);
-  const chips = document.querySelectorAll('#tee-chips .tee-chip');
-  if (chips[idx]) chips[idx].classList.toggle('active', t.active);
+  renderTeeChips();
   renderTeeDetails();
+  updateTeeCountHint();
+}
+
+// Re-renders chip appearance (label + ✕ on active chips)
+function renderTeeChips() {
+  const chips = document.querySelectorAll('#tee-chips .tee-chip');
+  teesState.forEach((t, i) => {
+    const chip = chips[i];
+    if (!chip) return;
+    chip.classList.toggle('active', t.active);
+    chip.innerHTML = t.active
+      ? `${t.name} <span class="tee-chip-x">✕</span>`
+      : t.name;
+  });
+}
+
+function updateTeeCountHint() {
+  const hint = document.getElementById('tee-count-hint');
+  if (!hint) return;
+  const n = activeTees().length;
+  hint.textContent = n >= MAX_TEES ? 'Maximum 3 tees selected. Tap a tee to remove it.' : '';
 }
 
 function syncTeeInputsToState() {
@@ -513,6 +572,42 @@ function syncTeeInputsToState() {
     if (crEl) t.cr = crEl.value;
     if (srEl) t.sr = srEl.value;
   });
+}
+
+// ── Hole state persistence ──────────────────────────────
+// Saves all visible hole inputs into holeState before leaving Screen 2.
+function saveHoleInputsToState() {
+  for (let h = 1; h <= numHoles; h++) {
+    const parEl = document.getElementById('h' + h + '-par');
+    if (!parEl) continue; // hole cards not rendered
+    if (!holeState[h]) holeState[h] = { par: '', si: '', yds: {} };
+    holeState[h].par = parEl.value;
+    const siEl = document.getElementById('h' + h + '-si');
+    holeState[h].si  = siEl ? siEl.value : '';
+    TEE_ORDER.forEach(tName => {
+      const yEl = document.getElementById('h' + h + '-yds-' + tName);
+      if (yEl) holeState[h].yds[tName] = yEl.value;
+    });
+  }
+}
+
+// Restores hole inputs from holeState after a re-render.
+function prefillHoleCardsFromState() {
+  let any = false;
+  for (let h = 1; h <= numHoles; h++) {
+    const data = holeState[h];
+    if (!data) continue;
+    any = true;
+    const parEl = document.getElementById('h' + h + '-par');
+    const siEl  = document.getElementById('h' + h + '-si');
+    if (parEl && data.par) { parEl.value = data.par; onParChange(h, data.par); }
+    if (siEl  && data.si)  siEl.value = data.si;
+    Object.entries(data.yds || {}).forEach(([tName, val]) => {
+      const yEl = document.getElementById('h' + h + '-yds-' + tName);
+      if (yEl && val !== '') yEl.value = val;
+    });
+  }
+  if (any) updateDots();
 }
 
 function renderTeeDetails() {
@@ -559,18 +654,13 @@ function goToLibrary() {
 }
 
 function goToBasics() {
+  saveHoleInputsToState();  // preserve hole data before leaving Screen 2
+  syncTeeInputsToState();   // preserve CR/SR too
   showScreen('basics');
 }
 
 function goToHoles() {
-  // Pre-fill hole data if editing an existing course
-  if (editingId !== null) {
-    const course = getCache()[editingId];
-    renderHoleCards();
-    if (course) setTimeout(() => prefillHoleCards(course), 0);
-    showScreen('holes');
-    return;
-  }
+  syncTeeInputsToState();
   const name = document.getElementById('course-name').value.trim();
   if (!name) {
     alert('Please enter a course name.');
@@ -582,9 +672,13 @@ function goToHoles() {
     alert('Please select at least one tee.');
     return;
   }
-  syncTeeInputsToState();
   document.getElementById('holes-course-label').textContent = 'Courses: ' + name;
-  renderHoleCards();
+  renderHoleCards(); // restores holeState via prefillHoleCardsFromState()
+  // On first visit for an existing course, pre-fill from cache only if holeState is empty
+  if (editingId !== null && Object.keys(holeState).length === 0) {
+    const course = getCache()[editingId];
+    if (course) setTimeout(() => prefillHoleCards(course), 0);
+  }
   showScreen('holes');
   document.getElementById('holes-stage').scrollTop = 0;
 }
@@ -641,6 +735,7 @@ function renderHoleCards() {
   }).join('');
 
   updateDots();
+  prefillHoleCardsFromState(); // restore any previously entered data
 }
 
 function onParChange(hole, val) {
@@ -780,7 +875,8 @@ function renderLibrary() {
 }
 
 function startAddCourse() {
-  editingId = null;
+  editingId  = null;
+  holeState  = {}; // clear any previous hole data
   // Reset form to blank
   document.getElementById('course-name').value     = '';
   document.getElementById('course-phone').value    = '';
@@ -788,11 +884,10 @@ function startAddCourse() {
   document.getElementById('course-city').value     = '';
   document.getElementById('course-province').value = 'BC';
   teesState.forEach(t => { t.active = (t.name === 'Blue'); t.cr = ''; t.sr = ''; });
-  document.querySelectorAll('#tee-chips .tee-chip').forEach((chip, i) => {
-    chip.classList.toggle('active', TEE_ORDER[i] === 'Blue');
-  });
   setHoles(18);
+  renderTeeChips();
   renderTeeDetails();
+  updateTeeCountHint();
   setEditMode(false);
   showScreen('basics');
 }
@@ -801,6 +896,7 @@ function editCourse(id) {
   const cache  = getCache();
   const course = cache[id];
   if (!course) { alert('Course not found.'); return; }
+  holeState = {}; // fresh edit — clear any leftover hole data
 
   editingId = course.id;
 
@@ -825,10 +921,9 @@ function editCourse(id) {
     t.cr = match ? (match.course_rating || '') : '';
     t.sr = match ? (match.slope_rating  || '') : '';
   });
-  document.querySelectorAll('#tee-chips .tee-chip').forEach((chip, i) => {
-    chip.classList.toggle('active', teesState[i].active);
-  });
+  renderTeeChips();
   renderTeeDetails();
+  updateTeeCountHint();
   applyFieldAsterisks();
 
   setEditMode(true, course.club_name);
@@ -880,7 +975,7 @@ function prefillHoleCards(course) {
     const hNum = i + 1;
     const parEl = document.getElementById('h' + hNum + '-par');
     const siEl  = document.getElementById('h' + hNum + '-si');
-    if (parEl && h.par)    parEl.value = h.par;
+    if (parEl && h.par)    { parEl.value = h.par; onParChange(hNum, h.par); }
     if (siEl  && h.index)  siEl.value  = h.index;
 
     // Yardage per tee
@@ -890,6 +985,7 @@ function prefillHoleCards(course) {
     });
   });
   updateDots();
+  saveHoleInputsToState(); // keep holeState in sync so Back+Next preserves edits
 }
 
 function saveCourse() {
@@ -1050,7 +1146,9 @@ function deleteCourse(id) {
   document.getElementById('basics-date').textContent = today;
   document.getElementById('holes-date').textContent  = today;
   document.getElementById('lib-date').textContent    = today;
+  renderTeeChips();
   renderTeeDetails();
+  updateTeeCountHint();
   renderLibrary();
   syncPhones(); // async — updates cache then re-renders if phones were missing
 })();
