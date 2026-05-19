@@ -244,60 +244,11 @@
 <link rel="manifest" href="manifest.json">
 <title>Score Card</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  button, input, select, textarea { font: inherit; }
-  :root {
-    --green:       #377f09;
-    --green-hover: #2e6b07;
-    --green-deep:  #1f4d05;
-    --green-pale:  #eaf4e1;
-    --cream:       #faf9f6;
-    --card:        #ffffff;
-    --text-primary:   #1a1a1a;
-    --text-secondary: #6b7280;
-    --text-muted:     #9ca3af;
-    --bogey:   #dc2626;
-    --border:  rgba(0,0,0,0.10);
-    --yellow:  #f5c842;
-    --row-alt: #f2f2f2;
-    --btn-gray: #e8e8e8;
-    --btn-gray-border: #c0c0c0;
-  }
-  html, body { height: 100%; overflow-x: hidden; overscroll-behavior: none; }
-  body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: var(--green);
-    color: var(--text-primary);
-    min-height: 100dvh;
-    width: 100%;
-    margin: 0 auto;
-    overflow-x: hidden;
-  }
-  @media (min-width: 600px) {
-    body { max-width: 320px; box-shadow: 0 0 40px rgba(0,0,0,0.3); }
-  }
-  .screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
-  .screen.active { display: flex; }
+
   .hu-pcc { display: none; } /* hidden until PCC enabled in Settings */
-  /* ── MASTHEADS ─────────────────────────────────────── */
-  .masthead, .hole-masthead, .card-masthead {
-    background: transparent;
-    padding: calc(44px + env(safe-area-inset-top)) 20px 4px;
-    color: white;
-    height: calc(208px + env(safe-area-inset-top));
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  /* Upper Header: 2-col grid — Course|Weather / Date|Duration */
-  .header-upper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    row-gap: 3px;
-    margin-bottom: 14px;
-  }
+
   /* PCC conditions dropdown — setup stage */
   .pcc-setup-row {
     display: none;
@@ -317,31 +268,7 @@
     -webkit-appearance: auto;
     appearance: auto;
   }
-  .hu-breadcrumb {
-    font-size: 13px; color: var(--yellow); font-weight: 500;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .hu-weather {
-    font-size: 13px; color: rgba(255,255,255,0.8);
-    text-align: right; white-space: nowrap;
-  }
-  .hu-date {
-    font-size: 12px; color: rgba(255,255,255,0.5);
-    white-space: nowrap;
-  }
-  .hu-duration {
-    font-size: 12px; color: rgba(255,255,255,0.5);
-    text-align: right; white-space: nowrap;
-  }
-  /* Lower Header — 2-row strip, identical structure on every screen */
-  .header-lower      { display: flex; flex-direction: column; position: relative; }
-  .header-lower-top  { min-height: 86px; display: flex; align-items: flex-end; }
-  .header-lower-bot  { min-height: 38px; display: flex; align-items: center;
-                       justify-content: space-between; }
-  .header-lower-title {
-    font-size: 56px; font-weight: 600; letter-spacing: -2px;
-    color: white; line-height: 1; white-space: nowrap;
-  }
+
   .hole-num {
     font-size: 64px; font-weight: 600; letter-spacing: -2px;
     line-height: 1; color: white;
@@ -376,26 +303,7 @@
     font-family: 'DM Sans', sans-serif;
   }
   .player-row { justify-content: center; }
-  /* ── 3D BUTTONS ────────────────────────────────────── */
-  .btn-3d {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    touch-action: manipulation;
-    font-size: 16px; font-weight: 600;
-    color: white; border: none; border-radius: 14px; cursor: pointer;
-    background: linear-gradient(180deg, #4a9e0d 0%, var(--green) 50%, var(--green-deep) 100%);
-    box-shadow:
-      0 6px 0 #164803,
-      0 8px 16px rgba(0,0,0,0.28),
-      inset 0 1px 0 rgba(255,255,255,0.18);
-    transition: transform 0.08s, box-shadow 0.08s, color 0.15s;
-    position: relative; top: 0;
-  }
-  .btn-3d:hover  { color: var(--yellow); }
-  .btn-3d:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 #164803, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
-    top: 4px;
-  }
+
   .start-btn { width: 100%; padding: 17px; margin-top: 16px; }
   /* ── SCORE SECTION ─────────────────────────────────── */
   .score-section {
@@ -677,13 +585,7 @@
     font-size: 13px;
   }
   /* ── STATS SCREEN ──────────────────────────────────── */
-  .stageScrolls {
-    flex: 1 1 0;
-    min-height: 0;
-    overflow-y: auto;
-    background: #fff;
-    margin-top: 12px;
-  }
+
   /* Stats screen — player name row spacing */
   #screen-stats .player-row { padding: 14px 0 14px; border-bottom: 1px solid var(--border); }
   .stats-grid {
@@ -790,20 +692,7 @@
   }
   .as-holes-toggle input[type=radio] { accent-color: var(--green); }
   #as-holes-field { display: none; }
-  /* iOS-style slider (unscripted placeholder) */
-  .switch { position: relative; display: inline-block; width: 53px; height: 26px; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .switch .slider-bg {
-    position: absolute; cursor: pointer; inset: 0;
-    background: rgba(255,255,255,0.25); border-radius: 26px; transition: 0.2s;
-  }
-  .switch .slider-bg::before {
-    position: absolute; content: ""; height: 22px; width: 22px;
-    left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
-  .switch input:checked + .slider-bg { background: var(--yellow); }
-  .switch input:checked + .slider-bg::before { transform: translateX(27px); }
+
   /* Putts counter — replaces toggle, default 2 */
   .putts-counter {
     display: inline-flex; align-items: center; gap: 8px;
@@ -895,27 +784,17 @@
 
   /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
   @media (max-height: 750px) {
-    .masthead, .hole-masthead, .card-masthead {
-      height: calc(170px + env(safe-area-inset-top));
-      padding: calc(20px + env(safe-area-inset-top)) 20px 4px;
-    }
-    .header-upper { margin-bottom: 4px; }
-    /* stage is elastic — no flex-basis override needed on small screens */
-    /* footer is content-sized; no min-height needed */
+
     .score-btn { width: 64px; height: 64px; font-size: 32px; }
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
     .hole-num { font-size: 52px; }
-    .header-lower-title { font-size: 46px; }
-    .header-lower-top { min-height: 74px; }
-    .header-lower-bot { min-height: 32px; }
     .success-body { padding: 24px; }
     .ss-hero .ss-val { font-size: 46px; }
 
   }
 </style>
-<link rel="stylesheet" href="shared.css">
 <script src="shared.js"></script>
 <script>
   if('serviceWorker' in navigator){
@@ -1088,7 +967,7 @@
       </div>
     </div>
   </div>
-  <div class="stageScrolls">
+  <div class="stage-scrolls">
     <div class="player-row"><span class="player-name-display" data-player-name>Paul</span></div>
     <div class="stats-grid">
       <div class="sg-row" data-metric="fir">

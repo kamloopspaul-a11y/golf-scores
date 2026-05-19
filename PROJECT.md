@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v9.88 — May 18, 2026
+**Version:** v9.88 / SW v62 — May 18, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
@@ -362,7 +362,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 ## Session Resume Notes
 
 **Last worked:** May 18, 2026 (Session 4)
-**Version:** v9.88 / SW v61
+**Version:** v9.88 / SW v62
 
 **Completed this session:**
 - PCC dropdown built and placed on **Start Round screen**, stage area, below course card
@@ -381,9 +381,9 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 1. ~~**Apps Script** — write `pccSelected` to Rounds tab~~ ✅ Done (Session 3)
 2. ~~**PCC toggle** — move to top of Tracking Your Stats section~~ ✅ Done (Session 3)
 3. ~~**Weather-deduced PCC default**~~ — **shelved** (see 2026-05-18 journal entry)
-4. **shared.css — HOME button standard width**
-5. **shared.css — Toggle switch canonical**
-6. **shared.css — Font type scale**
+4. **✅ shared.css — HOME button standard width**
+5. **✅ shared.css — Toggle switch canonical**
+6. **✅ shared.css — Font type scale**
 7. **Course card tap cue** — "Change Course ›" sublabel on Start Round screen
 8. **Sample Performance Report**
 9. **Settings bridge** — localStorage → Sheets Settings tab

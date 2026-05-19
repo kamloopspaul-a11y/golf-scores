@@ -1281,3 +1281,50 @@ The app's existing PCC implementation (player self-reports how conditions felt, 
 - `.benchmarks`: display none; `.benchmarks.open`: display block
 
 **Files changed:** `settings.html`, `assets/snippets/gpi-settings-block.html` (new)
+
+---
+
+## 2026-05-19 — Session 5 — shared.css v2.0 implementation
+
+### What was done
+Completed the shared.css centralisation work queued in the build list. All three HTML files now draw from a single stylesheet for all shared components.
+
+**shared.css v2.0** (258 lines → 270 lines after btn-3d cleanup):
+- Zone 0: `:root` with full brand palette + 11-step font type scale (`--fs-display` through `--fs-tiny`)
+- Zone 1: Masthead family (`.masthead`, `.hole-masthead`, `.card-masthead`) + `.header-upper`, `.hu-*`, `.header-lower-*` — with `@media (max-height: 750px)` responsive rules
+- Zone 2: `.stage-scrolls` (elastic middle zone)
+- Zone 3: Canonical toggle switch 48×26px green-on-white + `.switch--dark` modifier
+- Zone 4: `.nav-bar` + HOME button half-width rule (`.nav-bar .btn-3d:only-child`)
+- Zone 5: `.footer`, `.footer-nav-grid`, `.fnav-btn`, `.footer-version`
+- Zone 6: `.btn-3d`, `.btn-grey`, `.section-header`, `.setting-row`, `.setting-label`
+- Removed `text-transform: uppercase` and `margin-bottom: 6px` from `.btn-3d` (regression risk)
+
+**index.html** (−4887 chars):
+- `shared.css` link moved to before `<style>`
+- Removed: `* {}` reset, `:root`, `html/body`, `@media 600px`, `.screen/.screen.active`, all masthead + header-lower rules, `.btn-3d` base, `.stageScrolls`/`.stage-scrolls`, `.switch` base (53×26 yellow)
+- Renamed: `stageScrolls` → `stage-scrolls` (CSS + HTML element)
+- Preserved: `.switch.nht-switch` (yellow 9-hole toggle), `#screen-stats .switch` (green override for white bg), page-specific `@media (max-height:750px)` rules
+
+**settings.html** (−1432 chars):
+- Removed: `* {}` reset, `html/body`, `@media 600px`, `.screen`, canonical `.switch`/`.slider-bg` block
+- Added `.active` to the single `<div class="screen">` (replaces local `display:flex` override)
+- `.stage-scrolls` reduced to padding override only; `.nav-bar` kept (border-top + different padding)
+
+**courses.html** (−1512 chars):
+- Removed: `* {}` reset, `html/body`, `@media 600px`, `.screen/.screen.active`, `.nav-bar` local definition, `.btn-grey` (now in shared.css), `#screen-library .nav-bar { padding-top: 50px }` hack
+- `.stage-scrolls` reduced to `margin-top` + `padding` overrides only
+
+**sw.js**: `CACHE_NAME` bumped `golf-scores-v61` → `golf-scores-v62`
+
+### Files changed
+- `shared.css` — rewritten (v2.0)
+- `index.html` — style block cleanup + stageScrolls rename
+- `settings.html` — style block cleanup + screen.active
+- `courses.html` — style block cleanup + nav-bar / hack removal
+- `sw.js` — cache version bump
+
+### Open questions / next session
+- Visual spot-check: load all three pages in browser to confirm no regressions (toggle switches, nav-bar height, HOME button width, masthead sizing)
+- Next build queue item: Course card tap cue (courses.html)
+- Resume at: `shared.css` work is complete — next is UI/UX items
+

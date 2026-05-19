@@ -27,57 +27,14 @@
 <script src="shared.js"></script>
 <link rel="stylesheet" href="shared.css">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  button, input, select, textarea { font: inherit; }
-  html, body { height: 100%; overflow-x: hidden; overscroll-behavior: none; }
-  body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: var(--green);
-    color: var(--text-primary);
-    min-height: 100dvh;
-    width: 100%;
-    margin: 0 auto;
-    overflow-x: hidden;
-  }
-  @media (min-width: 600px) {
-    body { max-width: 320px; box-shadow: 0 0 40px rgba(0,0,0,0.3); }
-  }
 
-  /* ── 5-ZONE LAYOUT ── */
-  .screen {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  /* ── STAGE SCROLLS ── */
-  .stage-scrolls {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    background: var(--card);
-    padding: 0 0 20px;
-  }
+  /* ── STAGE SCROLLS override ── */
+  .stage-scrolls { padding: 0 0 20px; }
 
   /* ── TOGGLE SWITCH (shared pattern) ── */
   .toggle-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .toggle-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
   .toggle-label.active { color: var(--green); }
-  .switch { position: relative; display: inline-block; width: 48px; height: 26px; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .slider-bg {
-    position: absolute; cursor: pointer; inset: 0;
-    background: #d1d5db; border-radius: 26px;
-    transition: background 0.2s;
-  }
-  .slider-bg::before {
-    content: ''; position: absolute;
-    width: 20px; height: 20px; left: 3px; bottom: 3px;
-    background: white; border-radius: 50%;
-    transition: transform 0.2s;
-  }
-  .switch input:checked + .slider-bg { background: var(--green); }
-  .switch input:checked + .slider-bg::before { transform: translateX(22px); }
 
   /* ── EMAIL INPUT ── */
   .setting-input {
@@ -109,7 +66,6 @@
     font-size: 12px; color: var(--text-secondary);
     margin-top: 6px; min-height: 16px;
   }
-
 
   /* ── STAT TOGGLE ROWS — 2-col, label left / switch right ── */
   .stat-row {
@@ -213,7 +169,7 @@
 </style>
 </head>
 <body data-page-id="settings">
-<div class="screen">
+<div class="screen active">
 
   <!-- MASTHEAD -->
   <div class="masthead">

@@ -1,37 +1,93 @@
 /**
  * shared.css — Golf PWA global styles
- * v1.3 — 2026-05-14
+ * v2.0 — 2026-05-19
  *
- * Linked by every HTML page. Single source of truth for shared components.
+ * Single source of truth for all shared components.
+ * Linked by every HTML page (before local <style> so local styles can override).
  *
  * ⚠️  SW CACHE NOTE: shared.css is precached in sw.js.
- *    Any change here requires a CACHE_NAME bump in sw.js (e.g. v53 → v54)
+ *    Any change here requires a CACHE_NAME bump in sw.js (e.g. v61 → v62)
  *    or the old version will be served to returning users.
  *
  * Zones:
- *   1. Masthead   — .masthead, .header-upper, .header-lower-*
- *   2. Footer     — .footer, .footer-nav-grid, .fnav-btn, .footer-version
- *   3. Components — .btn-3d, .btn-grey, .section-header, .setting-row, .setting-label
+ *   0. Base        — :root vars (brand colours, font scale), html/body, desktop constraint
+ *   1. Masthead    — .masthead / .hole-masthead / .card-masthead, .header-upper, .header-lower-*
+ *   2. Stage       — .stage-scrolls (elastic middle zone)
+ *   3. Toggle      — .switch / .slider-bg canonical (48 × 26 px, green-on-white)
+ *   4. Nav bar     — .nav-bar, HOME button standard width
+ *   5. Footer      — .footer, .footer-nav-grid, .fnav-btn, .footer-version
+ *   6. Components  — .btn-3d, .btn-grey, .section-header, .setting-row, .setting-label
  */
 
-/* ── CSS VARIABLES ───────────────────────────────────────────────────────── */
+/* ── ZONE 0 — BASE ───────────────────────────────────────────────────────── */
 :root {
+  /* Brand colours */
   --green:          #377f09;
   --green-hover:    #2e6b07;
   --green-deep:     #1f4d05;
   --green-pale:     #eaf4e1;
+  --cream:          #faf9f6;
   --card:           #ffffff;
+
+  /* Text */
   --text-primary:   #1a1a1a;
   --text-secondary: #6b7280;
   --text-muted:     #9ca3af;
+
+  /* UI */
   --bogey:          #dc2626;
   --border:         rgba(0,0,0,0.10);
   --yellow:         #f5c842;
   --row-alt:        #f2f2f2;
+
+  /* Score counter +/− button greys */
+  --btn-gray:        #e8e8e8;
+  --btn-gray-border: #c0c0c0;
+
+  /* ── Font type scale ─────────────────────────────────── */
+  /* Display — masthead titles */
+  --fs-display:    56px;   /* non-hole title, default screen      */
+  --fs-display-sm: 46px;   /* non-hole title, small screen <750px */
+  --fs-hole:       64px;   /* hole number                         */
+  --fs-hole-sm:    52px;   /* hole number, small screen           */
+
+  /* Body */
+  --fs-body-lg:    19px;   /* setting labels, course names (lib-name) */
+  --fs-body:       15px;   /* standard body, nav options              */
+  --fs-body-md:    14px;   /* description text, sublabels             */
+  --fs-caption:    13px;   /* breadcrumb, weather, section headers    */
+  --fs-micro:      12px;   /* dates, setting sublabels                */
+  --fs-micro-sm:   11px;   /* stat group labels, tiny badges          */
+  --fs-tiny:       10px;   /* field labels, footnotes                 */
 }
 
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+button, input, select, textarea { font: inherit; }
+
+html, body { height: 100%; overflow-x: hidden; overscroll-behavior: none; }
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--green);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  width: 100%;
+  margin: 0 auto;
+  overflow-x: hidden;
+}
+@media (min-width: 600px) {
+  body { max-width: 320px; box-shadow: 0 0 40px rgba(0,0,0,0.3); }
+}
+
+/* Screen container — pages activate via .screen.active */
+.screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
+.screen.active { display: flex; }
+
 /* ── ZONE 1 — MASTHEAD ───────────────────────────────────────────────────── */
-.masthead {
+/* Covers .masthead (setup/add-scores/course screens) and
+   .hole-masthead / .card-masthead (hole, stats, midround, card, success)   */
+.masthead,
+.hole-masthead,
+.card-masthead {
   background: transparent;
   padding: calc(44px + env(safe-area-inset-top)) 20px 4px;
   color: white;
@@ -41,33 +97,90 @@
   flex-direction: column;
   justify-content: space-between;
 }
+
+/* Upper header: 2-col grid — Course|Weather / Date|Duration */
 .header-upper {
   display: grid;
   grid-template-columns: 1fr 1fr;
   row-gap: 3px;
   margin-bottom: 14px;
 }
-.hu-breadcrumb { font-size: 13px; color: var(--yellow); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hu-weather    { font-size: 13px; color: rgba(255,255,255,0.8); text-align: right; white-space: nowrap; }
-.hu-date       { font-size: 12px; color: rgba(255,255,255,0.5); white-space: nowrap; }
-.hu-duration   { font-size: 12px; color: rgba(255,255,255,0.5); text-align: right; white-space: nowrap; }
+.hu-breadcrumb { font-size: var(--fs-caption); color: var(--yellow); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hu-weather    { font-size: var(--fs-caption); color: rgba(255,255,255,0.8); text-align: right; white-space: nowrap; }
+.hu-date       { font-size: var(--fs-micro);   color: rgba(255,255,255,0.5); white-space: nowrap; }
+.hu-duration   { font-size: var(--fs-micro);   color: rgba(255,255,255,0.5); text-align: right; white-space: nowrap; }
 
+/* Lower header: 2-row strip — title row + PAR|YDS row */
 .header-lower     { display: flex; flex-direction: column; position: relative; }
 .header-lower-top { min-height: 86px; display: flex; align-items: flex-end; }
 .header-lower-bot { min-height: 38px; display: flex; align-items: center; justify-content: space-between; }
-.header-lower-title { font-size: 56px; font-weight: 600; letter-spacing: -2px; color: white; line-height: 1; white-space: nowrap; }
-.header-lower-subtitle { font-size: 16px; color: white; }
+.header-lower-title    { font-size: var(--fs-display); font-weight: 600; letter-spacing: -2px; color: white; line-height: 1; white-space: nowrap; }
+.header-lower-subtitle { font-size: var(--fs-body); color: white; }
 .header-lower-subtitle:empty { display: none; }
 
 @media (max-height: 750px) {
-  .masthead           { height: calc(170px + env(safe-area-inset-top)); padding: calc(20px + env(safe-area-inset-top)) 20px 4px; }
+  .masthead,
+  .hole-masthead,
+  .card-masthead      { height: calc(170px + env(safe-area-inset-top)); padding: calc(20px + env(safe-area-inset-top)) 20px 4px; }
   .header-upper       { margin-bottom: 4px; }
   .header-lower-top   { min-height: 74px; }
   .header-lower-bot   { min-height: 32px; }
-  .header-lower-title { font-size: 46px; }
+  .header-lower-title { font-size: var(--fs-display-sm); }
 }
 
-/* ── ZONE 2 — FOOTER NAV ─────────────────────────────────────────────────── */
+/* ── ZONE 2 — STAGE SCROLLS ──────────────────────────────────────────────── */
+/* Elastic middle zone — grows to fill space between masthead and nav-bar.
+   Pages override padding / background-colour locally as needed.            */
+.stage-scrolls {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--card);
+}
+
+/* ── ZONE 3 — TOGGLE SWITCH (canonical) ──────────────────────────────────── */
+/* Default context: white-background (Settings, Stats screen).
+   OFF = grey track; ON = green track; thumb = white pill.
+   For dark/green-background contexts add the .switch--dark modifier.       */
+.switch { position: relative; display: inline-block; width: 48px; height: 26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider-bg {
+  position: absolute; cursor: pointer; inset: 0;
+  background: #d1d5db; border-radius: 26px;
+  transition: background 0.2s;
+}
+.slider-bg::before {
+  content: ''; position: absolute;
+  width: 20px; height: 20px; left: 3px; bottom: 3px;
+  background: white; border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+.switch input:checked + .slider-bg         { background: var(--green); }
+.switch input:checked + .slider-bg::before { transform: translateX(22px); }
+
+/* Dark-background variant — semi-transparent OFF, yellow ON */
+.switch--dark .slider-bg                       { background: rgba(255,255,255,0.25); }
+.switch--dark input:checked + .slider-bg       { background: var(--yellow); }
+
+/* ── ZONE 4 — NAV BAR ────────────────────────────────────────────────────── */
+.nav-bar {
+  flex: 0 0 auto;
+  background: var(--card);
+  padding: 8px 16px calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* HOME button (or any sole btn-3d in nav-bar) — standard half-width.
+   Specificity (0,2,0) beats .btn-3d (0,1,0), so this holds even when a
+   local page style sets flex:1 on .btn-3d.                                 */
+.nav-bar .btn-3d:only-child {
+  max-width: calc(50% - 6px);
+}
+
+/* ── ZONE 5 — FOOTER NAV ─────────────────────────────────────────────────── */
 .footer {
   flex: 0 0 auto;
   background: transparent;
@@ -77,16 +190,16 @@
 .footer-nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .fnav-btn {
   background: none; border: none; color: var(--yellow);
-  font-size: 12px; font-weight: 500; min-height: 34px;
+  font-size: var(--fs-micro); font-weight: 500; min-height: 34px;
   padding: 4px 8px; text-align: center; cursor: pointer;
   width: 100%; -webkit-tap-highlight-color: transparent; text-decoration: none;
 }
 .fnav-btn:active { color: white; }
-.footer-version { text-align: center; color: white; font-size: 13px; font-weight: 500; margin-top: 6px; opacity: 0.7; letter-spacing: 0.03em; }
+.footer-version { text-align: center; color: white; font-size: var(--fs-caption); font-weight: 500; margin-top: 6px; opacity: 0.7; letter-spacing: 0.03em; }
 
-/* ── ZONE 3 — SHARED COMPONENTS ─────────────────────────────────────────── */
+/* ── ZONE 6 — SHARED COMPONENTS ──────────────────────────────────────────── */
 
-/* 3D Button — canonical definition, single source of truth */
+/* 3D Button — canonical definition. Pages override padding/width via modifiers. */
 .btn-3d {
   -webkit-appearance: none;
   appearance: none;
@@ -106,15 +219,13 @@
   position: relative;
   top: 0;
   padding: 12px 28px;
-  margin-bottom: 6px;
   -webkit-tap-highlight-color: transparent;
-  text-transform: uppercase;
 }
 .btn-3d:hover  { color: var(--yellow); }
 .btn-3d:active { transform: translateY(4px); top: 4px; box-shadow: 0 2px 0 #164803, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18); }
 .btn-3d:disabled { background: linear-gradient(180deg, #aaa 0%, #888 100%); box-shadow: 0 6px 0 #555; cursor: default; transform: none; top: 0; }
 
-/* Grey variant — used for secondary/cancel actions */
+/* Grey variant — secondary / cancel actions */
 .btn-grey {
   background: linear-gradient(180deg, #888 0%, #666 50%, #444 100%);
   box-shadow: 0 6px 0 #222, 0 8px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
@@ -123,7 +234,7 @@
 
 /* Section headers — SCORE CARD / FEEDBACK / ACCOUNT / TOOLS */
 .section-header {
-  font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+  font-size: var(--fs-caption); font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text-secondary);
   padding: 16px 20px 6px;
   background: var(--row-alt);
@@ -141,5 +252,5 @@
 .setting-left { display: flex; flex-direction: column; flex: 1; }
 
 /* Setting labels — matches .lib-name in courses */
-.setting-label { font-size: 19px; font-weight: 700; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.setting-sublabel { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.setting-label    { font-size: var(--fs-body-lg); font-weight: 700; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.setting-sublabel { font-size: var(--fs-micro);   color: var(--text-secondary); margin-top: 2px; }
