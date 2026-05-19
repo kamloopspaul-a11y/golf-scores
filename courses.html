@@ -96,26 +96,6 @@ v1.0 — 2026-05-11
     cursor: pointer; touch-action: manipulation; transition: all 0.15s;
   }
   .tee-chip.active { background: var(--green); color: white; border-color: var(--green); }
-  /* ✕ remove button inside active chip */
-  .tee-chip-x {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: rgba(255,255,255,0.25); font-size: 10px; line-height: 1;
-    pointer-events: none; /* click handled by chip button */
-  }
-  /* Shake animation when max tees reached */
-  @keyframes chip-shake {
-    0%,100% { transform: translateX(0); }
-    20%      { transform: translateX(-4px); }
-    40%      { transform: translateX(4px); }
-    60%      { transform: translateX(-3px); }
-    80%      { transform: translateX(3px); }
-  }
-  .tee-chip.shake { animation: chip-shake 0.35s ease; }
-  /* Tee count label */
-  .tee-count-hint {
-    font-size: 11px; color: var(--text-muted); margin-bottom: 10px;
-  }
 
   /* ── TEE DETAIL ROWS ───────────────────────────────── */
   .tee-detail {
@@ -402,8 +382,7 @@ v1.0 — 2026-05-11
 
     <!-- Tees -->
     <div class="form-section">
-      <label class="field-label">Tees <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(max 3)</span></label>
-      <div class="tee-count-hint" id="tee-count-hint"></div>
+      <label class="field-label">Tees</label>
       <div class="tee-chip-strip" id="tee-chips">
         <button class="tee-chip"        onclick="toggleTee('White')">White</button>
         <button class="tee-chip"        onclick="toggleTee('Gold')">Gold</button>
@@ -519,50 +498,24 @@ function setHoles(n) {
 }
 
 // ── Tee management ─────────────────────────────────────
-const MAX_TEES = 3;
-
 function toggleTee(name) {
   syncTeeInputsToState();
   const t = teesState.find(t => t.name === name);
   if (!t) return;
-
-  // Enforce max 3 — shake the chip if already at limit and trying to add
-  if (!t.active && activeTees().length >= MAX_TEES) {
-    const idx = TEE_ORDER.indexOf(name);
-    const chip = document.querySelectorAll('#tee-chips .tee-chip')[idx];
-    if (chip) {
-      chip.classList.remove('shake');
-      void chip.offsetWidth; // reflow to restart animation
-      chip.classList.add('shake');
-      setTimeout(() => chip.classList.remove('shake'), 400);
-    }
-    return;
-  }
-
   t.active = !t.active;
   renderTeeChips();
   renderTeeDetails();
-  updateTeeCountHint();
 }
 
-// Re-renders chip appearance (label + ✕ on active chips)
+// Re-renders chip appearance — tap to activate (green), tap again to deactivate
 function renderTeeChips() {
   const chips = document.querySelectorAll('#tee-chips .tee-chip');
   teesState.forEach((t, i) => {
     const chip = chips[i];
     if (!chip) return;
     chip.classList.toggle('active', t.active);
-    chip.innerHTML = t.active
-      ? `${t.name} <span class="tee-chip-x">✕</span>`
-      : t.name;
+    chip.textContent = t.name;
   });
-}
-
-function updateTeeCountHint() {
-  const hint = document.getElementById('tee-count-hint');
-  if (!hint) return;
-  const n = activeTees().length;
-  hint.textContent = n >= MAX_TEES ? 'Maximum 3 tees selected. Tap a tee to remove it.' : '';
 }
 
 function syncTeeInputsToState() {
@@ -639,6 +592,21 @@ function renderTeeDetails() {
     </div>`).join('');
 }
 
+
+// Saves a single hole's inputs to holeState immediately (called on every input event).
+// This ensures holeState is always current regardless of navigation method.
+function saveHole(h) {
+  if (!holeState[h]) holeState[h] = { par: '', si: '', yds: {} };
+  const parEl = document.getElementById('h' + h + '-par');
+  const siEl  = document.getElementById('h' + h + '-si');
+  if (parEl) holeState[h].par = parEl.value;
+  if (siEl)  holeState[h].si  = siEl.value;
+  TEE_ORDER.forEach(tName => {
+    const yEl = document.getElementById('h' + h + '-yds-' + tName);
+    if (yEl) holeState[h].yds[tName] = yEl.value;
+  });
+}
+
 // ── Navigation ─────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -705,7 +673,7 @@ function renderHoleCards() {
         <div class="hole-field-lbl">${esc(t.name)} yds</div>
         <input type="number" class="hole-input" id="h${h}-yds-${t.name}"
                placeholder="—" min="0" max="800" inputmode="numeric"
-               oninput="updateDots()">
+               oninput="updateDots(); saveHole(${h});">
       </div>`).join('');
 
     return `
@@ -719,13 +687,13 @@ function renderHoleCards() {
             <div class="hole-field-lbl">Par</div>
             <input type="number" class="hole-input" id="h${h}-par"
                    placeholder="—" min="3" max="6" inputmode="numeric"
-                   oninput="onParChange(${h}, this.value)">
+                   oninput="onParChange(${h}, this.value); saveHole(${h});">
           </div>
           <div>
             <div class="hole-field-lbl">SI</div>
             <input type="number" class="hole-input" id="h${h}-si"
                    placeholder="—" min="1" max="${numHoles}" inputmode="numeric"
-                   oninput="updateDots()">
+                   oninput="updateDots(); saveHole(${h});">
           </div>
         </div>
         <div class="hole-yds-row" style="grid-template-columns:${ydsCols}">
@@ -887,7 +855,6 @@ function startAddCourse() {
   setHoles(18);
   renderTeeChips();
   renderTeeDetails();
-  updateTeeCountHint();
   setEditMode(false);
   showScreen('basics');
 }
@@ -923,7 +890,6 @@ function editCourse(id) {
   });
   renderTeeChips();
   renderTeeDetails();
-  updateTeeCountHint();
   applyFieldAsterisks();
 
   setEditMode(true, course.club_name);
@@ -1032,6 +998,9 @@ function saveCourse() {
       holes
     });
   });
+
+  // Sort tees longest → shortest by total yardage
+  allTeeObjs.sort((a, b) => b.total_yards - a.total_yards);
 
   // Edit mode: overwrite existing; add mode: assign new negative ID
   const cache  = getCache();
@@ -1148,7 +1117,6 @@ function deleteCourse(id) {
   document.getElementById('lib-date').textContent    = today;
   renderTeeChips();
   renderTeeDetails();
-  updateTeeCountHint();
   renderLibrary();
   syncPhones(); // async — updates cache then re-renders if phones were missing
 })();
