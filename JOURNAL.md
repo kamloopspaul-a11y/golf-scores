@@ -1100,3 +1100,184 @@ index.html fix:
 - Calendar trigger deduplication: if round-count and calendar fire same day, still one email
 - GPI/PCC final scope decision (reports-only vs. diagnostic)
 - Course card tap cue, HOME button width, toggle canonical in shared.css, font type scale (carried forward)
+
+---
+
+## 2026-05-16 — Session Close Notes (evening continued)
+
+**Trigger setup completed:**
+- `sendReport` — weekly Sunday 8am trigger registered manually via Script Editor UI
+- `checkSeasonSummary` — monthly on 15th trigger registered; November-only logic confirmed (getMonth() === 10)
+- Season Summary date fixed at Nov 15 — non-configurable for now; settings bridge required to make it user-selectable
+- `listTriggers` diagnostic function removed, script redeployed as new version
+- ScriptApp.newTrigger() silent failure noted — triggers must be registered manually via UI for this project; root cause not resolved (likely scope authorization gap)
+
+**Email address note:**
+- REPORT_EMAIL in script = kamloopspaul@gmail.com
+- Profile reportEmail = kamloopspaul@live.ca
+- Confirm which inbox should receive reports before first live report fires
+
+**settings.html radio toggles confirmed working by Paul**
+
+**Queued for next session (build order):**
+1. shared.css — HOME button standard width (one class, all pages)
+2. shared.css — Toggle switch canonical (yellow on checked; translucent white on green bg, grey on white bg)
+3. shared.css — Font type scale (page title / section header / row label / sublabel / body)
+4. Course card tap cue — "Change Course ›" sublabel on Setup screen
+5. Sample Performance Report — static file for new accounts, linked from Settings description
+6. Settings bridge — write frequency prefs from localStorage to Sheets Settings tab
+
+**Files changed this close:** JOURNAL.md, PROJECT.md, TODO_LIST.md
+
+---
+
+## 2026-05-17 — Stat Metric Visibility + Symmetric Back Navigation
+
+**Focus:** Wiring Settings stat metric toggles to hole stats screen; fixing Back navigation to include stats screen.
+
+**Problems identified:**
+- Stats screen showed all 6 metrics regardless of player's Settings selections — toggles weren't connected to the hole screen
+- BACK from a score screen skipped the stats screen entirely — no way to correct stat entries on previous holes
+
+**Changes made (v9.85 / SW v58):**
+
+**index.html:**
+- Wrapped each metric pair in `<div class="sg-row" data-metric="...">` — `display:contents` preserves grid layout, `display:none` hides both cells cleanly
+- Added `.sg-row { display: contents; }` CSS
+- Added `applyMetricVisibility()` — reads `localStorage.profile` for each stat key; defaults all-on if key unset (fresh install); called from `showStatsScreen()` so both forward and back paths benefit
+- Fixed `prevHole()` — now calls `showStatsScreen()` instead of `showScreen('hole')` when stats are on and not in historical mode, making Back navigation fully symmetric: Score(N) ← Stats(N) ← Score(N+1)
+- Fixed `applyMetricVisibility()` to read from `localStorage.profile` (not standalone keys) — consistent with how settings.html stores preferences
+
+**shared.js:** APP_VERSION bumped v9.84 → v9.85
+**sw.js:** CACHE_NAME bumped v57 → v58
+
+**Verified working by Paul on live URL.**
+
+**Design discussion — PCC placement:**
+- Original spec: post-round prompt on Final Score screen
+- New direction: live dropdown on hole screen, below Home Course display, same width
+- Rationale: player can update as conditions change mid-round; final value at Post time = overall assessment; more accurate than post-round recall
+- Interaction style chosen: Option 1 — dropdown with full condition labels (matches PROJECT.md spec labels)
+- Status: first task next session
+
+**Queued for next session (in order):**
+1. **PCC dropdown on hole screen** — below Home Course display, same width, full condition labels, live throughout round
+2. shared.css — HOME button standard width
+3. shared.css — Toggle switch canonical (yellow on checked)
+4. shared.css — Font type scale
+5. Course card tap cue — "Change Course ›" sublabel on Setup screen
+6. Sample Performance Report — static file for new accounts
+7. Settings bridge — localStorage → Sheets Settings tab
+
+**Files changed:** `index.html`, `shared.js`, `sw.js`
+
+---
+
+## 2026-05-17 (Session 2)
+
+**Focus:** PCC dropdown implementation, placement refinement, design discussion.
+
+**Completed:**
+
+- **v9.86** — PCC dropdown built on hole screen masthead (col 1, below course name). Bug found immediately: `display:none` was inside `@media (min-width:600px)` so it showed on mobile regardless of setting.
+- **v9.87** — PCC dropdown moved to correct location: **Start Round screen stage area**, below course card (Mt. Paul / blue tees). Full-width, rounded, white bg, styled to match course card. `applyPccVisibility()` wired via `updateAllWeather()`.
+- **v9.88** — Default option text changed to "Record today's weather conditions…"
+
+**Design decisions made:**
+
+- PCC belongs in **Start Round screen**, not hole screen or Final Score screen
+- Auto-default to **Normal / calm (0)** if player doesn't select — no blocking of Start Round button
+- "Player Preferences" as a Settings section header was accidental — do not re-add. PCC toggle belongs at top of "Tracking Your Stats" with a visual separator, or in a minimal new section only if other preferences emerge
+- **−1 (Easier than normal)** should not be auto-deduced from weather — too subjective (depends on wind direction relative to course, ground firmness)
+
+**Queued — weather-deduced PCC default (discussed, not built):**
+- Extend Open-Meteo API call to include `precipitation` and `weather_code`
+- Store raw wind + precip values in state
+- After weather fetch, call `deducePcc(wind, precip, weatherCode)` to pre-fill dropdown
+- Mapping: <15 km/h → 0 | 15–25 → +1 | 25–40 → +2 | 40+ → +3; rain bumps +1
+- Player can still override before tapping Start Round
+- −1 (Easier than normal) stays manual only
+
+**Files changed:** `index.html` (v9.88), `shared.js` (v9.88), `sw.js` (v61)
+
+**Queued for next session (in order):**
+1. **Apps Script** — write `pccSelected` to Rounds tab; add `PCC_ScoreDelta` + `PCC_Flag` compute in `buildDiagnostics_()`
+2. **PCC Settings toggle** — move out of Stats block; position at top of Tracking Your Stats with separator
+3. **Weather-deduced PCC default** — extend API call, `deducePcc()` pre-fills dropdown
+4. shared.css — HOME button standard width
+5. shared.css — Toggle switch canonical (yellow on checked)
+6. shared.css — Font type scale
+7. Course card tap cue — "Change Course ›" sublabel on Start Round screen
+8. Sample Performance Report
+9. Settings bridge — localStorage → Sheets Settings tab
+
+---
+
+## 2026-05-17 (Session 3)
+
+**Focus:** Apps Script schema normalization, PCC integration, Settings redesign.
+
+**Completed:**
+- **Round_Meta tab** — normalized schema. Rounds tab is now a pure fact table (hole data only). Round_Meta holds one row per round: Date, Course, Tees, Round_Type, PCC_Selected, Pending, Pairing_ID. Migration runs automatically via `setup()`.
+- **PCC columns in Diagnostics** — PCC_Selected, PCC_ScoreDelta, PCC_Flag computed in both `appendDiagnosticsRow_()` and `buildDiagnostics_()`. Rolling average threshold: +3 strokes above average.
+- **Helper functions added** — `buildMetaMap_()`, `getMetaByRound_()`, `migrateRoundsToMeta_()`, updated `countRounds_()`.
+- **doPost bug fixed** — direct 18-hole path was calling removed `REPORT_EVERY_N_ROUNDS`/`sendReport_`; now correctly calls `checkRoundTriggers_()`.
+- **Settings v1.8** — GPI and PCC moved to new "Player Preferences" section (between Tracking Your Stats and Performance Reports). GPI and PCC each have descriptive text above their toggles. PCC description shortened and cleaned. "Player Preferences" is a placeholder heading.
+- **GPI description written** — leads with "In the absence of Strokes Gained data (ie: distance and lie)..." explains HI-scaled weighting.
+- **PCC description written** — plain language, course-agnostic.
+
+**Design discussion — Dynamic Report Messaging:**
+- Current Focus Areas in email reports use hardcoded tips per category (4 tips total, same text every report).
+- Proposed: JSON response library (`report-responses.json`) with arrays of variations keyed by performance band and trend direction (improving / declining / steady_good / steady_poor / persistent_weakness etc.).
+- Apps Script fetches library at report time, selects contextually based on actual trend data across windows.
+- **Decision: defer to off-season.** Not worth building for a single user. Revisit when app has broader distribution.
+
+**Files changed:** `apps-script.gs`, `settings.html`
+
+**Queued for next session (in order):**
+1. **Weather-deduced PCC default** — extend Open-Meteo call, `deducePcc()` pre-fills dropdown
+2. shared.css — HOME button standard width
+3. shared.css — Toggle switch canonical (yellow on checked)
+4. shared.css — Font type scale
+5. Course card tap cue — "Change Course ›" sublabel on Start Round screen
+6. Sample Performance Report
+7. Settings bridge — localStorage → Sheets Settings tab
+
+---
+
+## 2026-05-18 (Session 4 — PCC shelved + settings.html polish)
+
+**Decision: Weather-deduced PCC default — shelved.**
+
+PCC in the World Handicap System is a committee-level adjustment, not player-reported. The committee observes conditions and posts a PCC value (−1 to +3) that applies automatically to all scores that day. A solo player has no legitimate way to self-administer it.
+
+The app's existing PCC implementation (player self-reports how conditions felt, stored as context/flag only, not applied to handicap) is appropriate and stays as-is. The planned weather-deduction enhancement (extend Open-Meteo call, `deducePcc()` pre-fills dropdown) is dropped — auto-deducing from wind/precip has the same authenticity problem and adds complexity without value.
+
+**Queue revised — next session picks up at shared.css polish:**
+1. shared.css — HOME button standard width
+2. shared.css — Toggle switch canonical (yellow on checked)
+3. shared.css — Font type scale
+4. Course card tap cue — "Change Course ›" sublabel on Start Round screen
+5. Sample Performance Report
+6. Settings bridge — localStorage → Sheets Settings tab
+
+**settings.html — Section and copy work (v1.9):**
+
+- **Tracking Your Stats:** Corrected "represents the most strokes lost" → "represents the most strokes gained" in the description. (GPI is strokes gained — lower is better, reflects extra strokes received vs. scratch.)
+- **GPI block — rewritten and hidden:**
+  - Description revised: GPI simplified SG estimate across four game areas; "lower is better."
+  - More ›/‹ Close toggle pattern applied using `.bench-expand-link` / `.benchmarks.open` classes — matching Tracking Your Stats. Pattern is now locked and consistent across all expandable sections.
+  - Strokes Gained bench-table added (6 columns: Hdcp / Tee / Aprch / Grns / Putts / Total; 6 handicap rows: Scratch → 25). First column width override: 28%.
+  - Alternate-row shading applied via `:nth-child(even)` on both tables.
+  - `bench-footnote` (Src: golfity.com) and ‹ Close button in `bench-close-row`.
+  - Entire GPI block hidden: `display:none` with comment pointing to snippet asset.
+  - Full block preserved at `assets/snippets/gpi-settings-block.html` for future use (email reports once baseline established, or a Focus Mode section).
+- **TRACK CONDITIONS section (was "Player Preferences" → "TRACK YOUR PERFORMANCE" → "TRACK CONDITIONS"):**
+  - PCC description cleaned: removed sentence naming "PCC" explicitly. Remaining copy: conditions context only — no algorithm mention.
+- **settings.html bumped to v1.9.**
+
+**CSS locked:**
+- `.bench-expand-link`: font-size 12px, italic, font-weight 600, color var(--green), display inline-block, margin-top 8px
+- `.benchmarks`: display none; `.benchmarks.open`: display block
+
+**Files changed:** `settings.html`, `assets/snippets/gpi-settings-block.html` (new)

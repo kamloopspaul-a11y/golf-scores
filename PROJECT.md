@@ -4,11 +4,11 @@
 
 ## Status
 
-**Version:** v9.63 — May 14, 2026
+**Version:** v9.88 — May 18, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
-**Service Worker:** v42 (network-first for HTML, cache-first for assets)
+**Service Worker:** v58 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
 ## Core Spec
@@ -361,38 +361,32 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 16, 2026
-
-### What was completed this session
-- **shared.js v1.1** — added `getPlayerName()` + `renderPlayerName()` + `[data-player-name]` injection pattern; auto-calls on DOMContentLoaded alongside `renderFooterNav()`
-- **index.html v9.47** — 5-zone hole screen migration; two-step Score → Stats flow; stats screen with player name pill, PAR/YDS strip, stat sliders; `evictStaleSeeds()` IIFE (v9.46 bug, fixed v9.47: was checking `entry.city`, correct path is `entry.location.city`, now checks `entry.id === 12` only); `seedCourseCache()` fetch uses `cache: 'no-cache'`
-- **sw.js v36** — HTML fetch now uses `cache: 'no-cache'` to bypass GitHub Pages CDN stale responses
-- **courses.json** — removed entry 12 (Valley GC, Abbotsford stub, no tee data); 11 seeded courses remain
-- All committed and pushed — live at kamloopspaul-a11y.github.io/golf-scores
-
-### Files changed
-- `shared.js`, `index.html`, `sw.js`, `courses.json`, `JOURNAL.md`, `PROJECT.md`
-
-### Resume here next session
-
-**Last worked:** May 16, 2026
-**Version:** v9.84 / SW v57
+**Last worked:** May 18, 2026 (Session 4)
+**Version:** v9.88 / SW v61
 
 **Completed this session:**
-- Stats screen (screen-stats) — 2-step score → stats flow per hole, skipped in historicalMode
-- Add Scores screen — historical round entry with date picker, course/tee selector, 9/18 toggle
-- 9-hole widow/pairing — Front 9 Post Now toggle, client-side trim, Apps Script widow match/pair logic
-- Rounds schema: Pending, Pairing_ID, Round_Type columns added
-- Apps Script refactor: Post / Diagnose / Rebuild now three separate concerns
+- PCC dropdown built and placed on **Start Round screen**, stage area, below course card
+- Auto-default: Normal / calm (0) if player skips selection — no blocking of Start Round
+- Default option text: "Record today's weather conditions…"
+- `applyPccVisibility()` triggered via `updateAllWeather()`; hidden when `profile.statPCC` is off
+- `state.pccSelected` carries value into `submitRound()` payload as `pccSelected`
+
+**Design decisions:**
+- PCC toggle does NOT belong in the Stats metrics block — move to top of Tracking Your Stats with separator
+- "Player Preferences" section header: do not recreate (was accidental)
+- −1 (Easier than normal) stays manual only — too subjective to auto-derive
+- Weather-deduced PCC default: ~~queued~~ — **shelved (2026-05-18)**. PCC is a WHS committee function; player self-reporting has same authenticity problem. App PCC (context/flag only) stays as-is.
 
 **Build queue (in order):**
-1. **Course card tap cue** — add "Change Course ›" sublabel under course name on Setup screen ← NEXT
-2. **shared.css — HOME button standard width** — one class, all pages consistent
-3. **shared.css — Toggle switch canonical** — yellow track on checked; translucent white on green bg, grey on white bg
-4. **shared.css — Font type scale** — locked rules: page title / section header / row label / sublabel / body
-5. **Settings panel** — name, home tees, HI. Track Stats + Stat Reports toggles already in settings.html.
-6. **Auto-calculate HI** (WHS formula, best 8 of 20); display "—" until 20 rounds.
-7. Remove Dev buttons before release.
+1. ~~**Apps Script** — write `pccSelected` to Rounds tab~~ ✅ Done (Session 3)
+2. ~~**PCC toggle** — move to top of Tracking Your Stats section~~ ✅ Done (Session 3)
+3. ~~**Weather-deduced PCC default**~~ — **shelved** (see 2026-05-18 journal entry)
+4. **shared.css — HOME button standard width**
+5. **shared.css — Toggle switch canonical**
+6. **shared.css — Font type scale**
+7. **Course card tap cue** — "Change Course ›" sublabel on Start Round screen
+8. **Sample Performance Report**
+9. **Settings bridge** — localStorage → Sheets Settings tab
 
 #### Other pre-release tasks
 - Touch-target review for mobile

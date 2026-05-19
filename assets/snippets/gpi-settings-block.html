@@ -1,0 +1,55 @@
+<!--
+  GPI Settings Block — saved 2026-05-18
+  Extracted from settings.html when GPI section was hidden.
+
+  Context: GPI is a derived analytic (not a recorded stat) computed from
+  GIR, putts, scrambling, and penalties. Decision was made to hide it from
+  Settings and resurface it later — likely in email reports once a baseline
+  is established (x rounds) and a weakness is detected. Could also seed a
+  future Analytics / Focus Mode section.
+
+  Dependencies: uses .bench-expand-link, .benchmarks, .bench-table,
+  .bench-intro, .bench-close-row, .bench-footnote CSS classes from settings.html.
+  The GPI toggle requires saveStatPref('statGPI', this) wired to Apps Script.
+-->
+
+    <!-- GPI -->
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
+      <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
+        GPI is a simplified version that estimates Strokes Gained in a round across four areas of the game — ball striking, short game, putting, and penalties using stats you track.
+      </div>
+      <span id="gpi-more-btn" class="bench-expand-link" onclick="document.getElementById('gpi-more').classList.add('open');this.style.display='none';document.getElementById('gpi-less-btn').style.display='inline-block';">More ›</span>
+
+      <div class="benchmarks" id="gpi-more">
+        <div class="bench-intro">Each area is weighted to reflect its real cost at your handicap level. Add them together and you get a single number: your Golf Performance Index (GPI). The lower, the better.</div>
+        <div class="bench-intro">Average Strokes Gained per round by handicap.</div>
+        <table class="bench-table">
+          <thead>
+            <tr>
+              <th>Hdcp</th>
+              <th>Tee</th>
+              <th>Aprch</th>
+              <th>Grns</th>
+              <th>Putts</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Scratch</td><td>−0.8</td><td>−1.5</td><td>−0.5</td><td>−0.4</td><td>−3.2</td></tr>
+            <tr><td>5</td><td>−1.4</td><td>−3.0</td><td>−1.0</td><td>−0.8</td><td>−6.2</td></tr>
+            <tr><td>10</td><td>−2.0</td><td>−4.5</td><td>−1.5</td><td>−1.2</td><td>−9.2</td></tr>
+            <tr><td>15</td><td>−2.7</td><td>−6.0</td><td>−2.0</td><td>−1.5</td><td>−12.2</td></tr>
+            <tr><td>20</td><td>−3.4</td><td>−7.5</td><td>−2.5</td><td>−1.8</td><td>−15.2</td></tr>
+            <tr><td>25</td><td>−4.2</td><td>−9.0</td><td>−3.0</td><td>−2.2</td><td>−18.4</td></tr>
+          </tbody>
+        </table>
+        <div class="bench-close-row">
+          <div class="bench-footnote"><em>Src:</em> <a href="https://golfity.com" target="_blank">golfity.com</a></div>
+          <span id="gpi-less-btn" class="bench-expand-link" style="display:none;margin-top:0;" onclick="document.getElementById('gpi-more').classList.remove('open');document.getElementById('gpi-more-btn').style.display='inline-block';this.style.display='none';">‹ Close</span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <span class="stat-row-label">Include GPI (Strokes Gained)</span>
+      <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
+    </div>

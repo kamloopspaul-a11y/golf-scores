@@ -1,8 +1,12 @@
 <!--
   My Golf Scores — Settings
   settings.html
-  v1.8 — 2026-05-17
-  - Player Preferences section: Track Your Stats info card with expandable benchmark tables
+  v1.9 — 2026-05-18
+  - TRACK CONDITIONS section (was Player Preferences): PCC description cleaned, no PCC name shown to user
+  - GPI block hidden (display:none); full block preserved in assets/snippets/gpi-settings-block.html
+  - More ›/‹ Close toggle pattern: .bench-expand-link / .benchmarks.open — consistent across all expandable sections
+  - Strokes gained bench-table in GPI (hidden): 6-col × 6-row, first-col width 28%, alt-row shading
+  - Tracking Your Stats: corrected "most strokes lost" → "most strokes gained"
   - Record Stats toggle (SHOW/HIDE) — persisted to localStorage profile.recordStats
   - Send Report button — calls doGet?action=report on Apps Script URL
   - Courses link — navigates to courses.html
@@ -173,6 +177,8 @@
   .bench-table tbody tr:nth-child(even) { background: var(--row-alt); }
   .bench-table td:first-child,
   .bench-table th:first-child { width: 42%; }
+  #gpi-more .bench-table td:first-child,
+  #gpi-more .bench-table th:first-child { width: 28%; }
   .bench-hcp-sub { font-size: 11px; color: var(--text-muted); display: inline; }
   .bench-close-row {
     display: flex;
@@ -278,7 +284,7 @@
           </tbody>
         </table>
 
-        <div class="bench-callout">If any one of your numbers falls significantly below the benchmark for your handicap range, that's where your practice attention should go. If multiple numbers are off, prioritize the one that represents the most strokes lost — generally, GIR and penalty strokes tend to have the largest impact at the amateur level.</div>
+        <div class="bench-callout">If any one of your numbers falls significantly below the benchmark for your handicap range, that's where your practice attention should go. If multiple numbers are off, prioritize the one that represents the most strokes gained — generally, GIR and penalty strokes tend to have the largest impact at the amateur level.</div>
 
         <div class="bench-close-row">
           <div class="bench-footnote"><em>Src:</em> <a href="https://thegolfinglad.com/how-to-track-golf-stats/" target="_blank">thegolfinglad.com</a></div>
@@ -326,15 +332,45 @@
       </div>
     </div>
 
-    <div class="section-header">Player Preferences</div>
+    <div class="section-header">TRACK CONDITIONS</div>
 
-    <!-- GPI -->
-    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
+    <!-- GPI — hidden 2026-05-18; see assets/snippets/gpi-settings-block.html -->
+    <div class="setting-row" style="display:none; flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        In the absence of Strokes Gained data (ie: distance and lie) we've devised the Golf Performance Index (GPI). GPI estimates the strokes lost in a round across four areas of the game — ball striking, short game, putting, and penalties — using the stats you already track hole by hole. Each area is weighted to reflect its real cost at your handicap level. Add them together and you get a single number: lower is better, and watching it trend down over time is the point.
+        GPI is a simplified version that estimates Strokes Gained in a round across four areas of the game — ball striking, short game, putting, and penalties using stats you track.
+      </div>
+      <span id="gpi-more-btn" class="bench-expand-link" onclick="document.getElementById('gpi-more').classList.add('open');this.style.display='none';document.getElementById('gpi-less-btn').style.display='inline-block';">More ›</span>
+
+      <div class="benchmarks" id="gpi-more">
+        <div class="bench-intro">Each area is weighted to reflect its real cost at your handicap level. Add them together and you get a single number: your Golf Performance Index (GPI). The lower, the better.</div>
+        <div class="bench-intro">Average Strokes Gained per round by handicap.</div>
+        <table class="bench-table">
+          <thead>
+            <tr>
+              <th>Hdcp</th>
+              <th>Tee</th>
+              <th>Aprch</th>
+              <th>Grns</th>
+              <th>Putts</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Scratch</td><td>−0.8</td><td>−1.5</td><td>−0.5</td><td>−0.4</td><td>−3.2</td></tr>
+            <tr><td>5</td><td>−1.4</td><td>−3.0</td><td>−1.0</td><td>−0.8</td><td>−6.2</td></tr>
+            <tr><td>10</td><td>−2.0</td><td>−4.5</td><td>−1.5</td><td>−1.2</td><td>−9.2</td></tr>
+            <tr><td>15</td><td>−2.7</td><td>−6.0</td><td>−2.0</td><td>−1.5</td><td>−12.2</td></tr>
+            <tr><td>20</td><td>−3.4</td><td>−7.5</td><td>−2.5</td><td>−1.8</td><td>−15.2</td></tr>
+            <tr><td>25</td><td>−4.2</td><td>−9.0</td><td>−3.0</td><td>−2.2</td><td>−18.4</td></tr>
+          </tbody>
+        </table>
+        <div class="bench-close-row">
+          <div class="bench-footnote"><em>Src:</em> <a href="https://golfity.com" target="_blank">golfity.com</a></div>
+          <span id="gpi-less-btn" class="bench-expand-link" style="display:none;margin-top:0;" onclick="document.getElementById('gpi-more').classList.remove('open');document.getElementById('gpi-more-btn').style.display='inline-block';this.style.display='none';">‹ Close</span>
+        </div>
       </div>
     </div>
-    <div class="stat-row">
+    <div class="stat-row" style="display:none;">
       <span class="stat-row-label">Include GPI (Strokes Gained)</span>
       <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
     </div>
@@ -342,7 +378,7 @@
     <!-- PCC -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        The Playing Conditions Calculation (PCC) is used to reflect how much easier or harder the course played on a specific day. Factors like weather, course conditions and course setup can influence scoring. Our use is unofficial and limited to weather, but handy for spotting anomalies in your typical scoring.
+        Factors like weather, course conditions and course setup can influence scoring. Recording conditions is handy for spotting anomalies in your typical scoring.
       </div>
     </div>
     <div class="stat-row">
