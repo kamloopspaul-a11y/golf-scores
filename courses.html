@@ -170,7 +170,6 @@ v1.0 — 2026-05-11
     font-family: 'DM Mono', monospace;
     font-size: 17px; font-weight: 600; color: var(--green);
   }
-  .hole-card-badge { font-size: 12px; color: var(--text-secondary); }
   /* Par + SI row */
   .hole-par-si {
     display: grid; grid-template-columns: 1fr 1fr;
@@ -680,7 +679,6 @@ function renderHoleCards() {
       <div class="hole-card" id="hcard-${h}">
         <div class="hole-card-hdr">
           <span class="hole-card-num">Hole ${h}</span>
-          <span class="hole-card-badge" id="hbadge-${h}"></span>
         </div>
         <div class="hole-par-si">
           <div>
@@ -708,8 +706,6 @@ function renderHoleCards() {
 
 function onParChange(hole, val) {
   const p = parseInt(val);
-  const badge = document.getElementById('hbadge-' + hole);
-  if (badge) badge.textContent = (p >= 3 && p <= 6) ? 'Par ' + p : '';
   updateDots();
 }
 
@@ -851,7 +847,7 @@ function startAddCourse() {
   document.getElementById('course-street').value   = '';
   document.getElementById('course-city').value     = '';
   document.getElementById('course-province').value = 'BC';
-  teesState.forEach(t => { t.active = (t.name === 'Blue'); t.cr = ''; t.sr = ''; });
+  teesState.forEach(t => { t.active = false; t.cr = ''; t.sr = ''; });
   setHoles(18);
   renderTeeChips();
   renderTeeDetails();
@@ -955,6 +951,7 @@ function prefillHoleCards(course) {
 }
 
 function saveCourse() {
+  syncTeeInputsToState(); // ensure CR/SR are current before reading teesState
   const name = document.getElementById('course-name').value.trim();
   if (!name) { alert('Course name is required.'); return; }
 
@@ -980,9 +977,11 @@ function saveCourse() {
     let totalPar = 0, totalYards = 0;
 
     for (let h = 1; h <= numHoles; h++) {
-      const par   = parseInt((document.getElementById('h' + h + '-par') || {}).value || '') || 4;
-      const yards = parseInt((document.getElementById('h' + h + '-yds-' + t.name) || {}).value || '') || 0;
-      const si    = parseInt((document.getElementById('h' + h + '-si') || {}).value || '') || null;
+      const hs    = holeState[h] || {};
+      const par   = parseInt((document.getElementById('h' + h + '-par') || {}).value || hs.par || '') || 4;
+      const yards = parseInt((document.getElementById('h' + h + '-yds-' + t.name) || {}).value ||
+                    (hs.yds && hs.yds[t.name]) || '') || 0;
+      const si    = parseInt((document.getElementById('h' + h + '-si') || {}).value || hs.si || '') || null;
       holes.push({ par, yardage: yards, index: si });
       totalPar   += par;
       totalYards += yards;
