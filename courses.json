@@ -1671,610 +1671,209 @@
     "tees": {
       "male": [
         {
-          "tee_name": "Black",
-          "course_rating": 72.3,
-          "slope_rating": 125,
+          "tee_name": "White",
+          "course_rating": 68.9,
+          "slope_rating": 117,
           "number_of_holes": 18,
           "par_total": 72,
-          "total_yards": 6778,
+          "total_yards": 6006,
           "holes": [
             {
               "par": 4,
-              "yardage": 393,
-              "index": null
+              "yardage": 322,
+              "index": 11
             },
             {
               "par": 4,
-              "yardage": 370,
-              "index": null
+              "yardage": 333,
+              "index": 5
             },
             {
               "par": 5,
-              "yardage": 494,
-              "index": null
+              "yardage": 460,
+              "index": 17
             },
             {
               "par": 3,
-              "yardage": 175,
-              "index": null
+              "yardage": 143,
+              "index": 15
             },
             {
               "par": 5,
-              "yardage": 571,
-              "index": null
+              "yardage": 526,
+              "index": 3
             },
             {
               "par": 4,
-              "yardage": 399,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 209,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 393,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 440,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 339,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 391,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 221,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 348,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 481,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 239,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 381,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 429,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 505,
-              "index": null
-            }
-          ]
-        },
-        {
-          "tee_name": "Gold",
-          "course_rating": 70.3,
-          "slope_rating": 123,
-          "number_of_holes": 18,
-          "par_total": 72,
-          "total_yards": 6330,
-          "holes": [
-            {
-              "par": 4,
-              "yardage": 346,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 350,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 477,
-              "index": null
+              "yardage": 353,
+              "index": 1
             },
             {
               "par": 3,
               "yardage": 158,
-              "index": null
+              "index": 8
             },
             {
-              "par": 5,
-              "yardage": 545,
-              "index": null
+              "par": 4,
+              "yardage": 324,
+              "index": 9
+            },
+            {
+              "par": 4,
+              "yardage": 378,
+              "index": 13
             },
             {
               "par": 4,
               "yardage": 375,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 185,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 367,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 419,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 302,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 367,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 190,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 336,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 471,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 196,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 357,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 408,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 481,
-              "index": null
-            }
-          ]
-        },
-        {
-          "tee_name": "White",
-          "course_rating": 68.9,
-          "slope_rating": 118,
-          "number_of_holes": 18,
-          "par_total": 72,
-          "total_yards": 5950,
-          "holes": [
-            {
-              "par": 4,
-              "yardage": 322,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 333,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 460,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 143,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 526,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 353,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 158,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 343,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 391,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 290,
-              "index": null
+              "index": 6
             },
             {
               "par": 4,
               "yardage": 350,
-              "index": null
+              "index": 14
             },
             {
               "par": 3,
               "yardage": 173,
-              "index": null
+              "index": 12
             },
             {
               "par": 4,
               "yardage": 316,
-              "index": null
+              "index": 16
             },
             {
               "par": 5,
-              "yardage": 452,
-              "index": null
+              "yardage": 430,
+              "index": 18
             },
             {
               "par": 3,
-              "yardage": 148,
-              "index": null
+              "yardage": 173,
+              "index": 10
             },
             {
               "par": 4,
               "yardage": 348,
-              "index": null
+              "index": 8
             },
             {
               "par": 4,
               "yardage": 381,
-              "index": null
+              "index": 2
             },
             {
               "par": 5,
               "yardage": 463,
-              "index": null
+              "index": 4
             }
           ]
         },
         {
           "tee_name": "Red",
-          "course_rating": 66,
-          "slope_rating": 105,
+          "course_rating": 66.3,
+          "slope_rating": 103,
           "number_of_holes": 18,
-          "par_total": 71,
-          "total_yards": 5239,
+          "par_total": 72,
+          "total_yards": 5315,
           "holes": [
             {
               "par": 4,
               "yardage": 293,
-              "index": null
+              "index": 7
             },
             {
               "par": 4,
               "yardage": 289,
-              "index": null
+              "index": 5
             },
             {
               "par": 5,
               "yardage": 423,
-              "index": null
+              "index": 9
             },
             {
               "par": 3,
               "yardage": 122,
-              "index": null
+              "index": 15
             },
             {
               "par": 5,
               "yardage": 461,
-              "index": null
+              "index": 3
             },
             {
               "par": 4,
               "yardage": 324,
-              "index": null
+              "index": 1
             },
             {
               "par": 3,
               "yardage": 135,
-              "index": null
+              "index": 17
             },
             {
               "par": 4,
               "yardage": 280,
-              "index": null
+              "index": 11
             },
             {
               "par": 4,
               "yardage": 333,
-              "index": null
+              "index": 13
             },
             {
               "par": 4,
-              "yardage": 275,
-              "index": null
+              "yardage": 339,
+              "index": 6
             },
             {
               "par": 4,
               "yardage": 315,
-              "index": null
+              "index": 10
             },
             {
               "par": 3,
               "yardage": 147,
-              "index": null
+              "index": 18
             },
             {
               "par": 4,
               "yardage": 273,
-              "index": null
+              "index": 16
             },
             {
-              "par": 4,
+              "par": 5,
               "yardage": 373,
-              "index": null
+              "index": 14
             },
             {
               "par": 3,
-              "yardage": 136,
-              "index": null
+              "yardage": 148,
+              "index": 8
             },
             {
               "par": 4,
               "yardage": 285,
-              "index": null
+              "index": 12
             },
             {
               "par": 4,
               "yardage": 345,
-              "index": null
+              "index": 4
             },
             {
               "par": 5,
               "yardage": 430,
-              "index": null
+              "index": 2
             }
           ]
         }
       ],
-      "female": [
-        {
-          "tee_name": "White",
-          "course_rating": 73.6,
-          "slope_rating": 127,
-          "number_of_holes": 18,
-          "par_total": 72,
-          "total_yards": 5950,
-          "holes": [
-            {
-              "par": 4,
-              "yardage": 322,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 333,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 460,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 143,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 526,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 353,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 158,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 343,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 391,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 290,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 350,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 173,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 316,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 452,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 148,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 348,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 381,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 463,
-              "index": null
-            }
-          ]
-        },
-        {
-          "tee_name": "Red",
-          "course_rating": 69.5,
-          "slope_rating": 120,
-          "number_of_holes": 18,
-          "par_total": 72,
-          "total_yards": 5239,
-          "holes": [
-            {
-              "par": 4,
-              "yardage": 293,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 289,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 423,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 122,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 461,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 324,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 135,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 280,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 333,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 275,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 315,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 147,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 273,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 373,
-              "index": null
-            },
-            {
-              "par": 3,
-              "yardage": 136,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 285,
-              "index": null
-            },
-            {
-              "par": 4,
-              "yardage": 345,
-              "index": null
-            },
-            {
-              "par": 5,
-              "yardage": 430,
-              "index": null
-            }
-          ]
-        }
-      ]
+      "female": []
     },
-    "cachedAt": "2026-05-01",
+    "cachedAt": "2026-05-19",
     "phone": "250-573-2453"
   },
   "4": {
