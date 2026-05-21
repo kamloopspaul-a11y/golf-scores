@@ -361,32 +361,34 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 18, 2026 (Session 4)
-**Version:** v9.88 / SW v62
+**Last worked:** May 19, 2026 (Session 6)
+**Version:** v9.90 / SW v64 · courses.html (tee chip + save fixes, unverified)
 
 **Completed this session:**
-- PCC dropdown built and placed on **Start Round screen**, stage area, below course card
-- Auto-default: Normal / calm (0) if player skips selection — no blocking of Start Round
-- Default option text: "Record today's weather conditions…"
-- `applyPccVisibility()` triggered via `updateAllWeather()`; hidden when `profile.statPCC` is off
-- `state.pccSelected` carries value into `submitRound()` payload as `pccSelected`
+- v9.89/v9.90 — tee chips pure toggle, continuous hole save, no default tee, Par badge removed, CR/SR save fix
+- courses.json — Eaglepoint updated with official scorecard (White + Red only, correct yardages + SI)
 
-**Design decisions:**
-- PCC toggle does NOT belong in the Stats metrics block — move to top of Tracking Your Stats with separator
-- "Player Preferences" section header: do not recreate (was accidental)
-- −1 (Easier than normal) stays manual only — too subjective to auto-derive
-- Weather-deduced PCC default: ~~queued~~ — **shelved (2026-05-18)**. PCC is a WHS committee function; player self-reporting has same authenticity problem. App PCC (context/flag only) stays as-is.
+**Standing rule:** No code changes without explicit agreement on what's being built first.
+
+**Outstanding — courses.html (MUST discuss before any coding):**
+- Tee chip UX: Paul wants radio-button style — one tee at a time for hole data entry. Discuss exact behaviour.
+- Phone localStorage: Eaglepoint still has 4 old tees. Need sync code fix to overwrite stale seeded data from courses.json on load.
+- Hole data persistence: White data disappears on Back → Next. Root cause not found. Trace before fixing.
+- Tee order: sort by yardage added but untested end-to-end.
+
+**Next session: upload courses.html alongside PROJECT.md**
 
 **Build queue (in order):**
 1. ~~**Apps Script** — write `pccSelected` to Rounds tab~~ ✅ Done (Session 3)
 2. ~~**PCC toggle** — move to top of Tracking Your Stats section~~ ✅ Done (Session 3)
-3. ~~**Weather-deduced PCC default**~~ — **shelved** (see 2026-05-18 journal entry)
-4. **✅ shared.css — HOME button standard width**
-5. **✅ shared.css — Toggle switch canonical**
-6. **✅ shared.css — Font type scale**
-7. **Course card tap cue** — "Change Course ›" sublabel on Start Round screen
-8. **Sample Performance Report**
-9. **Settings bridge** — localStorage → Sheets Settings tab
+3. ~~**Weather-deduced PCC default**~~ — **shelved**
+4. ~~**shared.css — HOME button standard width**~~ ✅ Done (Session 5)
+5. ~~**shared.css — Toggle switch canonical**~~ ✅ Done (Session 5)
+6. ~~**shared.css — Font type scale**~~ ✅ Done (Session 5)
+7. **courses.html fixes** — discuss first, then build (see outstanding above)
+8. **Course card tap cue** — "Change Course ›" sublabel on Start Round screen
+9. **Sample Performance Report**
+10. **Settings bridge** — localStorage → Sheets Settings tab
 
 #### Other pre-release tasks
 - Touch-target review for mobile

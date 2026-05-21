@@ -1463,3 +1463,18 @@ Completed the shared.css centralisation work queued in the build list. All three
 ### Files changed
 - `courses.html` (v1.6)
 - `sw.js` (v65)
+
+### Session 7 wrap-up notes
+
+**Tested on phone:**
+- Library cards correctly show "18 holes" — confirmed.
+- Tee chip display on existing course edits still shows multiple highlighted tees. Root cause: `teesState` initialises with Blue active by default; when editing a course that has different tees, the chip state isn't being reset cleanly to match saved data. **Deferred — address next session.**
+
+**Immediate data entry needed (Paul):**
+- Eaglepoint — White + Red tees (scorecard in `Eaglepoint-Scorecard.txt`)
+- Mt. Paul — Red tees (Blue already entered; need to add Red as second tee)
+
+**Next session priority order:**
+1. Fix tee chip highlight on edit (multi-highlighted bug)
+2. Enter Eaglepoint + Mt. Paul Red tee data
+3. Phone localStorage sync — courses.json version stamp to overwrite stale seeded entries

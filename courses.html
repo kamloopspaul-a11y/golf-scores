@@ -381,10 +381,10 @@ v1.0 — 2026-05-11
     <div class="form-section">
       <label class="field-label">Tees</label>
       <div class="tee-chip-strip" id="tee-chips">
-        <button class="tee-chip"        onclick="toggleTee('White')">White</button>
-        <button class="tee-chip"        onclick="toggleTee('Gold')">Gold</button>
-        <button class="tee-chip active" onclick="toggleTee('Blue')">Blue</button>
-        <button class="tee-chip"        onclick="toggleTee('Red')">Red</button>
+        <button class="tee-chip"        onclick="selectTee('White')">White</button>
+        <button class="tee-chip"        onclick="selectTee('Gold')">Gold</button>
+        <button class="tee-chip active" onclick="selectTee('Blue')">Blue</button>
+        <button class="tee-chip"        onclick="selectTee('Red')">Red</button>
       </div>
       <div id="tee-details"></div>
     </div>
@@ -441,13 +441,16 @@ const TEE_ORDER = ['White', 'Gold', 'Blue', 'Red'];
 // ── State ──────────────────────────────────────────────
 let numHoles = 18;
 
-// teesState: [{name, active, cr, sr}]
+// teesState: [{name, cr, sr}]
+// All 4 tees always exist. selectedTeeScreen1 controls which one is shown/edited.
 let teesState = TEE_ORDER.map(name => ({
   name,
-  active: name === 'Blue',
   cr: '',
   sr: ''
 }));
+
+// selectedTeeScreen1 — radio-button selection on Screen 1 (one tee at a time)
+let selectedTeeScreen1 = 'Blue';
 
 // holeState — persists par/SI/yardages across Screen 1 ↔ Screen 2 navigation
 // keyed by hole number: { 1: { par:'4', si:'7', yds:{ White:'380', Red:'310' } }, ... }
@@ -487,8 +490,21 @@ function removeFromCache(id) {
   localStorage.setItem('courseCache', JSON.stringify(c));
 }
 
+// All 4 tees are always available on Screen 2 for yardage entry.
 function activeTees() {
-  return teesState.filter(t => t.active);
+  return teesState;
+}
+
+// Returns tees that actually have data (CR, SR, or any yardage) — used for save.
+function teesWithData() {
+  return teesState.filter(t => {
+    if (t.cr || t.sr) return true;
+    for (let h = 1; h <= numHoles; h++) {
+      const hs = holeState[h];
+      if (hs && hs.yds && hs.yds[t.name]) return true;
+    }
+    return false;
+  });
 }
 
 // ── Holes toggle ───────────────────────────────────────
@@ -498,46 +514,42 @@ function setHoles(n) {
   document.getElementById('seg-18').classList.toggle('active', n === 18);
 }
 
-// ── Screen 1 tee management (multi-select: which tees does the course have) ──
-function toggleTee(name) {
-  syncTeeInputsToState();
-  const t = teesState.find(t => t.name === name);
-  if (!t) return;
-  t.active = !t.active;
+// ── Screen 1 tee management (radio button: one tee selected at a time) ──
+function selectTee(name) {
+  syncTeeInputsToState();          // flush current form data before switching
+  selectedTeeScreen1 = name;
   renderTeeChips();
   renderTeeDetails();
 }
 
-// Re-renders Screen 1 chip appearance.
+// Re-renders Screen 1 chip appearance — only selectedTeeScreen1 is highlighted.
 function renderTeeChips() {
   const chips = document.querySelectorAll('#tee-chips .tee-chip');
-  teesState.forEach((t, i) => {
+  TEE_ORDER.forEach((name, i) => {
     const chip = chips[i];
     if (!chip) return;
-    chip.classList.toggle('active', t.active);
-    chip.textContent = t.name;
+    chip.classList.toggle('active', name === selectedTeeScreen1);
+    chip.textContent = name;
   });
 }
 
 function syncTeeInputsToState() {
-  teesState.forEach(t => {
-    const crEl = document.getElementById('cr-' + t.name);
-    const srEl = document.getElementById('sr-' + t.name);
-    if (crEl) t.cr = crEl.value;
-    if (srEl) t.sr = srEl.value;
-  });
+  // Only flush the currently visible tee's inputs into state
+  const t = teesState.find(t => t.name === selectedTeeScreen1);
+  if (!t) return;
+  const crEl = document.getElementById('cr-' + t.name);
+  const srEl = document.getElementById('sr-' + t.name);
+  if (crEl) t.cr = crEl.value;
+  if (srEl) t.sr = srEl.value;
 }
 
 function renderTeeDetails() {
   const container = document.getElementById('tee-details');
-  const active = activeTees();
-  if (!active.length) {
-    container.innerHTML = '';
-    return;
-  }
-  container.innerHTML = active.map(t => `
+  const t = teesState.find(x => x.name === selectedTeeScreen1);
+  if (!t) { container.innerHTML = ''; return; }
+  container.innerHTML = `
     <div class="tee-detail" id="tee-detail-${t.name}">
-      <div class="tee-detail-name">${esc(t.name)}</div>
+      <div class="tee-detail-name">${esc(t.name)} Tees</div>
       <div class="cr-sr-grid">
         <div>
           <div class="cr-sr-label" id="lbl-cr-${t.name}">Course Rating (CR)</div>
@@ -554,7 +566,7 @@ function renderTeeDetails() {
                  oninput="teesState.find(x=>x.name==='${t.name}').sr=this.value">
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
 }
 
 // ── Screen 2 tee radio-button (one tee active at a time for hole data entry) ──
@@ -701,16 +713,8 @@ function goToHoles() {
     document.getElementById('course-name').focus();
     return;
   }
-  const active = activeTees();
-  if (!active.length) {
-    alert('Please select at least one tee.');
-    return;
-  }
-
-  // Set active tee: first non-Red tee (longest), else only tee available
-  const sorted = sortedActiveTeesForScreen2();
-  const nonRed = sorted.filter(t => t.name !== 'Red');
-  activeTeeScreen2 = (nonRed.length ? nonRed[0] : sorted[0]).name;
+  // Start Screen 2 on whichever tee was selected on Screen 1
+  activeTeeScreen2 = selectedTeeScreen1;
 
   document.getElementById('holes-course-label').textContent = 'Courses: ' + name;
   renderHoleCards();        // builds DOM, then calls prefillHoleCardsFromState()
@@ -914,7 +918,8 @@ function startAddCourse() {
   document.getElementById('course-street').value   = '';
   document.getElementById('course-city').value     = '';
   document.getElementById('course-province').value = 'BC';
-  teesState.forEach(t => { t.active = false; t.cr = ''; t.sr = ''; });
+  teesState.forEach(t => { t.cr = ''; t.sr = ''; });
+  selectedTeeScreen1 = 'Blue';
   setHoles(18);
   renderTeeChips();
   renderTeeDetails();
@@ -943,17 +948,18 @@ function editCourse(id) {
   const holes    = firstTee ? (firstTee.number_of_holes || (firstTee.holes || []).length || 18) : 18;
   setHoles(holes);
 
-  // Activate tee chips from saved data
+  // Load saved tee data into teesState
   const savedTeeNames = maleTees.map(t => t.tee_name);
   teesState.forEach(t => {
-    t.active = savedTeeNames.includes(t.name);
     const match = maleTees.find(m => m.tee_name === t.name);
-    t.cr = match ? (match.course_rating || '') : '';
-    t.sr = match ? (match.slope_rating  || '') : '';
+    t.cr = match ? String(match.course_rating || '') : '';
+    t.sr = match ? String(match.slope_rating  || '') : '';
   });
+  // Select the first saved tee (in standard order) for editing
+  const firstSaved = TEE_ORDER.find(name => savedTeeNames.includes(name));
+  selectedTeeScreen1 = firstSaved || savedTeeNames[0] || 'Blue';
   renderTeeChips();
   renderTeeDetails();
-  applyFieldAsterisks();
 
   setEditMode(true, course.club_name);
   showScreen('basics');
@@ -971,27 +977,25 @@ function setEditMode(on, courseName) {
 }
 
 function applyFieldAsterisks() {
-  // Mark CR/SR labels with a red asterisk if the value is empty/zero
-  teesState.filter(t => t.active).forEach(t => {
-    const crEl = document.getElementById('cr-' + t.name);
-    const srEl = document.getElementById('sr-' + t.name);
-    const crLbl = document.getElementById('lbl-cr-' + t.name);
-    const srLbl = document.getElementById('lbl-sr-' + t.name);
-    if (crLbl) {
-      const star = crLbl.querySelector('.req-star');
-      if (star) star.remove();
-      if (!crEl || !parseFloat(crEl.value)) {
-        crLbl.insertAdjacentHTML('beforeend', '<span class="req-star">*</span>');
-      }
-    }
-    if (srLbl) {
-      const star = srLbl.querySelector('.req-star');
-      if (star) star.remove();
-      if (!srEl || !parseInt(srEl.value)) {
-        srLbl.insertAdjacentHTML('beforeend', '<span class="req-star">*</span>');
-      }
-    }
-  });
+  // Mark CR/SR labels with a red asterisk if the selected tee's values are empty
+  const t = teesState.find(t => t.name === selectedTeeScreen1);
+  if (!t) return;
+  const crEl  = document.getElementById('cr-' + t.name);
+  const srEl  = document.getElementById('sr-' + t.name);
+  const crLbl = document.getElementById('lbl-cr-' + t.name);
+  const srLbl = document.getElementById('lbl-sr-' + t.name);
+  if (crLbl) {
+    const star = crLbl.querySelector('.req-star');
+    if (star) star.remove();
+    if (!crEl || !parseFloat(crEl.value))
+      crLbl.insertAdjacentHTML('beforeend', '<span class="req-star">*</span>');
+  }
+  if (srLbl) {
+    const star = srLbl.querySelector('.req-star');
+    if (star) star.remove();
+    if (!srEl || !parseInt(srEl.value))
+      srLbl.insertAdjacentHTML('beforeend', '<span class="req-star">*</span>');
+  }
 }
 
 function prefillHoleCards(course) {
@@ -1031,8 +1035,8 @@ function saveCourse() {
   const name = document.getElementById('course-name').value.trim();
   if (!name) { alert('Course name is required.'); return; }
 
-  const active = activeTees();
-  if (!active.length) { alert('At least one tee is required.'); return; }
+  const active = teesWithData();
+  if (!active.length) { alert('Please enter CR or SR data for at least one tee before saving.'); return; }
 
   // Count holes with par filled (read from holeState — DOM may not exist)
   let parFilled = 0;
