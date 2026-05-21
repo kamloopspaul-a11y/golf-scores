@@ -253,6 +253,27 @@
 <script>
   'use strict';
 
+  // ── BYPASS ONBOARDING if profile already has a name ──────────────────────
+  try {
+    var _p = JSON.parse(localStorage.getItem('profile') || '{}');
+    if (_p.name) {
+      _p.setupComplete = true;
+      localStorage.setItem('profile', JSON.stringify(_p));
+      window.location.replace('index.html');
+    }
+  } catch(e) {}
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // If a profile with a name already exists, skip onboarding entirely
+  try {
+    var _p = JSON.parse(localStorage.getItem('profile') || '{}');
+    if (_p.name) {
+      _p.setupComplete = true;
+      localStorage.setItem('profile', JSON.stringify(_p));
+      window.location.replace('index.html');
+    }
+  } catch(e) {}
+
   const VALID_URL_PREFIX = 'https://script.google.com/macros/s/';
   let selectedTee = 'mensBlue';
 
