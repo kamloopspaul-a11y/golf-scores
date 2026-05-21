@@ -819,11 +819,16 @@
 </style>
 <script src="shared.js"></script>
 <script>
-  // ?reset — clears only courseCache so courses reseed from courses.json.
-  // Profile, settings, and round history are preserved.
+  // ?reset — clears courseCache so courses reseed from courses.json.
+  // Preserves profile and all other settings.
+  // Also repairs setupComplete if onboarding was interrupted.
   if (location.search.includes('reset')) {
     localStorage.removeItem('courseCache');
     localStorage.removeItem('activeCourse');
+    try {
+      var p = JSON.parse(localStorage.getItem('profile') || '{}');
+      if (p.name) { p.setupComplete = true; localStorage.setItem('profile', JSON.stringify(p)); }
+    } catch(e) {}
     location.replace(location.pathname);
   }
 
