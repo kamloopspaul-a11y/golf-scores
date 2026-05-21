@@ -819,6 +819,12 @@
 </style>
 <script src="shared.js"></script>
 <script>
+  // ?reset — clears localStorage and reloads clean. Use in Safari address bar to reset test data.
+  if (location.search.includes('reset')) {
+    localStorage.clear();
+    location.replace(location.pathname);
+  }
+
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
       navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -2041,24 +2047,27 @@ function renderSetupTeePicker() {
   if (!_setupTeeChoice) { _setupTeeChoice = null; }
 
   picker.style.display = 'block';
-  strip.innerHTML = allTees.map(function(entry, i) {
-    var tb       = entry.teeBox;
-    var chosen   = _setupTeeChoice && _setupTeeChoice.teeBox.tee_name === tb.tee_name;
+  strip.innerHTML = allTees.map(function(entry) {
+    var tb     = entry.teeBox;
+    var chosen = _setupTeeChoice && _setupTeeChoice.teeBox.tee_name === tb.tee_name;
+    // Pass tee name directly — never rely on array index which can shift on re-render
     return '<button class="setup-tee-chip' + (chosen ? ' active' : '') + '"'
-         + ' onclick="selectSetupTee(' + i + ')">'
+         + ' onclick="selectSetupTee(' + JSON.stringify(tb.tee_name) + ',' + JSON.stringify(entry.gender) + ')">'
          + esc(tb.tee_name)
          + '</button>';
   }).join('');
-  strip._teeList   = allTees;
-  strip._course    = course;
+  strip._teeList = allTees;
+  strip._course  = course;
 }
 
 // Called when a tee chip is tapped on the Setup screen.
-// Loads that tee's hole data into activeCourseData immediately.
-function selectSetupTee(i) {
+// Looks up the tee by name — immune to list reordering between renders.
+function selectSetupTee(teeName, gender) {
   var strip = document.getElementById('setup-tee-chips');
   if (!strip || !strip._teeList) return;
-  var entry  = strip._teeList[i];
+  var entry  = strip._teeList.find(function(e) {
+    return e.teeBox.tee_name === teeName && e.gender === gender;
+  });
   var course = strip._course;
   if (!entry || !course) return;
 
@@ -2066,8 +2075,8 @@ function selectSetupTee(i) {
   saveActiveCourseData(buildActiveCourseData(course, entry.teeBox, entry.gender));
 
   // Highlight chosen chip, clear others
-  document.querySelectorAll('.setup-tee-chip').forEach(function(btn, j) {
-    btn.classList.toggle('active', j === i);
+  document.querySelectorAll('.setup-tee-chip').forEach(function(btn) {
+    btn.classList.toggle('active', btn.textContent.trim() === teeName);
   });
 }
 
@@ -2255,31 +2264,6 @@ loadActiveCourse();
 
 seedCourseCache(); // silent background cache seed
 
-// Sync seeded courses (positive IDs) from courses.json on every load —
-// restores any data that may have been partially overwritten by a UI edit.
-(async function syncSeededCourses() {
-  try {
-    const resp = await fetch('courses.json', { cache: 'no-cache' });
-    if (!resp.ok) return;
-    const data = await resp.json();
-    const cache = JSON.parse(localStorage.getItem('courseCache') || '{}');
-    let changed = false;
-    Object.entries(data).forEach(function([k, src]) {
-      if (k === '_meta' || !src || !src.id) return;
-      const key   = String(src.id);
-      const fresh = Object.assign({}, src, { cachedAt: new Date().toISOString().split('T')[0] });
-      if (JSON.stringify(cache[key]) !== JSON.stringify(fresh)) {
-        cache[key] = fresh;
-        changed = true;
-      }
-    });
-    if (changed) {
-      localStorage.setItem('courseCache', JSON.stringify(cache));
-      // Re-render tee picker now that fresh data is in cache
-      updateCourseNameDisplay();
-    }
-  } catch(e) {}
-})();
 fetchWeather();
 
 // Stats help overlay toggle

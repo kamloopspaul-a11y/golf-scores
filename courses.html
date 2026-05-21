@@ -841,9 +841,9 @@ function purgeTobiano() {
   if (Object.keys(c).length !== before) localStorage.setItem('courseCache', JSON.stringify(c));
 }
 
-// ── Full sync from courses.json (the permanent record) ──
-// Seeded courses (positive IDs) are always refreshed from courses.json on load.
-// User-added courses (negative IDs) are never touched.
+// ── Safe sync from courses.json ──
+// Only adds courses missing from cache and fills in missing phone numbers.
+// Never overwrites existing course data — user edits are preserved.
 async function syncPhones() {
   try {
     const resp = await fetch('courses.json');
@@ -854,10 +854,13 @@ async function syncPhones() {
     Object.entries(data).forEach(([k, src]) => {
       if (k === '_meta' || !src || !src.id) return;
       const key = String(src.id);
-      // Always overwrite seeded (positive ID) entries from courses.json
-      const fresh = { ...src, cachedAt: new Date().toISOString().split('T')[0] };
-      if (JSON.stringify(cache[key]) !== JSON.stringify(fresh)) {
-        cache[key] = fresh;
+      if (!cache[key]) {
+        // Course not in cache — seed it fresh
+        cache[key] = { ...src, cachedAt: new Date().toISOString().split('T')[0] };
+        changed = true;
+      } else if (src.phone && !cache[key].phone) {
+        // Fill in missing phone only
+        cache[key].phone = src.phone;
         changed = true;
       }
     });
