@@ -223,11 +223,10 @@
   <!-- ── STEP 2: Apps Script URL + Tees + HI ── -->
   <div class="step" id="step-2">
     <div class="field">
-      <label for="inp-url">Apps Script URL</label>
+      <label for="inp-url">Apps Script URL <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></label>
       <input class="f-input" type="url" id="inp-url" autocomplete="off"
-
         placeholder="https://script.google.com/macros/s/…/exec">
-      <div class="field-hint">Your Google Apps Script /exec URL. Paste from your deployment.</div>
+      <div class="field-hint">Optional — paste your /exec URL when you have it. Add it later in Settings if needed.</div>
       <div class="error-msg" id="err-url">Must start with https://script.google.com/macros/s/</div>
     </div>
     <div class="field">
@@ -263,16 +262,6 @@
     }
   } catch(e) {}
   // ─────────────────────────────────────────────────────────────────────────
-
-  // If a profile with a name already exists, skip onboarding entirely
-  try {
-    var _p = JSON.parse(localStorage.getItem('profile') || '{}');
-    if (_p.name) {
-      _p.setupComplete = true;
-      localStorage.setItem('profile', JSON.stringify(_p));
-      window.location.replace('index.html');
-    }
-  } catch(e) {}
 
   const VALID_URL_PREFIX = 'https://script.google.com/macros/s/';
   let selectedTee = 'mensBlue';
@@ -331,7 +320,12 @@
     const hiRaw = document.getElementById('inp-hi').value.trim();
     const hi    = hiRaw === '' ? null : parseFloat(hiRaw);
     let bad = false;
-    bad = setFieldError('inp-url', 'err-url', !validUrl(url)) || bad;
+    // URL is optional — only validate format if something was entered
+    if (url !== '') {
+      bad = setFieldError('inp-url', 'err-url', !validUrl(url)) || bad;
+    } else {
+      setFieldError('inp-url', 'err-url', false);
+    }
     if (hiRaw !== '') {
       bad = setFieldError('inp-hi', 'err-hi', isNaN(hi) || hi < 0 || hi > 54) || bad;
     } else {
