@@ -819,9 +819,11 @@
 </style>
 <script src="shared.js"></script>
 <script>
-  // ?reset — clears localStorage and reloads clean. Use in Safari address bar to reset test data.
+  // ?reset — clears only courseCache so courses reseed from courses.json.
+  // Profile, settings, and round history are preserved.
   if (location.search.includes('reset')) {
-    localStorage.clear();
+    localStorage.removeItem('courseCache');
+    localStorage.removeItem('activeCourse');
     location.replace(location.pathname);
   }
 
