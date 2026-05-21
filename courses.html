@@ -1087,6 +1087,14 @@ function saveCourse() {
     newId = negIds.length ? Math.min(...negIds) - 1 : -1;
   }
 
+  // Merge tees: preserve existing tees that weren't edited this session,
+  // so saving only Red tees doesn't wipe Blue tee data from a prior save.
+  const existingMale = ((cache[String(newId)] || {}).tees || {}).male || [];
+  const editedNames  = new Set(allTeeObjs.map(t => t.tee_name));
+  const keptTees     = existingMale.filter(t => !editedNames.has(t.tee_name));
+  const mergedMale   = [...allTeeObjs, ...keptTees]
+    .sort((a, b) => (b.total_yards || 0) - (a.total_yards || 0));
+
   const phone    = formatPhone((document.getElementById('course-phone').value || '').trim());
   const street   = (document.getElementById('course-street').value   || '').trim();
   const city     = (document.getElementById('course-city').value     || '').trim();
@@ -1103,7 +1111,7 @@ function saveCourse() {
       state:   province || 'BC',
       country: 'Canada'
     },
-    tees:        { male: allTeeObjs, female: [] }   // male key for compat with course-select in index.html
+    tees:        { male: mergedMale, female: [] }
   };
 
   saveToCache(course);

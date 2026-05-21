@@ -2254,6 +2254,32 @@ loadActiveCourse();
 })();
 
 seedCourseCache(); // silent background cache seed
+
+// Sync seeded courses (positive IDs) from courses.json on every load —
+// restores any data that may have been partially overwritten by a UI edit.
+(async function syncSeededCourses() {
+  try {
+    const resp = await fetch('courses.json', { cache: 'no-cache' });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const cache = JSON.parse(localStorage.getItem('courseCache') || '{}');
+    let changed = false;
+    Object.entries(data).forEach(function([k, src]) {
+      if (k === '_meta' || !src || !src.id) return;
+      const key   = String(src.id);
+      const fresh = Object.assign({}, src, { cachedAt: new Date().toISOString().split('T')[0] });
+      if (JSON.stringify(cache[key]) !== JSON.stringify(fresh)) {
+        cache[key] = fresh;
+        changed = true;
+      }
+    });
+    if (changed) {
+      localStorage.setItem('courseCache', JSON.stringify(cache));
+      // Re-render tee picker now that fresh data is in cache
+      updateCourseNameDisplay();
+    }
+  } catch(e) {}
+})();
 fetchWeather();
 
 // Stats help overlay toggle
