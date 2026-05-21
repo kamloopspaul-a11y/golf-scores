@@ -738,6 +738,28 @@
     font-size: 15px; color: var(--text-secondary);
     margin-top: 6px;
   }
+  /* ── Setup screen tee picker ── */
+  .setup-tee-picker {
+    margin: 12px 0 4px;
+    text-align: center;
+  }
+  .setup-tee-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.7px; color: var(--text-muted); margin-bottom: 8px;
+  }
+  .setup-tee-strip {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    justify-content: center;
+  }
+  .setup-tee-chip {
+    padding: 7px 18px; border-radius: 20px;
+    border: 1.5px solid var(--border); background: var(--card);
+    font-size: 14px; font-weight: 600; color: var(--text-secondary);
+    cursor: pointer; touch-action: manipulation; transition: all 0.15s;
+  }
+  .setup-tee-chip.active {
+    background: var(--green); color: white; border-color: var(--green);
+  }
 
   .course-search-row {
     display: flex; gap: 8px; margin-bottom: 12px;
@@ -836,6 +858,10 @@
     <div class="setup-course-card">
       <div class="setup-course-name" id="setup-course-display" onclick="showPanel('courses')" style="cursor:pointer;">Select a Course</div>
       <div class="setup-course-meta" id="setup-tee-display"></div>
+    </div>
+    <div class="setup-tee-picker" id="setup-tee-picker" style="display:none">
+      <div class="setup-tee-label">Select Tees</div>
+      <div class="setup-tee-strip" id="setup-tee-chips"></div>
     </div>
     <div class="pcc-setup-row" id="pcc-row">
       <select id="pcc-select" class="pcc-setup-select" onchange="pccChanged(this.value)">
@@ -1961,6 +1987,91 @@ function updateCourseNameDisplay() {
       nameEl.textContent = 'Select a Course';
       metaEl.textContent = '';
     }
+  }
+  renderSetupTeePicker();
+}
+
+// ── SETUP SCREEN TEE PICKER ──────────────────────────
+// Returns true only if a tee has CR, SR, and every hole has par, yardage > 0, and SI.
+function teeIsComplete(teeBox) {
+  if (!teeBox.course_rating || !teeBox.slope_rating) return false;
+  const holes = teeBox.holes || [];
+  if (!holes.length) return false;
+  return holes.every(function(h) {
+    return h.par >= 3 && (h.yardage || 0) > 0 && h.index != null;
+  });
+}
+
+// Renders tee chips on the Setup screen for the currently active course.
+// Only shows tees that pass teeIsComplete(). Hides the picker if none qualify.
+function renderSetupTeePicker() {
+  var picker = document.getElementById('setup-tee-picker');
+  var strip  = document.getElementById('setup-tee-chips');
+  if (!picker || !strip) return;
+
+  if (!activeCourseData || !activeCourseData.apiId) {
+    picker.style.display = 'none';
+    return;
+  }
+
+  var course = getCourseById(activeCourseData.apiId);
+  if (!course) { picker.style.display = 'none'; return; }
+
+  var allTees = [];
+  ((course.tees || {}).male   || []).forEach(function(t) {
+    if (teeIsComplete(t)) allTees.push({ teeBox: t, gender: 'male' });
+  });
+  ((course.tees || {}).female || []).forEach(function(t) {
+    if (teeIsComplete(t)) allTees.push({ teeBox: t, gender: 'female' });
+  });
+
+  if (allTees.length <= 1) {
+    // Only one valid tee — no picker needed, just ensure it is selected
+    picker.style.display = 'none';
+    if (allTees.length === 1) {
+      var only = allTees[0];
+      if (activeCourseData.teeName !== only.teeBox.tee_name) {
+        saveActiveCourseData(buildActiveCourseData(course, only.teeBox, only.gender));
+      }
+    }
+    return;
+  }
+
+  picker.style.display = 'block';
+  strip.innerHTML = allTees.map(function(entry, i) {
+    var tb      = entry.teeBox;
+    var isActive = activeCourseData.teeName === tb.tee_name && activeCourseData.gender === entry.gender;
+    var glyph   = entry.gender === 'female' ? ' ♀' : '';
+    return '<button class="setup-tee-chip' + (isActive ? ' active' : '') + '"'
+         + ' onclick="selectSetupTee(' + i + ')"'
+         + ' data-tee-idx="' + i + '">'
+         + esc(tb.tee_name) + glyph
+         + '</button>';
+  }).join('');
+  strip._teeList = allTees;
+}
+
+// Called when a tee chip is tapped on the Setup screen.
+function selectSetupTee(i) {
+  var strip = document.getElementById('setup-tee-chips');
+  if (!strip || !strip._teeList) return;
+  var entry = strip._teeList[i];
+  if (!entry) return;
+  var course = getCourseById(activeCourseData.apiId);
+  if (!course) return;
+  saveActiveCourseData(buildActiveCourseData(course, entry.teeBox, entry.gender));
+  // Re-render chips so active state updates
+  document.querySelectorAll('.setup-tee-chip').forEach(function(btn, j) {
+    btn.classList.toggle('active', j === i);
+  });
+  // Refresh the tee meta line below the course name
+  var metaEl = document.getElementById('setup-tee-display');
+  if (metaEl) {
+    var tb = entry.teeBox;
+    var tee = tb.tee_name ? tb.tee_name + ' Tees' : '';
+    var cr  = tb.course_rating || '';
+    var sr  = tb.slope_rating  || '';
+    metaEl.textContent = tee + (cr && sr ? ' · ' + cr + ' / ' + sr : '');
   }
 }
 

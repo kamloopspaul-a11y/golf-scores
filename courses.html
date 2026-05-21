@@ -841,7 +841,9 @@ function purgeTobiano() {
   if (Object.keys(c).length !== before) localStorage.setItem('courseCache', JSON.stringify(c));
 }
 
-// ── Sync from courses.json: fill missing phones + inject new entries ──
+// ── Full sync from courses.json (the permanent record) ──
+// Seeded courses (positive IDs) are always refreshed from courses.json on load.
+// User-added courses (negative IDs) are never touched.
 async function syncPhones() {
   try {
     const resp = await fetch('courses.json');
@@ -852,15 +854,10 @@ async function syncPhones() {
     Object.entries(data).forEach(([k, src]) => {
       if (k === '_meta' || !src || !src.id) return;
       const key = String(src.id);
-      if (cache[key]) {
-        // Update phone if the cached entry is missing it
-        if (src.phone && !cache[key].phone) {
-          cache[key].phone = src.phone;
-          changed = true;
-        }
-      } else {
-        // Course not in cache yet — inject it (e.g. Valley Golf Centre)
-        cache[key] = { ...src, cachedAt: new Date().toISOString().split('T')[0] };
+      // Always overwrite seeded (positive ID) entries from courses.json
+      const fresh = { ...src, cachedAt: new Date().toISOString().split('T')[0] };
+      if (JSON.stringify(cache[key]) !== JSON.stringify(fresh)) {
+        cache[key] = fresh;
         changed = true;
       }
     });
@@ -1147,13 +1144,21 @@ function renderSavedList() {
 }
 
 
+// Returns true if a tee has CR, SR, and every hole has par, yardage > 0, and SI.
+function teeIsComplete(teeBox) {
+  if (!teeBox.course_rating || !teeBox.slope_rating) return false;
+  const holes = teeBox.holes || [];
+  if (!holes.length) return false;
+  return holes.every(h => h.par >= 3 && (h.yardage || 0) > 0 && h.index != null);
+}
+
 function selectCourse(id) {
   const course = getCache()[String(id)];
   if (!course) return;
 
-  // Pick first available mens tee
+  // Pick first complete mens tee; fall back to first available
   const maleTees = (course.tees || {}).male || [];
-  const tee = maleTees[0];
+  const tee = maleTees.find(t => teeIsComplete(t)) || maleTees[0];
   if (!tee) { alert('No tee data for this course — edit it first.'); return; }
 
   const holes = (tee.holes || []).slice(0, Math.min(tee.number_of_holes || 18, 18))
