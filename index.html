@@ -1825,10 +1825,25 @@ function saveActiveCourseData(data) {
   activeCourseData = data;
   localStorage.setItem('activeCourse', JSON.stringify(data));
 }
+function setActiveCourseFromLibrary(data) {
+  // Called when a new course is chosen from the library — resets the tee choice
+  _setupTeeChoice = null;
+  saveActiveCourseData(data);
+}
 function loadActiveCourse() {
   try {
     const raw = localStorage.getItem('activeCourse');
-    if (raw) activeCourseData = JSON.parse(raw);
+    if (raw) {
+      activeCourseData = JSON.parse(raw);
+      // Migration: old records may not have apiId — resolve it from cache by name
+      if (activeCourseData && !activeCourseData.apiId) {
+        const match = Object.values(_getCache()).find(function(c) {
+          return c.club_name === activeCourseData.name ||
+                 (c.club_name + ' – ' + c.course_name) === activeCourseData.name;
+        });
+        if (match) activeCourseData.apiId = match.id;
+      }
+    }
   } catch(e) { activeCourseData = null; }
   updateCourseNameDisplay();
 }
@@ -1971,108 +1986,89 @@ function updateCourseNameDisplay() {
   // Update Change Course link text to show active course
   // Populate new setup course card
   const nameEl = document.getElementById('setup-course-display');
-  const metaEl = document.getElementById('setup-tee-display');
-  if (nameEl && metaEl) {
-    if (activeCourseData) {
-      const totalYards = activeCourseData.holes
-        ? activeCourseData.holes.reduce((a, h) => a + (h.yards || 0), 0) : 0;
-      const ydsStr = totalYards > 0 ? ' — ' + totalYards + ' Yds' : '';
-      nameEl.textContent = activeCourseData.name.toUpperCase() + ydsStr;
-      const cr = activeCourseData.cr || '';
-      const sr = activeCourseData.sr || '';
-      const tee = activeCourseData.teeName || '';
-      const teeFull = tee ? tee + ' Tees' : '';
-      metaEl.textContent = teeFull + (cr && sr ? ' · ' + cr + ' / ' + sr : '');
-    } else {
-      nameEl.textContent = 'Select a Course';
-      metaEl.textContent = '';
-    }
+  if (nameEl) {
+    nameEl.textContent = activeCourseData
+      ? activeCourseData.name.toUpperCase()
+      : 'Select a Course';
   }
+  // Clear the old tee meta line — tee is shown via the chip picker instead
+  const metaEl = document.getElementById('setup-tee-display');
+  if (metaEl) metaEl.textContent = '';
   renderSetupTeePicker();
 }
 
 // ── SETUP SCREEN TEE PICKER ──────────────────────────
+// Tracks the tee the player explicitly chose on the Setup screen this session.
+var _setupTeeChoice = null;  // { teeBox, gender } or null
+
 // Returns true only if a tee has CR, SR, and every hole has par, yardage > 0, and SI.
 function teeIsComplete(teeBox) {
   if (!teeBox.course_rating || !teeBox.slope_rating) return false;
-  const holes = teeBox.holes || [];
+  var holes = teeBox.holes || [];
   if (!holes.length) return false;
   return holes.every(function(h) {
     return h.par >= 3 && (h.yardage || 0) > 0 && h.index != null;
   });
 }
 
-// Renders tee chips on the Setup screen for the currently active course.
-// Only shows tees that pass teeIsComplete(). Hides the picker if none qualify.
+// Renders tee chips on the Setup screen for the active course.
+// Shows all complete tees. No chip is pre-highlighted — player must tap to choose.
 function renderSetupTeePicker() {
   var picker = document.getElementById('setup-tee-picker');
   var strip  = document.getElementById('setup-tee-chips');
   if (!picker || !strip) return;
 
-  if (!activeCourseData || !activeCourseData.apiId) {
-    picker.style.display = 'none';
-    return;
-  }
+  if (!activeCourseData) { picker.style.display = 'none'; return; }
 
-  var course = getCourseById(activeCourseData.apiId);
+  // Resolve course from cache — try apiId first, then search by name
+  var course = activeCourseData.apiId ? getCourseById(activeCourseData.apiId) : null;
+  if (!course) {
+    course = Object.values(_getCache()).find(function(c) {
+      return c.club_name === activeCourseData.name ||
+             (c.club_name + ' – ' + c.course_name) === activeCourseData.name;
+    }) || null;
+  }
   if (!course) { picker.style.display = 'none'; return; }
 
-  var allTees = [];
-  ((course.tees || {}).male   || []).forEach(function(t) {
-    if (teeIsComplete(t)) allTees.push({ teeBox: t, gender: 'male' });
-  });
-  ((course.tees || {}).female || []).forEach(function(t) {
-    if (teeIsComplete(t)) allTees.push({ teeBox: t, gender: 'female' });
-  });
+  // Collect complete male tees only (female tees shown if no male tees exist)
+  var maleTees = ((course.tees || {}).male || []).filter(teeIsComplete);
+  var allTees  = maleTees.length ? maleTees.map(function(t) { return { teeBox: t, gender: 'male' }; })
+    : ((course.tees || {}).female || []).filter(teeIsComplete).map(function(t) { return { teeBox: t, gender: 'female' }; });
 
-  if (allTees.length <= 1) {
-    // Only one valid tee — no picker needed, just ensure it is selected
-    picker.style.display = 'none';
-    if (allTees.length === 1) {
-      var only = allTees[0];
-      if (activeCourseData.teeName !== only.teeBox.tee_name) {
-        saveActiveCourseData(buildActiveCourseData(course, only.teeBox, only.gender));
-      }
-    }
-    return;
-  }
+  if (!allTees.length) { picker.style.display = 'none'; return; }
+
+  // Reset explicit choice when course changes
+  if (!_setupTeeChoice) { _setupTeeChoice = null; }
 
   picker.style.display = 'block';
   strip.innerHTML = allTees.map(function(entry, i) {
-    var tb      = entry.teeBox;
-    var isActive = activeCourseData.teeName === tb.tee_name && activeCourseData.gender === entry.gender;
-    var glyph   = entry.gender === 'female' ? ' ♀' : '';
-    return '<button class="setup-tee-chip' + (isActive ? ' active' : '') + '"'
-         + ' onclick="selectSetupTee(' + i + ')"'
-         + ' data-tee-idx="' + i + '">'
-         + esc(tb.tee_name) + glyph
+    var tb       = entry.teeBox;
+    var chosen   = _setupTeeChoice && _setupTeeChoice.teeBox.tee_name === tb.tee_name;
+    return '<button class="setup-tee-chip' + (chosen ? ' active' : '') + '"'
+         + ' onclick="selectSetupTee(' + i + ')">'
+         + esc(tb.tee_name)
          + '</button>';
   }).join('');
-  strip._teeList = allTees;
+  strip._teeList   = allTees;
+  strip._course    = course;
 }
 
 // Called when a tee chip is tapped on the Setup screen.
+// Loads that tee's hole data into activeCourseData immediately.
 function selectSetupTee(i) {
   var strip = document.getElementById('setup-tee-chips');
   if (!strip || !strip._teeList) return;
-  var entry = strip._teeList[i];
-  if (!entry) return;
-  var course = getCourseById(activeCourseData.apiId);
-  if (!course) return;
+  var entry  = strip._teeList[i];
+  var course = strip._course;
+  if (!entry || !course) return;
+
+  _setupTeeChoice = entry;
   saveActiveCourseData(buildActiveCourseData(course, entry.teeBox, entry.gender));
-  // Re-render chips so active state updates
+
+  // Highlight chosen chip, clear others
   document.querySelectorAll('.setup-tee-chip').forEach(function(btn, j) {
     btn.classList.toggle('active', j === i);
   });
-  // Refresh the tee meta line below the course name
-  var metaEl = document.getElementById('setup-tee-display');
-  if (metaEl) {
-    var tb = entry.teeBox;
-    var tee = tb.tee_name ? tb.tee_name + ' Tees' : '';
-    var cr  = tb.course_rating || '';
-    var sr  = tb.slope_rating  || '';
-    metaEl.textContent = tee + (cr && sr ? ' · ' + cr + ' / ' + sr : '');
-  }
 }
 
 // ── REGIONAL COURSE SEED (from courses.json) ─────────
