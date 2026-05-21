@@ -1,7 +1,7 @@
 <!--
   My Golf Scores — Add Course
   courses.html
-  v1.5 — 2026-05-19
+  v1.6 — 2026-05-21
   - ADD COURSE: btn-3d 3D styling
   - screen-basics: BACK|NEXT (green), removed Saved Courses section
   - screen-holes: BACK|SAVE COURSE (green), all-caps
@@ -172,11 +172,9 @@ v1.0 — 2026-05-11
   }
   /* Par + SI row */
   .hole-par-si {
-    display: grid; grid-template-columns: 1fr 1fr;
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
     gap: 8px; margin-bottom: 8px;
   }
-  /* Yardage row (one col per active tee) */
-  .hole-yds-row { display: grid; gap: 8px; }
   .hole-field-lbl {
     font-size: 10px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 3px;
@@ -420,6 +418,7 @@ v1.0 — 2026-05-11
   </div>
 
   <div class="stage-scrolls" id="holes-stage">
+    <div class="tee-chip-strip" id="holes-tee-chips"></div>
     <div class="nav-dots" id="hole-dots"></div>
     <div id="hole-cards"></div>
   </div>
@@ -451,8 +450,11 @@ let teesState = TEE_ORDER.map(name => ({
 }));
 
 // holeState — persists par/SI/yardages across Screen 1 ↔ Screen 2 navigation
-// keyed by hole number: { 1: { par:'4', si:'7', yds:{ Blue:'380', White:'350' } }, ... }
+// keyed by hole number: { 1: { par:'4', si:'7', yds:{ White:'380', Red:'310' } }, ... }
 let holeState = {};
+
+// activeTeeScreen2 — which tee is currently selected on Screen 2 (radio button)
+let activeTeeScreen2 = null;
 
 // ── Utility ────────────────────────────────────────────
 // ── Phone formatter ────────────────────────────────────
@@ -496,7 +498,7 @@ function setHoles(n) {
   document.getElementById('seg-18').classList.toggle('active', n === 18);
 }
 
-// ── Tee management ─────────────────────────────────────
+// ── Screen 1 tee management (multi-select: which tees does the course have) ──
 function toggleTee(name) {
   syncTeeInputsToState();
   const t = teesState.find(t => t.name === name);
@@ -506,7 +508,7 @@ function toggleTee(name) {
   renderTeeDetails();
 }
 
-// Re-renders chip appearance — tap to activate (green), tap again to deactivate
+// Re-renders Screen 1 chip appearance.
 function renderTeeChips() {
   const chips = document.querySelectorAll('#tee-chips .tee-chip');
   teesState.forEach((t, i) => {
@@ -524,42 +526,6 @@ function syncTeeInputsToState() {
     if (crEl) t.cr = crEl.value;
     if (srEl) t.sr = srEl.value;
   });
-}
-
-// ── Hole state persistence ──────────────────────────────
-// Saves all visible hole inputs into holeState before leaving Screen 2.
-function saveHoleInputsToState() {
-  for (let h = 1; h <= numHoles; h++) {
-    const parEl = document.getElementById('h' + h + '-par');
-    if (!parEl) continue; // hole cards not rendered
-    if (!holeState[h]) holeState[h] = { par: '', si: '', yds: {} };
-    holeState[h].par = parEl.value;
-    const siEl = document.getElementById('h' + h + '-si');
-    holeState[h].si  = siEl ? siEl.value : '';
-    TEE_ORDER.forEach(tName => {
-      const yEl = document.getElementById('h' + h + '-yds-' + tName);
-      if (yEl) holeState[h].yds[tName] = yEl.value;
-    });
-  }
-}
-
-// Restores hole inputs from holeState after a re-render.
-function prefillHoleCardsFromState() {
-  let any = false;
-  for (let h = 1; h <= numHoles; h++) {
-    const data = holeState[h];
-    if (!data) continue;
-    any = true;
-    const parEl = document.getElementById('h' + h + '-par');
-    const siEl  = document.getElementById('h' + h + '-si');
-    if (parEl && data.par) { parEl.value = data.par; onParChange(h, data.par); }
-    if (siEl  && data.si)  siEl.value = data.si;
-    Object.entries(data.yds || {}).forEach(([tName, val]) => {
-      const yEl = document.getElementById('h' + h + '-yds-' + tName);
-      if (yEl && val !== '') yEl.value = val;
-    });
-  }
-  if (any) updateDots();
 }
 
 function renderTeeDetails() {
@@ -591,19 +557,119 @@ function renderTeeDetails() {
     </div>`).join('');
 }
 
+// ── Screen 2 tee radio-button (one tee active at a time for hole data entry) ──
 
-// Saves a single hole's inputs to holeState immediately (called on every input event).
-// This ensures holeState is always current regardless of navigation method.
+// Returns active tees sorted longest → shortest by holeState yardage totals.
+// Falls back to TEE_ORDER with Red always last when no yardages yet.
+function sortedActiveTeesForScreen2() {
+  const active = activeTees();
+  return [...active].sort((a, b) => {
+    const yA = getTeeYardageTotal(a.name);
+    const yB = getTeeYardageTotal(b.name);
+    if (yA > 0 || yB > 0) return yB - yA;
+    // No yardages yet: Red always last, else by TEE_ORDER
+    if (a.name === 'Red') return 1;
+    if (b.name === 'Red') return -1;
+    return TEE_ORDER.indexOf(a.name) - TEE_ORDER.indexOf(b.name);
+  });
+}
+
+function getTeeYardageTotal(teeName) {
+  let total = 0;
+  for (let h = 1; h <= numHoles; h++) {
+    const hs = holeState[h];
+    total += parseInt((hs && hs.yds && hs.yds[teeName]) || '') || 0;
+  }
+  return total;
+}
+
+// Renders tee chips on Screen 2 (radio button — one active at a time).
+// Hidden when only one tee.
+function renderHoleTeePicker() {
+  const el = document.getElementById('holes-tee-chips');
+  if (!el) return;
+  const sorted = sortedActiveTeesForScreen2();
+  if (sorted.length <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = sorted.map(t =>
+    `<button class="tee-chip${t.name === activeTeeScreen2 ? ' active' : ''}"
+             onclick="switchTeeOnScreen2('${esc(t.name)}')">${esc(t.name)}</button>`
+  ).join('');
+}
+
+// Switches the active tee on Screen 2, flushing current yardages first.
+function switchTeeOnScreen2(teeName) {
+  if (teeName === activeTeeScreen2) return;
+  saveYardagesToState();
+  activeTeeScreen2 = teeName;
+  renderHoleTeePicker();
+  updateYardageInputs();
+}
+
+// Flushes the visible yardage inputs into holeState for the current tee.
+function saveYardagesToState() {
+  if (!activeTeeScreen2) return;
+  for (let h = 1; h <= numHoles; h++) {
+    const yEl = document.getElementById('h' + h + '-yds');
+    if (!yEl) continue;
+    if (!holeState[h]) holeState[h] = { par: '', si: '', yds: {} };
+    if (!holeState[h].yds) holeState[h].yds = {};
+    holeState[h].yds[activeTeeScreen2] = yEl.value;
+  }
+}
+
+// Updates the single yardage column to show values for activeTeeScreen2.
+function updateYardageInputs() {
+  for (let h = 1; h <= numHoles; h++) {
+    const yEl  = document.getElementById('h' + h + '-yds');
+    const lblEl = document.getElementById('h' + h + '-yds-lbl');
+    if (!yEl) continue;
+    const hs  = holeState[h];
+    const val = (hs && hs.yds && hs.yds[activeTeeScreen2]) || '';
+    yEl.value = val;
+    if (lblEl) lblEl.textContent = (activeTeeScreen2 || '') + ' yds';
+  }
+  updateDots();
+}
+
+// ── Hole state persistence ──────────────────────────────
+// Saves par/SI from DOM into holeState (yardages kept current via saveYardagesToState).
+function saveParSiToState() {
+  for (let h = 1; h <= numHoles; h++) {
+    const parEl = document.getElementById('h' + h + '-par');
+    if (!parEl) continue;
+    if (!holeState[h]) holeState[h] = { par: '', si: '', yds: {} };
+    holeState[h].par = parEl.value;
+    const siEl = document.getElementById('h' + h + '-si');
+    if (siEl) holeState[h].si = siEl.value;
+  }
+}
+
+// Restores par/SI from holeState after re-render, then loads active tee yardages.
+function prefillHoleCardsFromState() {
+  let any = false;
+  for (let h = 1; h <= numHoles; h++) {
+    const data = holeState[h];
+    if (!data) continue;
+    any = true;
+    const parEl = document.getElementById('h' + h + '-par');
+    const siEl  = document.getElementById('h' + h + '-si');
+    if (parEl && data.par) { parEl.value = data.par; onParChange(h, data.par); }
+    if (siEl  && data.si)  siEl.value = data.si;
+  }
+  updateYardageInputs(); // load current tee's yardages into the single column
+  if (any) updateDots();
+}
+
+// Saves a single hole's par/SI + active tee yardage on every input event.
 function saveHole(h) {
   if (!holeState[h]) holeState[h] = { par: '', si: '', yds: {} };
+  if (!holeState[h].yds) holeState[h].yds = {};
   const parEl = document.getElementById('h' + h + '-par');
   const siEl  = document.getElementById('h' + h + '-si');
+  const yEl   = document.getElementById('h' + h + '-yds');
   if (parEl) holeState[h].par = parEl.value;
   if (siEl)  holeState[h].si  = siEl.value;
-  TEE_ORDER.forEach(tName => {
-    const yEl = document.getElementById('h' + h + '-yds-' + tName);
-    if (yEl) holeState[h].yds[tName] = yEl.value;
-  });
+  if (yEl && activeTeeScreen2) holeState[h].yds[activeTeeScreen2] = yEl.value;
 }
 
 // ── Navigation ─────────────────────────────────────────
@@ -621,8 +687,9 @@ function goToLibrary() {
 }
 
 function goToBasics() {
-  saveHoleInputsToState();  // preserve hole data before leaving Screen 2
-  syncTeeInputsToState();   // preserve CR/SR too
+  saveYardagesToState();  // flush current tee's yardages before leaving Screen 2
+  saveParSiToState();     // flush par/SI
+  syncTeeInputsToState(); // flush CR/SR
   showScreen('basics');
 }
 
@@ -639,12 +706,20 @@ function goToHoles() {
     alert('Please select at least one tee.');
     return;
   }
+
+  // Set active tee: first non-Red tee (longest), else only tee available
+  const sorted = sortedActiveTeesForScreen2();
+  const nonRed = sorted.filter(t => t.name !== 'Red');
+  activeTeeScreen2 = (nonRed.length ? nonRed[0] : sorted[0]).name;
+
   document.getElementById('holes-course-label').textContent = 'Courses: ' + name;
-  renderHoleCards(); // restores holeState via prefillHoleCardsFromState()
-  // On first visit for an existing course, pre-fill from cache only if holeState is empty
+  renderHoleCards();        // builds DOM, then calls prefillHoleCardsFromState()
+  renderHoleTeePicker();    // renders tee chips (hidden if only one tee)
+
+  // Edit mode: prefill from cache on first visit (holeState empty)
   if (editingId !== null && Object.keys(holeState).length === 0) {
     const course = getCache()[editingId];
-    if (course) setTimeout(() => prefillHoleCards(course), 0);
+    if (course) setTimeout(() => { prefillHoleCards(course); renderHoleTeePicker(); }, 0);
   }
   showScreen('holes');
   document.getElementById('holes-stage').scrollTop = 0;
@@ -661,20 +736,8 @@ function renderHoleCards() {
     `<div class="dot" id="dot-${i+1}" onclick="scrollToHole(${i+1})"></div>`
   ).join('');
 
-  // Yardage grid columns: one per active tee
-  const ydsCols = active.length === 1 ? '1fr'
-                : active.map(() => '1fr').join(' ');
-
   cardsEl.innerHTML = Array.from({length: numHoles}, (_, i) => {
     const h = i + 1;
-    const ydsInputs = active.map(t => `
-      <div>
-        <div class="hole-field-lbl">${esc(t.name)} yds</div>
-        <input type="number" class="hole-input" id="h${h}-yds-${t.name}"
-               placeholder="—" min="0" max="800" inputmode="numeric"
-               oninput="updateDots(); saveHole(${h});">
-      </div>`).join('');
-
     return `
       <div class="hole-card" id="hcard-${h}">
         <div class="hole-card-hdr">
@@ -693,9 +756,12 @@ function renderHoleCards() {
                    placeholder="—" min="1" max="${numHoles}" inputmode="numeric"
                    oninput="updateDots(); saveHole(${h});">
           </div>
-        </div>
-        <div class="hole-yds-row" style="grid-template-columns:${ydsCols}">
-          ${ydsInputs}
+          <div>
+            <div class="hole-field-lbl" id="h${h}-yds-lbl">${esc(activeTeeScreen2 || '')} yds</div>
+            <input type="number" class="hole-input" id="h${h}-yds"
+                   placeholder="—" min="0" max="800" inputmode="numeric"
+                   oninput="updateDots(); saveHole(${h});">
+          </div>
         </div>
       </div>`;
   }).join('');
@@ -816,9 +882,10 @@ function renderLibrary() {
   }
 
   el.innerHTML = courses.map(c => {
-    const rawTees = ((c.tees || {}).male || []).map(t => t.tee_name);
-    const teeStr  = filterDisplayTees(rawTees).map(toTitleCase).join(', ');
-    const meta = teeStr;
+    // Show hole count as subtitle; no tee chips (colours inconsistent across courses)
+    const maleTees  = (c.tees || {}).male || [];
+    const holeCount = maleTees[0] ? (maleTees[0].number_of_holes || 18) : 18;
+    const meta = holeCount + ' holes';
     const phoneHtml = c.phone
       ? `<div class="lib-phone"><a href="tel:${esc(c.phone)}">${esc(c.phone)}</a></div>` : '';
     const isUserAdded = Number(c.id) < 0;
@@ -928,40 +995,49 @@ function applyFieldAsterisks() {
 }
 
 function prefillHoleCards(course) {
-  const maleTees = (course.tees || {}).male || [];
-  const firstTee = maleTees[0];
-  if (!firstTee) return;
+  // Populate holeState from all tees in the saved course, then display active tee.
+  const allTees = (course.tees || {}).male || (course.tees || {}).all || [];
+  if (!allTees.length) return;
+
+  // Use first tee's holes array for par/SI (shared across tees)
+  const firstTee = allTees[0];
   const holeData = firstTee.holes || [];
 
   holeData.forEach((h, i) => {
     const hNum = i + 1;
-    const parEl = document.getElementById('h' + hNum + '-par');
-    const siEl  = document.getElementById('h' + hNum + '-si');
-    if (parEl && h.par)    { parEl.value = h.par; onParChange(hNum, h.par); }
-    if (siEl  && h.index)  siEl.value  = h.index;
+    if (!holeState[hNum]) holeState[hNum] = { par: '', si: '', yds: {} };
+    holeState[hNum].par = String(h.par   || '');
+    holeState[hNum].si  = String(h.index || '');
+    if (!holeState[hNum].yds) holeState[hNum].yds = {};
 
-    // Yardage per tee
-    maleTees.forEach(t => {
-      const yEl = document.getElementById('h' + hNum + '-yds-' + t.tee_name);
-      if (yEl && t.holes && t.holes[i]) yEl.value = t.holes[i].yardage || '';
+    // Yardage for each tee → stored by tee_name in holeState
+    allTees.forEach(t => {
+      const tName = t.tee_name;
+      const yds   = t.holes && t.holes[i] ? (t.holes[i].yardage || '') : '';
+      holeState[hNum].yds[tName] = String(yds);
     });
   });
-  updateDots();
-  saveHoleInputsToState(); // keep holeState in sync so Back+Next preserves edits
+
+  // Restore par/SI to DOM and load active tee's yardages
+  prefillHoleCardsFromState();
 }
 
 function saveCourse() {
+  // Flush whatever is currently visible on Screen 2 into holeState before reading it
+  saveYardagesToState();
+  saveParSiToState();
   syncTeeInputsToState(); // ensure CR/SR are current before reading teesState
+
   const name = document.getElementById('course-name').value.trim();
   if (!name) { alert('Course name is required.'); return; }
 
   const active = activeTees();
   if (!active.length) { alert('At least one tee is required.'); return; }
 
-  // Count holes with par filled
+  // Count holes with par filled (read from holeState — DOM may not exist)
   let parFilled = 0;
   for (let h = 1; h <= numHoles; h++) {
-    const p = parseInt((document.getElementById('h' + h + '-par') || {}).value || '');
+    const p = parseInt((holeState[h] || {}).par || '');
     if (p >= 3 && p <= 6) parFilled++;
   }
   if (parFilled < numHoles) {
@@ -969,7 +1045,7 @@ function saveCourse() {
     if (!confirm(`${missing} hole${missing > 1 ? 's are' : ' is'} missing a par value. Save anyway?`)) return;
   }
 
-  // Build tee objects — gender-neutral, all stored under tees.all
+  // Build tee objects — all data read from holeState (source of truth)
   const allTeeObjs = [];
 
   active.forEach(t => {
@@ -978,10 +1054,9 @@ function saveCourse() {
 
     for (let h = 1; h <= numHoles; h++) {
       const hs    = holeState[h] || {};
-      const par   = parseInt((document.getElementById('h' + h + '-par') || {}).value || hs.par || '') || 4;
-      const yards = parseInt((document.getElementById('h' + h + '-yds-' + t.name) || {}).value ||
-                    (hs.yds && hs.yds[t.name]) || '') || 0;
-      const si    = parseInt((document.getElementById('h' + h + '-si') || {}).value || hs.si || '') || null;
+      const par   = parseInt(hs.par || '') || 4;
+      const yards = parseInt((hs.yds && hs.yds[t.name]) || '') || 0;
+      const si    = parseInt(hs.si  || '') || null;
       holes.push({ par, yardage: yards, index: si });
       totalPar   += par;
       totalYards += yards;
@@ -989,8 +1064,8 @@ function saveCourse() {
 
     allTeeObjs.push({
       tee_name:        t.name,
-      course_rating:   parseFloat(t.cr) || 0,
-      slope_rating:    parseInt(t.sr)   || 0,
+      course_rating:   parseFloat(t.cr) || null,
+      slope_rating:    parseInt(t.sr)   || null,
       number_of_holes: numHoles,
       par_total:       totalPar,
       total_yards:     totalYards,

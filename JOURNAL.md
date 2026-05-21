@@ -1328,3 +1328,138 @@ Completed the shared.css centralisation work queued in the build list. All three
 - Next build queue item: Course card tap cue (courses.html)
 - Resume at: `shared.css` work is complete — next is UI/UX items
 
+
+---
+
+## 2026-05-19 — Session 5b — courses.html v1.4
+
+### Bug fix: hole data wiped when toggling tees mid-entry
+
+**Problem reported:** Entering White tee CR/SR + hole pars/yardages on Screen 2, going Back to Screen 1 to add Red tee, then hitting NEXT again — all White tee hole data was erased.
+
+**Root cause:** `goToBasics()` just called `showScreen('basics')` with no state save. `goToHoles()` always called `renderHoleCards()` fresh, rebuilding the DOM from scratch with no restoration.
+
+**Fix (v1.4):**
+- Added `let holeState = {}` — in-memory store keyed by hole number
+- Added `saveHoleInputsToState()` — reads par/SI/yardages from DOM into holeState
+- Added `prefillHoleCardsFromState()` — restores DOM from holeState after re-render
+- `goToBasics()` now calls `saveHoleInputsToState()` + `syncTeeInputsToState()` before leaving Screen 2
+- `renderHoleCards()` calls `prefillHoleCardsFromState()` at end
+- `goToHoles()` refactored: only prefills from cache on first visit (holeState empty); subsequent visits use holeState
+- `prefillHoleCards()` calls `saveHoleInputsToState()` at end to keep state in sync
+- `startAddCourse()` and `editCourse()` reset `holeState = {}`
+
+**Clarification:** Courses save to localStorage only — never to Sheets. Only rounds (scores) post to Sheets via Apps Script. This is by design.
+
+**Files changed:** `courses.html` (v1.4)
+
+## 2026-05-19 — Session 5c — courses.html v1.5
+
+### Tee chip UX: max 3 tees + explicit ✕ remove button
+
+**Changes:**
+- Active tee chips now show a ✕ badge so it's obvious you can tap to remove
+- Max 3 tees enforced — tapping a 4th chip shakes it and shows hint text below the label
+- `renderTeeChips()` helper centralises chip rendering (replaces scattered classList.toggle calls)
+- `updateTeeCountHint()` updates the "Maximum 3 tees selected" hint label
+- All tee chip state changes (startAddCourse, editCourse, init) now use renderTeeChips + updateTeeCountHint
+
+**Design clarifications recorded:**
+- SI is stored per hole (one value across all tees) — Eaglepoint's per-tee SI nuance not captured, accepted
+- Tee order fixed: White → Gold → Blue → Red (standard convention, longest to shortest)
+- Courses save to localStorage only; Sheets integration is for rounds only
+
+**Files changed:** `courses.html` (v1.5)
+
+---
+
+## 2026-05-19 — Session 6 — courses.html tee chip + data fixes (incomplete)
+
+### What was attempted
+- **v9.89** — tee chips: pure toggle (no ✕, no 3-tee max), continuous hole save via `saveHole()`, tee sort by yardage at save time
+- **v9.90** — no default active tee on new course, removed redundant Par badge from hole cards, added `syncTeeInputsToState()` at top of `saveCourse()`, holeState fallback for hole data reads
+- **courses.json** — Eaglepoint updated with official scorecard data (White + Red only, correct yardages, SI, CR/SR from eaglepointgolfresort.com)
+- Console script written to fix Eaglepoint localStorage (ran successfully on laptop; phone not updated)
+
+### What went wrong
+- **Standing rule violated:** "No code changes without explicit agreement on what's being built first." — coded immediately without discussing the four outstanding courses.html items from Session 5 resume notes
+- **Phone localStorage** still has old Eaglepoint entry (4 tees: Black, Gold, White, Red). Console script only fixed laptop
+- **Hole data persistence** still broken — White tee data disappears when navigating Back then Next
+- **Tee chip UX** still wrong — Paul wants one tee at a time (radio button style), not all tees shown simultaneously on hole data screen
+- Multiple pushes (v9.89, v9.90, courses.json) deployed with unverified fixes
+
+### Files changed
+- `courses.html` (v9.90 changes — tee chip + save fixes)
+- `shared.js` (v9.90)
+- `sw.js` (SW v64)
+- `courses.json` (Eaglepoint White/Red only, official scorecard data)
+
+### Must discuss BEFORE coding next session
+1. **Tee chip UX** — Paul wants radio-button style: one tee at a time for hole data entry. Discuss exact behaviour before touching code.
+2. **Phone localStorage** — need sync code fix so courses.json updates overwrite stale seeded course data on load. Discuss approach.
+3. **Hole data persistence** — root cause not identified. Discuss and trace before writing fixes.
+4. **Tee order** — sort by yardage is in but untested end-to-end.
+
+### Next session MUST start with
+- Upload courses.html alongside PROJECT.md
+- Discuss all four items above before any code
+
+---
+
+## 2026-05-21 — Session 7 — courses.html tee chip + hole data fix
+
+### Directive (agreed before coding)
+
+**Problem:** Can only store one tee's hole data at a time. Switching tees during entry either erases the prior tee's data or fails to save it.
+
+**Root cause:** `renderHoleCards()` only builds DOM columns for currently active tees. When tees switch and the DOM re-renders, prior tee input values are never read back — the save/restore cycle loses data because the elements never existed.
+
+**Rules governing the fix:**
+1. Tees sorted by total yardage, longest → shortest. Red is always shortest/last.
+2. Don't show tee boxes on course library cards (colours are inconsistent across courses).
+3. If a course has >1 tee, the default highlighted tee is NOT Red — it's the first (longest) non-Red tee.
+4. Tee chips = radio button behaviour. One highlighted at a time, green pill on white font.
+5. Tee properties: total yardage, CR, SR, SI per hole. Expect many null values (not all courses have per-tee CR/SR). Plan accordingly.
+
+**Architecture for Screen 2 (holes):**
+- One active tee at a time (`activeTeeScreen2` variable).
+- Each hole card: Par (shared), SI (shared), one Yardage input (current tee only).
+- Switching tee chips: flush current yardages → holeState, then swap in new tee's values. Par/SI never change.
+- holeState accumulates all tees: `{ h: { par, si, yds: { White: '...', Red: '...' } } }`
+
+**Screen 1 (basics):** Multi-select chips unchanged — still defines which tees the course has, with CR/SR per tee below.
+
+**Library display:** No tee chips on course cards.
+
+**Storage note (deferred):** After this fix, add Export/Import JSON for course library backup. Sheets stays rounds-only.
+
+
+### What was built (courses.html v1.6 + sw.js v65)
+
+**Screen 2 — radio-button tee switching + hole data persistence fix:**
+- Added `activeTeeScreen2` state variable — tracks which tee is selected on Screen 2
+- `sortedActiveTeesForScreen2()` — returns active tees sorted longest → shortest by holeState yardage totals; falls back to TEE_ORDER with Red always last when no yardages entered yet
+- `renderHoleTeePicker()` — renders tee chips above the nav dots on Screen 2; hidden when only one tee; chips are radio-button style (one green-pill active at a time)
+- `switchTeeOnScreen2(teeName)` — flushes current yardages via `saveYardagesToState()`, sets new active tee, re-renders picker and yardage inputs
+- `saveYardagesToState()` — flushes the single visible yardage column into `holeState[h].yds[activeTeeScreen2]`
+- `updateYardageInputs()` — swaps yardage column values and label for `activeTeeScreen2` without re-rendering hole cards
+- `saveParSiToState()` — flushes par/SI from DOM into holeState (replaces old `saveHoleInputsToState`)
+- `saveHole(h)` — updated to write par/SI + `holeState[h].yds[activeTeeScreen2]`
+
+**Hole card layout:**
+- `.hole-par-si` is now a 3-column grid (Par | SI | Yardage) — one row per hole, one yardage field only
+- Yardage field: id `h${h}-yds`, label `h${h}-yds-lbl` (updates dynamically on tee switch)
+- Removed per-tee column approach and `.hole-yds-row` entirely
+
+**goToHoles():** Sets `activeTeeScreen2` to first non-Red tee (longest); calls `renderHoleCards()` + `renderHoleTeePicker()`
+**goToBasics():** Calls `saveYardagesToState()` + `saveParSiToState()` + `syncTeeInputsToState()` before leaving
+**prefillHoleCards():** Now populates `holeState` from ALL tees in the saved course, then calls `prefillHoleCardsFromState()` to restore DOM + active tee yardages
+**saveCourse():** Reads exclusively from `holeState` (DOM no longer the source of truth); `course_rating`/`slope_rating` stored as null when absent (not 0)
+
+**Library cards:** Subtitle now shows hole count ("18 holes") — no tee chips displayed
+
+**sw.js:** CACHE_NAME bumped v64 → v65
+
+### Files changed
+- `courses.html` (v1.6)
+- `sw.js` (v65)
