@@ -2005,9 +2005,8 @@ function updateCourseNameDisplay() {
       : 'Select a Course';
   }
   // Clear the old tee meta line — tee is shown via the chip picker instead
-  const metaEl = document.getElementById('setup-tee-display');
-  if (metaEl) metaEl.textContent = '';
   renderSetupTeePicker();
+  renderActiveTeeRating(_setupTeeChoice);
 }
 
 // ── SETUP SCREEN TEE PICKER ──────────────────────────
@@ -2028,7 +2027,7 @@ function teeIsComplete(teeBox) {
 // Looser check for the Setup screen tee picker.
 // Requires CR + SR + par/yardage for every hole. SI optional — not needed to start a round.
 function teeHasPlayData(teeBox) {
-  if (!teeBox.course_rating || !teeBox.slope_rating) return false;
+  // CR/SR not required to play — only needed for handicap calculations
   var holes = teeBox.holes || [];
   if (!holes.length) return false;
   return holes.every(function(h) {
@@ -2062,10 +2061,10 @@ function renderSetupTeePicker() {
   if (!course) { picker.style.display = 'none'; return; }
 
   // Collect complete male tees only (female tees shown if no male tees exist)
-  var maleTees = ((course.tees || {}).male || []).filter(teeIsComplete);
+  var maleTees = ((course.tees || {}).male || []).filter(teeHasPlayData);
   var allTees  = maleTees.length
     ? maleTees.map(function(t) { return { teeBox: t, gender: 'male' }; })
-    : ((course.tees || {}).female || []).filter(teeIsComplete).map(function(t) { return { teeBox: t, gender: 'female' }; });
+    : ((course.tees || {}).female || []).filter(teeHasPlayData).map(function(t) { return { teeBox: t, gender: 'female' }; });
 
   if (!allTees.length) { picker.style.display = 'none'; return; }
 
@@ -2098,6 +2097,17 @@ function renderSetupTeePicker() {
 
 // Called by the delegated strip listener when a chip is tapped.
 // Receives the full entry object and its index — no string matching needed.
+// Updates the CR/SR line below the course name for the active tee.
+function renderActiveTeeRating(entry) {
+  var el = document.getElementById('setup-tee-display');
+  if (!el) return;
+  if (!entry || !entry.teeBox) { el.textContent = ''; return; }
+  var t  = entry.teeBox;
+  if (!t.course_rating || !t.slope_rating) { el.textContent = ''; return; }
+  var genderLabel = entry.gender === 'female' ? "Women's" : "Men's";
+  el.textContent = genderLabel + ' ' + t.tee_name + ': ' + t.course_rating + ' / ' + t.slope_rating;
+}
+
 function selectSetupTee(entry, idx) {
   if (!entry || !_setupTeeCourse) return;
 
@@ -2108,6 +2118,9 @@ function selectSetupTee(entry, idx) {
   document.querySelectorAll('.setup-tee-chip').forEach(function(btn) {
     btn.classList.toggle('active', parseInt(btn.dataset.idx, 10) === idx);
   });
+
+  // Show CR/SR for the newly selected tee
+  renderActiveTeeRating(entry);
 }
 
 // Delegated listener — wired once at page load in initTeePickerListener().
