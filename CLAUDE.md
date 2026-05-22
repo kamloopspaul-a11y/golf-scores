@@ -111,3 +111,9 @@ These are settled — do not reopen without explicit instruction:
 `apps-script.gs` is deployed as a Google Apps Script Web App (`/exec` URL, execute as Me, Anyone can access). The URL is stored in `localStorage` key `profile.sheetsUrl` (set during onboarding). To update the script: paste new code → Deploy → Manage deployments → edit → New version. The `/exec` URL does not change on redeploy.
 
 Email reports fire automatically when `totalRounds % n === 0` for any window in `ROUND_WINDOWS = [5, 10, 20]`. To trigger manually, run `sendReport()` in the Apps Script editor.
+
+## STANDING RULE — Development Context
+
+**This is NOT a PWA. It is a web app in development hosted on GitHub Pages.**
+
+Do not give troubleshooting advice based on PWA/home screen install assumptions. No home screen icons, no standalone mode, no app installation advice during development. Treat it as a standard browser-based web app until explicitly told otherwise.

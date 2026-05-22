@@ -1478,3 +1478,44 @@ Completed the shared.css centralisation work queued in the build list. All three
 1. Fix tee chip highlight on edit (multi-highlighted bug)
 2. Enter Eaglepoint + Mt. Paul Red tee data
 3. Phone localStorage sync — courses.json version stamp to overwrite stale seeded entries
+
+---
+
+## 2026-05-21 — Session 8 — Tee chip redesign discussion
+
+### Decisions made this session (discussion only — no code yet)
+
+**Tee chip onclick bug identified:**
+- Root cause: `JSON.stringify(tee_name)` inside `onclick="..."` produces double quotes that clash with the HTML attribute delimiter — onclick silently breaks
+- Fix agreed: event delegation (Option C) — one listener on the strip container, no inline onclick values
+
+**Tee chip architecture — agreed design:**
+- Event delegation: single `click` listener on `#setup-tee-chips` strip
+- Each chip carries `data-idx` (position in rendered list) — no name/gender matching in handler
+- `selectSetupTee` receives the full entry object directly from `_teeList[idx]`
+
+**Tee sort order — agreed:**
+- Sort by total yardage, longest → shortest (left → right in chip strip)
+- No fixed name-based sort table — yardage is universal regardless of course naming conventions
+
+**Tee slots — capped at 4:**
+- Edit Courses offers exactly 4 tee slots (Gold → Blue → White → Red as default labels)
+- Player fills in whichever slots they have data for — unused slots stay empty and don't appear as chips
+
+**Tee renaming — WISH LIST (deferred):**
+- Player-renameable tee labels is a valid future feature
+- Cannot be done via chip click (chips are selection UI, not edit UI)
+- Belongs in Edit Courses form, not the Home screen
+- Deferred until all course data is entered — revisit then
+
+### Still to build (agreed scope for next coding pass)
+1. Refactor `renderSetupTeePicker()` — event delegation + `data-idx` + yardage sort
+2. Edit Courses — enforce 4-slot tee entry (not free-form)
+
+---
+
+### STANDING RULE — added 2026-05-21
+
+**THIS IS NOT A PWA. It is a web app in development hosted on GitHub Pages.**
+
+Do not give troubleshooting advice based on PWA/home screen install behaviour. Do not reference home screen icons, standalone mode, or app installation during development. Browser cache and Service Worker behaviour applies as a standard web app only. Treat it accordingly until Paul explicitly says otherwise.

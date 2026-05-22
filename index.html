@@ -2015,6 +2015,7 @@ function updateCourseNameDisplay() {
 var _setupTeeChoice = null;  // { teeBox, gender } or null
 
 // Returns true only if a tee has CR, SR, and every hole has par, yardage > 0, and SI.
+// Used in courses.html to validate full data entry.
 function teeIsComplete(teeBox) {
   if (!teeBox.course_rating || !teeBox.slope_rating) return false;
   var holes = teeBox.holes || [];
@@ -2024,8 +2025,25 @@ function teeIsComplete(teeBox) {
   });
 }
 
+// Looser check for the Setup screen tee picker.
+// Requires CR + SR + par/yardage for every hole. SI optional — not needed to start a round.
+function teeHasPlayData(teeBox) {
+  if (!teeBox.course_rating || !teeBox.slope_rating) return false;
+  var holes = teeBox.holes || [];
+  if (!holes.length) return false;
+  return holes.every(function(h) {
+    return h.par >= 3 && (h.yardage || 0) > 0;
+  });
+}
+
 // Renders tee chips on the Setup screen for the active course.
 // Shows all complete tees. No chip is pre-highlighted — player must tap to choose.
+// Returns total yardage for a tee — prefers stored total, falls back to summing holes.
+function getTeeYardage(teeBox) {
+  if (teeBox.total_yards) return teeBox.total_yards;
+  return (teeBox.holes || []).reduce(function(sum, h) { return sum + (h.yardage || 0); }, 0);
+}
+
 function renderSetupTeePicker() {
   var picker = document.getElementById('setup-tee-picker');
   var strip  = document.getElementById('setup-tee-chips');
@@ -2045,45 +2063,64 @@ function renderSetupTeePicker() {
 
   // Collect complete male tees only (female tees shown if no male tees exist)
   var maleTees = ((course.tees || {}).male || []).filter(teeIsComplete);
-  var allTees  = maleTees.length ? maleTees.map(function(t) { return { teeBox: t, gender: 'male' }; })
+  var allTees  = maleTees.length
+    ? maleTees.map(function(t) { return { teeBox: t, gender: 'male' }; })
     : ((course.tees || {}).female || []).filter(teeIsComplete).map(function(t) { return { teeBox: t, gender: 'female' }; });
 
   if (!allTees.length) { picker.style.display = 'none'; return; }
 
-  // Reset explicit choice when course changes
-  if (!_setupTeeChoice) { _setupTeeChoice = null; }
+  // Sort longest → shortest by total yardage — universal, name-agnostic
+  allTees.sort(function(a, b) {
+    return getTeeYardage(b.teeBox) - getTeeYardage(a.teeBox);
+  });
+
+  // Persist sorted list and course for the delegated click listener
+  _setupTeeList   = allTees;
+  _setupTeeCourse = course;
+
+  // Determine which idx is currently chosen (match by tee_name)
+  var chosenIdx = -1;
+  if (_setupTeeChoice) {
+    allTees.forEach(function(e, i) {
+      if (e.teeBox.tee_name === _setupTeeChoice.teeBox.tee_name) chosenIdx = i;
+    });
+  }
 
   picker.style.display = 'block';
-  strip.innerHTML = allTees.map(function(entry) {
-    var tb     = entry.teeBox;
-    var chosen = _setupTeeChoice && _setupTeeChoice.teeBox.tee_name === tb.tee_name;
-    // Pass tee name directly — never rely on array index which can shift on re-render
-    return '<button class="setup-tee-chip' + (chosen ? ' active' : '') + '"'
-         + ' onclick="selectSetupTee(' + JSON.stringify(tb.tee_name) + ',' + JSON.stringify(entry.gender) + ')">'
-         + esc(tb.tee_name)
+  // Chips carry only data-idx — no string values injected into onclick
+  strip.innerHTML = allTees.map(function(entry, idx) {
+    return '<button class="setup-tee-chip' + (idx === chosenIdx ? ' active' : '') + '"'
+         + ' data-idx="' + idx + '">'
+         + esc(entry.teeBox.tee_name)
          + '</button>';
   }).join('');
-  strip._teeList = allTees;
-  strip._course  = course;
 }
 
-// Called when a tee chip is tapped on the Setup screen.
-// Looks up the tee by name — immune to list reordering between renders.
-function selectSetupTee(teeName, gender) {
-  var strip = document.getElementById('setup-tee-chips');
-  if (!strip || !strip._teeList) return;
-  var entry  = strip._teeList.find(function(e) {
-    return e.teeBox.tee_name === teeName && e.gender === gender;
-  });
-  var course = strip._course;
-  if (!entry || !course) return;
+// Called by the delegated strip listener when a chip is tapped.
+// Receives the full entry object and its index — no string matching needed.
+function selectSetupTee(entry, idx) {
+  if (!entry || !_setupTeeCourse) return;
 
   _setupTeeChoice = entry;
-  saveActiveCourseData(buildActiveCourseData(course, entry.teeBox, entry.gender));
+  saveActiveCourseData(buildActiveCourseData(_setupTeeCourse, entry.teeBox, entry.gender));
 
-  // Highlight chosen chip, clear others
+  // Highlight chosen chip by index — unambiguous regardless of tee name
   document.querySelectorAll('.setup-tee-chip').forEach(function(btn) {
-    btn.classList.toggle('active', btn.textContent.trim() === teeName);
+    btn.classList.toggle('active', parseInt(btn.dataset.idx, 10) === idx);
+  });
+}
+
+// Delegated listener — wired once at page load in initTeePickerListener().
+// Handles all chip clicks for the lifetime of the page.
+function initTeePickerListener() {
+  var strip = document.getElementById('setup-tee-chips');
+  if (!strip) return;
+  strip.addEventListener('click', function(e) {
+    var btn = e.target.closest('.setup-tee-chip');
+    if (!btn) return;
+    var idx = parseInt(btn.dataset.idx, 10);
+    if (isNaN(idx) || !_setupTeeList[idx]) return;
+    selectSetupTee(_setupTeeList[idx], idx);
   });
 }
 
@@ -2254,6 +2291,7 @@ if(savedStart){
   durationTimer = setInterval(updateAllWeather, 30000);
 }
 loadActiveCourse();
+initTeePickerListener(); // wire delegated tee chip listener once
 // One-time migration: remove Valley GC stub (id 12) seeded from old courses.json
 (function evictStaleSeeds() {
   try {
