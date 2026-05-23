@@ -1245,7 +1245,7 @@ async function fetchWeather() {
   try {
     const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=50.6745&longitude=-120.3273&current=temperature_2m,wind_speed_10m&temperature_unit=celsius&wind_speed_unit=kmh");
     const d = await r.json();
-    state.weatherTemp = Math.round(d.current.temperature_2m) + "°C";
+    state.weatherTemp = "Temp: " + Math.round(d.current.temperature_2m) + "°C";
     state.weatherWind = "Wind: " + Math.round(d.current.wind_speed_10m) + " km/h";
   } catch(e) { state.weatherTemp = ""; state.weatherWind = ""; }
   updateAllWeather();
