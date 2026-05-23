@@ -273,9 +273,7 @@
     font-size: 64px; font-weight: 600; letter-spacing: -2px;
     line-height: 1; color: white;
   }
-  .stat-pair       { display: inline-flex; align-items: baseline; gap: 5px; }
-  .hole-stat-val   { font-size: 16px; font-weight: 600; color: white; line-height: 1; }
-  .hole-stat-label { font-size: 16px; font-weight: 600; color: white; line-height: 1; letter-spacing: 0.5px; }
+  /* hole-stat-* replaced by .hole-info-* in shared.css */
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
     flex: 1 1 auto;  /* matches .stage-scrolls — elastic, shrinks with min-height:0 */
@@ -947,13 +945,11 @@
       <div class="hu-date" id="hole-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower">
-      <div class="header-lower-top">
-        <div class="hole-num" id="hole-num">1</div>
-      </div>
-      <div class="header-lower-bot">
-        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="hole-par-display">4</span></span>
-        <span class="stat-pair"><span class="hole-stat-val" id="hole-yards-display">275</span><span class="hole-stat-label">YDS</span></span>
+    <div class="header-lower header-lower--hole">
+      <div class="hole-num" id="hole-num">1</div>
+      <div class="hole-info-stack">
+        <span class="hole-info-line"><span class="hole-info-lbl">Par </span><span id="hole-par-display">4</span></span>
+        <span class="hole-info-line"><span id="hole-yards-display">275</span><span class="hole-info-lbl"> Yds</span></span>
       </div>
     </div>
     </div>
@@ -991,13 +987,11 @@
       <div class="hu-date" id="stats-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower">
-      <div class="header-lower-top">
-        <div class="hole-num" id="stats-hole-num">1</div>
-      </div>
-      <div class="header-lower-bot">
-        <span class="stat-pair"><span class="hole-stat-label">PAR</span><span class="hole-stat-val" id="stats-par-display">4</span></span>
-        <span class="stat-pair"><span class="hole-stat-val" id="stats-yards-display">275</span><span class="hole-stat-label">YDS</span></span>
+    <div class="header-lower header-lower--hole">
+      <div class="hole-num" id="stats-hole-num">1</div>
+      <div class="hole-info-stack">
+        <span class="hole-info-line"><span class="hole-info-lbl">Par </span><span id="stats-par-display">4</span></span>
+        <span class="hole-info-line"><span id="stats-yards-display">275</span><span class="hole-info-lbl"> Yds</span></span>
       </div>
     </div>
     </div>
