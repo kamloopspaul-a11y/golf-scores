@@ -89,26 +89,34 @@ body {
 .hole-masthead,
 .card-masthead {
   background: transparent;
-  padding: calc(44px + env(safe-area-inset-top)) 20px 4px;
+  padding: calc(24px + env(safe-area-inset-top)) 0 4px;
   color: white;
   height: calc(208px + env(safe-area-inset-top));
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 
-/* Upper header: 2-col grid — Course|Weather / Date|Duration */
+/* Masthead content wrapper — positions content block within masthead frame */
+.masthead-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  padding: 0 20px;
+}
+
+/* Upper header: 2-col grid — Course|Temp / Date|Wind */
 .header-upper {
   display: grid;
   grid-template-columns: 1fr 1fr;
   row-gap: 3px;
   margin-bottom: 14px;
 }
-.hu-breadcrumb { font-size: var(--fs-caption); color: var(--yellow); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hu-weather    { font-size: var(--fs-caption); color: rgba(255,255,255,0.8); text-align: right; white-space: nowrap; }
-.hu-date       { font-size: var(--fs-micro);   color: rgba(255,255,255,0.5); white-space: nowrap; }
-.hu-duration   { font-size: var(--fs-micro);   color: rgba(255,255,255,0.5); text-align: right; white-space: nowrap; }
+.hu-breadcrumb { font-size: var(--fs-body);     color: var(--yellow); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hu-temp       { font-size: var(--fs-body);     color: rgba(255,255,255,0.8); text-align: right; white-space: nowrap; }
+.hu-date       { font-size: var(--fs-body-md);  color: rgba(255,255,255,0.5); white-space: nowrap; }
+.hu-wind       { font-size: var(--fs-body-md);  color: rgba(255,255,255,0.5); text-align: right; white-space: nowrap; }
 
 /* Lower header: 2-row strip — title row + PAR|YDS row */
 .header-lower     { display: flex; flex-direction: column; position: relative; }
@@ -121,7 +129,7 @@ body {
 @media (max-height: 750px) {
   .masthead,
   .hole-masthead,
-  .card-masthead      { height: calc(170px + env(safe-area-inset-top)); padding: calc(20px + env(safe-area-inset-top)) 20px 4px; }
+  .card-masthead      { height: calc(170px + env(safe-area-inset-top)); padding: calc(4px + env(safe-area-inset-top)) 0 4px; }
   .header-upper       { margin-bottom: 4px; }
   .header-lower-top   { min-height: 74px; }
   .header-lower-bot   { min-height: 32px; }
