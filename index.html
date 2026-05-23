@@ -1502,8 +1502,6 @@ async function submitRound(){
     const mhTitleErr = document.querySelector('#screen-success .header-lower-title');
     if(mhTitleErr) mhTitleErr.textContent='Save Round';
     if(infoBtn) infoBtn.classList.add('visible');
-    const dbg = document.getElementById('success-summary');
-    if(dbg){ dbg.innerHTML = '<p style="font-size:12px;word-break:break-all;text-align:left;padding:8px"><b>Error:</b> ' + e.message + '<br><br><b>URL:</b> ' + (SHEETS_URL||'(empty)') + '</p>'; }
     // Save to offline queue — payload keeps its roundId so retry is idempotent
     const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
     if(!queue.find(q => q.roundId === payload.roundId)) {
