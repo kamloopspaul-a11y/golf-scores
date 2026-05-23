@@ -128,9 +128,14 @@ body {
   .header-lower-title { font-size: var(--fs-display-sm); }
 }
 
-/* ── ZONE 2 — STAGE SCROLLS ──────────────────────────────────────────────── */
-/* Elastic middle zone — grows to fill space between masthead and nav-bar.
-   Pages override padding / background-colour locally as needed.            */
+/* ── ZONE 2 — STAGE ──────────────────────────────────────────────────────── */
+/* Two sub-zones, both flush — no margin or gap between them or adjacent zones.
+   stageScore:   fixed widget (score counter). Optional — absent on most screens.
+   stageScrolls: elastic fill. ALWAYS present. Scrolls when content overflows.  */
+.stage-score {
+  flex: 0 0 auto;
+  background: var(--card);
+}
 .stage-scrolls {
   flex: 1 1 auto;
   min-height: 0;

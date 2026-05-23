@@ -278,11 +278,10 @@
   .hole-stat-label { font-size: 16px; font-weight: 600; color: white; line-height: 1; letter-spacing: 0.5px; }
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-    flex: 1 0 auto;  /* flex-shrink: 0 — stage never shrinks on any screen */
+    flex: 1 1 auto;  /* matches .stage-scrolls — elastic, shrinks with min-height:0 */
     min-height: 0;
     overflow-y: auto;
     background: #fff;
-    margin-top: 12px;
   }
   .hole-actions { background: #fff; }
   /* ── SETUP ─────────────────────────────────────────── */
@@ -642,7 +641,6 @@
   /* ── Add Scores form ─────────────────────────────── */
   .as-body {
     background: #fff;
-    margin-top: 12px;
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
