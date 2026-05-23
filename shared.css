@@ -101,10 +101,15 @@ body {
 .masthead-content {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 24px;
+  justify-content: space-between;
   flex: 1;
   padding: 0 20px;
+}
+
+/* When lower zone uses hole layout, switch to flex-start with explicit gap */
+.masthead-content:has(.header-lower--hole) {
+  justify-content: flex-start;
+  gap: 24px;
 }
 
 /* Upper header: 2-col grid — Course|Temp / Date|Wind */
