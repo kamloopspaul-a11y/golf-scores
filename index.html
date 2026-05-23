@@ -1498,7 +1498,7 @@ async function submitRound(){
     const mhTitle = document.querySelector('#screen-success .header-lower-title');
     if(mhTitle) mhTitle.textContent='Save Round';
   } catch(e){
-    if(title){ title.textContent='Unable to Post'; title.classList.remove('success-title-error'); }
+    if(title){ title.textContent='Unable to Post: ' + e.message; title.classList.add('success-title-error'); }
     const mhTitleErr = document.querySelector('#screen-success .header-lower-title');
     if(mhTitleErr) mhTitleErr.textContent='Save Round';
     if(infoBtn) infoBtn.classList.add('visible');
