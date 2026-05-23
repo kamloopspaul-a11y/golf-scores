@@ -140,7 +140,7 @@ body {
   gap: 8px;
 }
 .hole-info-line {
-  font-size: var(--fs-body-md);
+  font-size: 17px;
   color: white;
   font-weight: 600;
   line-height: 1.1;
