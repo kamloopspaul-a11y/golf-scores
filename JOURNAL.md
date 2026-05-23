@@ -1563,3 +1563,64 @@ Completed the shared.css centralisation work queued in the build list. All three
 **THIS IS NOT A PWA. It is a web app in development hosted on GitHub Pages.**
 
 Do not give troubleshooting advice based on PWA/home screen install behaviour. Do not reference home screen icons, standalone mode, or app installation during development. Browser cache and Service Worker behaviour applies as a standard web app only. Treat it accordingly until Paul explicitly says otherwise.
+
+---
+
+## 2026-05-22 — Session 12 — Masthead redesign + evictStaleSeeds removal (v10.20 / SW v97)
+
+### Standing rule reinforced
+Discuss and agree first, then implement. A premature fix was caught and called out mid-session — noted and acknowledged.
+
+### evictStaleSeeds removed (v10.9 → patched into v10.10)
+- **Root cause identified:** Valley Centre Golf (manually added by Paul) was silently deleted on every page load because `evictStaleSeeds()` deleted any course with `id === 12`. The IIFE ran on every boot, not just once as intended. Valley GC was assigned id 12 — the same id as the old stub it was meant to clean up.
+- **Fix:** Removed `evictStaleSeeds()` IIFE entirely from `index.html`. No replacement needed — the stub it targeted no longer exists in courses.json.
+- **Also fixed:** Stale `.git/HEAD.lock` blocked two consecutive pushes — removed manually with `rm .git/HEAD.lock`.
+
+### Masthead Pass 1 — wrapper + upper restructure (v10.10–v10.13)
+
+**What changed:**
+- Added `.masthead-content` wrapper div inside every masthead across `index.html`, `courses.html`, `settings.html` — separates content positioning from masthead frame
+- Split `.hu-weather` into `.hu-temp` (row 1 right) and `.hu-wind` (row 2 right)
+- Removed `.hu-duration` from all mastheads and all JS — duration feature dropped entirely
+- `fetchWeather()` now parses `state.weatherTemp` and `state.weatherWind` separately; `updateAllWeather()` uses `querySelectorAll('.hu-temp')` / `querySelectorAll('.hu-wind')` — class-based, no ID arrays
+- Added "Temp:" prefix to temperature display
+- Bumped row 1 font: `--fs-caption` (13px) → `--fs-body` (15px)
+- Bumped row 2 font: `--fs-micro` (12px) → `--fs-body-md` (14px)
+- Row 2 colour: `rgba(255,255,255,0.5)` → `rgba(255,255,255,0.85)`
+- Masthead top padding reduced 44px → 14px (raising content 30px)
+- Small screen top padding: 20px → 0px
+
+**Bug fixed mid-pass:** `settings.html` masthead-content wrapper was not closed — stage-scrolls rendered inside the masthead. Fixed v10.11.
+
+### Masthead Pass 2 — lower masthead collapse (v10.14–v10.20)
+
+**What changed:**
+- Hole and stats screens: collapsed 2-row lower masthead (86px + 38px) into a single flex row
+- Left: hole number (unchanged, large)
+- Right: `.hole-info-stack` — two stacked lines (Par / Yds), right-justified
+- Final font size for Par/Yds: **17px**, weight 600, white — uniform (no label/value contrast)
+- Gap between Par and Yds lines: **8px**
+- New CSS classes: `.header-lower--hole`, `.hole-info-stack`, `.hole-info-line`, `.hole-info-lbl` (emptied — inherits from line)
+- Masthead height reduced: 208px → 168px (small screen: 170px → 148px)
+- `.masthead-content` switched to `flex-start` for hole screens only — implemented using CSS `:has()` selector:
+  ```css
+  .masthead-content:has(.header-lower--hole) {
+    justify-content: flex-start;
+    gap: 24px;
+  }
+  ```
+  Zone-based — no screen-specific overrides. Fallback: `space-between` on all other screens.
+- Old `.stat-pair`, `.hole-stat-val`, `.hole-stat-label` local CSS removed
+
+### Files changed
+- `index.html` (v10.20)
+- `shared.css`
+- `shared.js` (APP_VERSION v10.20)
+- `sw.js` (CACHE_NAME golf-scores-v97)
+- `courses.html`
+- `settings.html`
+
+### Next session
+- Footer real estate reduction (same approach — shrink the zone)
+- Responsive breakpoint smoothing — 14px→4px margin jump at 750px is too aggressive, consider two breakpoints
+- SI data entry continues (Paul, from scorecards)
