@@ -147,9 +147,7 @@ body {
   white-space: nowrap;
 }
 .hole-info-lbl {
-  font-size: var(--fs-caption);
-  font-weight: 400;
-  opacity: 0.75;
+  /* inherits font-size and weight from .hole-info-line */
 }
 
 @media (max-height: 750px) {
