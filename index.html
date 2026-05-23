@@ -570,13 +570,6 @@
     font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.45;
   }
   .new-round-btn   { padding: 17px 48px; }
-  .footer {
-    background: transparent;
-    min-height: calc(220px + env(safe-area-inset-bottom));
-    padding: 20px 20px calc(env(safe-area-inset-bottom) + 12px);
-    flex: 0 0 auto;
-    color: white;
-  }
   .footer-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -626,17 +619,7 @@
   .switch.nht-switch input:checked + .slider-bg { background: var(--yellow); }
   .fg-left  { color: var(--yellow); font-weight: 500; align-self: center; }
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
-  /* Non-hole screens don't have stat sliders — release the 220px floor */
-  #screen-setup      .footer,
-  #screen-midround   .footer,
-  #screen-card       .footer,
-  #screen-success    .footer,
-  #screen-add-scores .footer,
-  #screen-hole       .footer,
-  #screen-stats      .footer {
-    min-height: calc(env(safe-area-inset-bottom) + 8px);
-    padding-top: 8px;
-  }
+
   /* Historical entry mode — stats screen is skipped entirely (advanceHole called directly) */
   /* ── Add Scores form ─────────────────────────────── */
   .as-body {
