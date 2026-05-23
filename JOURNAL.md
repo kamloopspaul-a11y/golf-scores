@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-05-22 — Stage Area shift fixed; footer overrides removed (v10.8 / SW v85)
+
+**Session approach — new standing rule:**
+Diagnose and discuss first, agree on a plan, then implement. No code written until the problem is understood and the fix is agreed upon. This rule was established this session after a premature fix was written and had to be rolled back.
+
+**Problem diagnosed:**
+The Stage Area was inconsistent in height and position across screens — most visibly when advancing from Enter Score (`#screen-hole`) to Enter Stats (`#screen-stats`), and on the Courses screen. The 5-zone template (locked 2026-05-12, PROJECT.md) was never fully migrated in `index.html`.
+
+**Root causes identified (via discussion, not assumption):**
+1. `margin-top: 12px` had been copy-pasted onto all local content area classes from a one-off Add Scores fix (2026-05-13). Not part of the zone spec — green body shows through transparent masthead/footer as the frame, not a gap.
+2. Local content classes (`.setup-body`, `.score-section`, etc.) used `flex: 1 0 auto` (flex-shrink: 0) while `.stage-scrolls` used `flex: 1 1 auto` — inconsistent elastic behaviour.
+3. `courses.html` had a local `.stage-scrolls` override adding `margin-top: 12px`.
+4. `index.html` had a legacy local `.footer` override with `min-height: calc(220px + safe-area)` — leftover from the old stats-in-footer design. A per-screen reset rule patched most screens but `#screen-course` was missing from the list.
+5. `courses.html` had a local `.footer` override with non-standard padding, making its footer a different height than Settings and Scores.
+
+**What was changed:**
+
+`shared.css` (SW v83):
+- Zone 2 updated — `.stage-score` added (`flex: 0 0 auto`); `.stage-scrolls` unchanged. Both zones documented as flush with no gaps.
+
+`index.html` (SW v83, v84, v85):
+- All local content classes: `flex: 1 0 auto` → `flex: 1 1 auto`; `margin-top: 12px` removed
+- `.as-body`: `margin-top: 12px` removed
+- Legacy 220px local `.footer` override removed entirely
+- Per-screen footer reset block removed (was only needed to counteract the 220px override)
+
+`courses.html` (SW v84, v85):
+- `.stage-scrolls` local override: `margin-top: 12px` removed
+- Local `.footer` override removed entirely
+
+`shared.js`:
+- `APP_VERSION` bumped v10.7 → v10.8
+
+`sw.js`:
+- Bumped v82 → v83 → v84 → v85
+
+**Result:**
+Stage Area is now consistent in height and position across all screens. Footer height is governed solely by shared.css on all pages. Settings, Courses, and Scores all look identical in zone proportions.
+
+**Next session:**
+Masthead tightening — review upper and lower masthead zones for height, spacing, and visual balance.
+
+---
+
 ## 2026-05-14 — Apps Script refactor: Post / Diagnose / Rebuild separated (apps-script.gs)
 
 **Did:**
