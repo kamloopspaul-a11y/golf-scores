@@ -11,7 +11,7 @@
  *
  * Zones:
  *   0. Base        — :root vars (brand colours, font scale), html/body, desktop constraint
- *   1. Masthead    — .masthead / .hole-masthead / .card-masthead, .header-upper, .header-lower-*
+ *   1. Masthead    — .masthead, .header-upper, .header-lower-*
  *   2. Stage       — .stage-scrolls (elastic middle zone)
  *   3. Toggle      — .switch / .slider-bg canonical (48 × 26 px, green-on-white)
  *   4. Nav bar     — .nav-bar, HOME button standard width
@@ -83,11 +83,8 @@ body {
 .screen.active { display: flex; }
 
 /* ── ZONE 1 — MASTHEAD ───────────────────────────────────────────────────── */
-/* Covers .masthead (setup/add-scores/course screens) and
-   .hole-masthead / .card-masthead (hole, stats, midround, card, success)   */
-.masthead,
-.hole-masthead,
-.card-masthead {
+/* Zone 1 — all screens */
+.masthead {
   background: transparent;
   padding: calc(14px + env(safe-area-inset-top)) 0 4px;
   color: white;
@@ -157,9 +154,7 @@ body {
 }
 
 @media (max-height: 750px) {
-  .masthead,
-  .hole-masthead,
-  .card-masthead      { height: calc(148px + env(safe-area-inset-top)); padding: calc(0px + env(safe-area-inset-top)) 0 4px; }
+  .masthead { height: calc(148px + env(safe-area-inset-top)); padding: calc(0px + env(safe-area-inset-top)) 0 4px; }
   .header-upper       { margin-bottom: 4px; }
   .header-lower-top   { min-height: 74px; }
   .header-lower-bot   { min-height: 32px; }

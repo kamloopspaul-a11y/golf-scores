@@ -1,237 +1,54 @@
 <!--
-  My Golf Scores — PWA
+  My Golf Scores
   https://kamloopspaul-a11y.github.io/golf-scores
   Built with Claude AI
-  CHANGELOG
-  v9.58 — 2026-05-13
-  - START ROUND button all-caps
-  - Player name display: plain text (no green pill)
-  v9.38 — 2026-05-12
-  - shared.js: NAV_LINKS, renderFooterNav(), showPanel() — single source of truth
-  - index.html: footer nav replaced with data-nav (shared.js auto-renders) on all non-hole screens
-  - CSS: hu-course → hu-breadcrumb (canonical class name)
-  - showPanel() removed from inline script; _handlePanel override wires add-scores
-  - fnav-btn color: white → yellow (matches courses.html canonical)
-  v9.37 — May 11 2026
-  - Add Scores screen: date picker + course/tee selectors + 9/18 toggle for 9-hole courses
-  - Historical entry mode: state.historicalMode hides stats footer, uses selected date
-  - showPanel('add-scores') wired — no longer a stub
-  - initAddScoresScreen(), asOnCourseChange(), startHistoricalRound() added
-  v9.36 — May 11 2026
-  - Fix: 9-hole courses now reach Final Score screen (nextHole guard + showSummary)
-  - Fix: footer min-height released on scorecard/setup screens — stage no longer squeezed
-  - Fix: footer nav links — no underline, tighter padding
-  v9.35 — May 11 2026
-  - courses.html: Add Course panel (Screen 1: name/holes/tees+CR+SR; Screen 2: hole-by-hole par/yds/SI)
-  - showPanel('courses') navigates to courses.html
-  - SW bumped v31 → v32: courses.html cached
-  v9.34 — May 8 2026
-  - Footer nav grid added to all non-hole screens (Setup, Front 9, Back 9, Save Round, Course)
-  - 8 utility links: Settings, Add Scores, Pro Tips, Penalty Rules, Quick Rules, Game Formats, My Stats, Courses
-  - showPanel() stub wired — panels to be built per link
-  v9.33 — May 4 2026
-  - Ask Gemini screen removed (Diagnostics + email reports replace it)
-  - apps-script.gs: doGet ?action=data, doPost action:query, callGemini_()
-  v9.27m — May 2 2026
-  - Success screen: grid-template-columns 20%/20%/20%/40% → 1fr/1fr/1fr/2fr (fixes right-padding overflow with gap)
-  - Success screen: stats "i" info overlay on hero cell (HI, Net Score, FIR, GIR, PEN, UD, X-UD, PUTTS)
-  v9.26 — May 2 2026
-  - Added 3 BC courses: Bighorn, Meadow Creek (9-hole loop), Pineridge
-  - courses.json sorted A-Z, IDs renumbered 1-12
-  - GolfCourseAPI removed; app is fully local-data-only
-  v9.25 — May 1 2026
-  - Course data: local courses.json seed (seedCourseCache). API removed v9.26.
-    localStorage.courseCache) + Course Select screen (search → results → tee
-    picker → Use Course). activeCourseData drives startRound/courseHandicap/
-    submitRound. Mt. Paul remains default; Change Course link on Setup.
-  v9.24 — April 30 2026
-  - Hero grid columns 15/15/15/55 → 20/20/20/40 (fixes iPhone right-edge clip)
-  - Hero score (.ss-val) small-screen rule: 56px → 46px (matches title scaling)
-  - "Posted!" → "Posted" (drop exclamation mark)
-  - Player name on Setup: input → display-only span (editable name moves to onboarding/Settings)
-  v9.23 — April 29 2026
-  - Save Round summary refactored: dropped redundant Front|Back|Total row
-    (already shown on the Final Score screen). Grid is now 4 cols x 2 rows
-    with col 4 spanning both rows. Hero shows Actual Score (gross) at 56px;
-    fine-print sub-line below: "HI: 20 | Net Score: 70". Stats cells are
-    now FIR/GIR/PEN on row 1 and UD/X-UD/PUTTS on row 2 (replaces the old
-    FIR/GIR/UD/Avg-Score row).
-  - COURSE constant extended with par (=64) and ratings table
-    (mensBlue/mensRed/ladiesBlue/ladiesRed, each {cr, sr}). Multi-course
-    ready — Kamloops GC and others extend the table without schema changes.
-  - Net Score calc inline (TODO: read HI + tee set from Settings tab once
-    onboarding is wired). Hardcoded HI 20 and Mens Blue for now.
-  - Single-player app — multi-player UI removed.
-    - Setup screen: dynamic players-list + "+ Add Player" button replaced
-      by a single static name input. Pre-filled with "Paul"; editable;
-      6-char max preserved.
-    - Removed JS: renderPlayers(), appendPlayerRow(), addPlayer(),
-      removePlayer(), confirmPlayer(), updateAddButtonVisibility(),
-      updateConfirmBtn(), MAX_PLAYERS constant.
-    - Removed CSS: .players-list, .add-player-btn, .remove-btn,
-      .confirm-btn (and .player-row's gap-for-remove-btn slot).
-    - state.players stays as a single-element array so downstream code
-      (scoring, posting, success summary) is unchanged.
-    - Player chips on hole screen continue to auto-hide for solo play.
-  v9.22 — April 28 2026
-  - Lower header restructured into a 2-row strip (.header-lower / -top / -bot).
-    Top row 86/74px holds title-or-hole-number; bottom row 38/32px holds
-    PAR | YDS strip on Hole screens, empty on the other four. min-height on
-    .header-lower-bot keeps the row from collapsing on non-Hole screens, so
-    every masthead has identical total height. No layout shift between screens.
-  - Removed .hole-top-row / .hole-left / .hole-right (superseded).
-  v9.21.1 — April 25 2026
-  - Hole number color reverted from yellow to white
-  v9.21 — April 25 2026
-  - Unified bottom-row height across all mastheads. Both .hole-top-row and
-    .header-lower-title now have min-height 86px (default) / 74px (small).
-    No vertical shift between Hole screens and non-Hole screens.
-  - .header-lower-title flexed with align-items: flex-end so title text sits
-    at the bottom of the (now fixed-height) row. Vertical positioning within
-    the row will be iterated next.
-  - "Round Saved" -> "Save Round"
-  v9.20 — April 25 2026
-  - Removed recessed circular background on hole number (too overbearing)
-  - PAR / YDS labels + values dropped from 22px to 16px (more proportional
-    to the big yellow hole number above)
-  v9.19 — April 25 2026
-  - Hole header redesign:
-    - Hole number on TOP of left column, PAR display below it
-    - Hole number gets a recessed circular pill background (rgba black 15%
-      + inset shadow) and changes color from white to var(--yellow)
-    - PAR / YDS labels now styled like values (22px, weight 600, white)
-    - YARDS abbreviated to YDS, placed AFTER the number ("275 YDS")
-    - Left column uses align-items: center so the hole-number circle visually
-      centers over the "PAR 4" row
-  v9.18 — April 25 2026
-  - Hole header: PAR moved to left column (above the hole number, replacing
-    the "Hole" label). YARDS stays right. Better grouping — par is
-    intrinsic to the hole, yards is reference info.
-  - Hole number bumped one size: 56px -> 64px (default), 46px -> 52px (small)
-  - .hole-left now flex column; tight 2px gap between PAR row and number
-  v9.17 — April 25 2026
-  - Hole header: PAR + YARDS now inline on a single line, baseline-aligned
-    with the bottom of the hole number. Right side compacts from 4-row
-    stack to one tidy strip. Better visual balance with the title screens.
-  - .hole-top-row align-items: center -> flex-end
-  v9.16 — April 25 2026
-  - Fonts: robust cross-device fallback chain for DM Sans (-apple-system,
-    BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial). Locks out
-    weird default fonts even if Google Fonts is blocked.
-  - Forced buttons/inputs/selects/textareas to inherit body font (overrides
-    browser/OS form-control defaults that would otherwise fall to system fonts)
-  v9.15 — April 25 2026
-  - "Final Round Score" -> "Final Score" (shorter title fits at hole-num size)
-  - Title font now matches hole-num exactly: 56px default / 46px small-screen
-  - Tops and bottoms of titles now align with the hole number's visual mass
-  v9.14 — April 25 2026
-  - Fix: non-hole title (My Golf Scores / Front 9 Score / Final Round Score
-    / Round Saved) now visually aligned with hole-screen number — bumped
-    .header-lower-title from 26px to 36px (default) / 30px (small-screen)
-  v9.13.1 — April 25 2026
-  - Fix: footer min-height restored so non-hole screens (Setup, midround, card,
-    success) match the hole-screen footer height. Visual parity preserved.
-  v9.13 — April 25 2026
-  - Refactor: stage is now elastic (flex: 1 1 auto), footer is content-sized
-  - Stage absorbs viewport variation; footer stays exactly as tall as 6 rows
-    + safe-area-inset-bottom + 12px buffer. No more padding-bottom hacks.
-  - Reverted to 100dvh (svh had prior issues per Paul's note)
-  - Robust against iOS Safari URL bar overlay, dvh quirks, device variation
-  v9.12.1 — April 25 2026
-  - Fix: iOS Safari bottom URL bar was overlaying PUTTS row (100dvh quirk)
-  - Switched .screen + body to 100svh (small viewport) so layout always
-    fits within chrome-visible area, regardless of URL bar state
-  v9.12 — April 25 2026
-  - Fix: PUTTS row missing on iPhone Safari (footer overflowing clipped .screen)
-  - Footer: dropped 230px padding-bottom hack; justify-content flex-start; min-height 220+safe
-  - Header (small-screen): height 170 -> 150, top padding 32 -> 20 (reclaim ~30px)
-  - Score-section (small-screen): flex-basis 228 -> 210
-  - Service worker cache bumped v12 -> v13
-  v9.11 — April 25 2026
-  - Hole footer: 6 stat rows (FIR/GIR/PEN/UD/X-UD/PUTTS); X-UD now manual rocker
-  - Apps Script schema: PEN/UD/X-UD/PUTTS/Score columns; in-place migration
-  - Service worker: network-first for HTML, cache-first for assets (v12)
-  v9.10 — April 24 2026
-  - Google Sheets webhook live (Apps Script bound to user's Sheet)
-  - Slider switches wired: FIR / GIR / U&D toggles, PUTTS now a counter
-  - PUTTS counter replaced "3+ Putts" toggle (default 2, range 0-9)
-  - Server-side Score column = strokes − putts
-  - Post Score spinner ("Posting…" -> "Posted!")
-  - Sheet schema: Player column dropped, Year + Tees added to Scorecard
-  - Folder rename: golf-scores -> Golf (remote repo name unchanged)
-  v9.2 — April 17 2026
-  - Player entry: custom green checkmark button beside input (mirrors × design)
-  - Checkmark dims when input empty, activates when text entered
-  - Tap ✓ confirms name, auto-focuses next input (keyboard stays up)
-  - Enter key also confirms (works with iOS keyboard Done)
-  - enterkeyhint="done", autocorrect/autocomplete off → cleaner iOS keyboard
-  - Synchronous focus on Add Player → reliable iOS keyboard open
-  v9.1 — April 16 2026
-  - Scorecard font size increased to 16px for readability
-  - Scorecard header font increased to 13px
-  - Scorecard row padding increased for breathing room
-  v9 — April 16 2026
-  - Upper header font size increased to match Discard Round button
-  - Course name prefixed with "Course:" as static label
-  - Hole-in-One: cheering.mp3 plays when score reaches 1
-  - touch-action: manipulation on all buttons — prevents double-tap zoom on iOS
-  - Service Worker added — full offline support, caches all assets
-  - manifest.json added — improves PWA installation on iOS and Android
-  - Start New Round button moved to fixed nav position on Posted screen
-  - Player name max length set to 6 characters
-  - Fixed column widths on scorecards (name col wider, data cols equal)
-  - Header fixed height 186px across all screens
-  - Duration format changed to 00:00 (HH:MM)
-  - Leaderboard removed from both scorecard screens
-  - Thin progress bar removed — dots are sole progress indicator
-  - All nav buttons fixed position across all screens including Home
-  v8 — April 16 2026
-  - Leaderboard removed from both scorecard screens
-  - Duration moved to Upper Header (row 2 right), live on all screens
-  - Thin progress bar removed — dots are the sole progress indicator
-  - All mastheads unified: identical padding, consistent height
-  - Nav Buttons fixed position on all screens incl. Home Start Round
-  - Start Round button matches Nav Button dimensions and position
-  v7 — April 16 2026
-  - Merged v6 features into corrected header/layout codebase
-  - Front 9 Score Card: summary bar (Total, Par, vs Par for Par 32)
-  - Front 9 Score Card title → "Front 9 Score"
-  - Eagle scorecard cell: double circle (not square)
-  - Jewel score entry: plain jewel, no rings
-  - Round duration timer: starts on Start Round, shown on Final Round Score
-  - midroundSeen flag: Back on Hole 10+ returns to Front 9 Score Card
-  - Par row added to back 9 table on Final Round Score
-  - OUT/IN/TOT column order corrected on Final Round Score
-  - Bogey (+1 only): square box on scorecard
-  - Double bogey+: plain number
-  - Unified header structure (header-upper grid) across all screens
-  - "Final Round Score" title on 18-hole summary screen
-  - Discard Round button retained for testing phase
-  v6 — April 15 2026
-  - (recovered from corrupted file — features merged into v7)
-  v5 — April 15 2026
-  - Back and Post Score buttons equal size, both green, 3D raised effect
-  - Next and Back buttons also 3D raised effect
-  - Arrows removed from Back / Next button labels
-  - Mid-round 9-hole summary shown after hole 9, before hole 10 (no Post Score, no summary bar)
-  - Next on mid-round card proceeds directly to hole 10
-  - Birdie: circle only, black text (no blue)
-  - Eagle: square border, black text (no purple)
-  - Score entry: no red/blue colouring on +/- buttons, grey only
-  - Birdie/Bogey/etc. text label removed from below jewel score
-  - Header row: Course name left (yellow), Weather+Wind right, same line
-  - Course stored as variable (future GPS / multi-course ready)
-  - Player tabs moved out of green header into score area
-  - Progress bar removed from hole header
-  - "Built with Claude AI" footer, text only
-  v4 — April 15 2026
-  - Green #377f09, jewel score, corrected scoring logic, two-section scorecard
-  v3 — April 15 2026
-  - Temp/wind persistent, 5 players, progress bar, date display only
-  v2 — April 15 2026
-  - Multi-player, live weather, white header text
-  v1 — April 15 2026
-  - Initial prototype
+
+  MAJOR MILESTONES — full history in git log
+  v10.14–v10.20 — May 2026
+  - Masthead Pass 2: single-row hole masthead, 208→168px height
+  - CSS :has() selector scopes hole layout — no per-screen overrides
+  - evictStaleSeeds() removed — was silently deleting courses with id=12 on every boot
+  v10.8 — May 2026
+  - Stage Area shift fully resolved — 5-zone template migration completed across all files
+  - Legacy 220px footer override removed; shared.css is now canonical on all pages
+  v9.38 — May 2026
+  - shared.js: NAV_LINKS, renderFooterNav(), showPanel() — single source of truth for footer nav
+  - Footer nav replaced with data-nav auto-render on all non-hole screens
+  v9.37 — May 2026
+  - Add Scores screen: historical round entry with date picker, course/tee selectors, 9/18 toggle
+  - state.historicalMode hides stats footer; uses selected date instead of live date
+  v9.35 — May 2026
+  - courses.html: Add Course panel built (name/holes/tees+CR+SR → hole-by-hole par/yds/SI)
+  - showPanel('courses') wired
+  v9.34 — May 2026
+  - Footer nav grid added to all non-hole screens; showPanel() stub framework
+  v9.33 — May 2026
+  - Ask Gemini removed; Diagnostics tab + email reports replace it (apps-script.gs)
+  v9.25–v9.26 — May 2026
+  - Multi-course architecture: courses.json seeds localStorage.courseCache (12 BC courses)
+  - GolfCourseAPI.com dropped — app is fully local-data-only
+  - activeCourseData drives startRound / courseHandicap / submitRound
+  v9.23 — April 2026
+  - Single-player conversion: multi-player UI fully removed
+  - Save Round: 4-col × 2-row summary grid; gross score hero; net score sub-line
+  - COURSE constant extended with CR/SR ratings table (mensBlue/mensRed/ladiesBlue/ladiesRed)
+  v9.22 — April 2026
+  - Lower header: 2-row strip (86/74px title row + 38/32px PAR|YDS row)
+  - Identical masthead height on all screens — no layout shift
+  v9.13 — April 2026
+  - Elastic stage refactor: stage flex: 1 1 auto, footer content-sized + min-height
+  - Fixed iOS Safari footer overflow (PUTTS row was clipped)
+  v9.11 — April 2026
+  - 6 stat rows in hole footer: FIR / GIR / PEN / UD / X-UD / PUTTS
+  - Service Worker: network-first HTML, cache-first assets
+  v9.10 — April 2026
+  - Google Sheets webhook live via Apps Script
+  - Stats sliders wired: FIR / GIR / UD toggles; PUTTS counter (0–9, default 2)
+  v9 — April 2026
+  - Service Worker + manifest.json: full offline support
+  - Leaderboard removed (permanent); nav dots sole progress indicator
+  - touch-action: manipulation on all buttons (iOS double-tap fix)
+  - Hole-in-One: cheering.mp3 Easter egg
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -275,15 +92,9 @@
   }
   /* hole-stat-* replaced by .hole-info-* in shared.css */
   /* ── CONTENT AREA (shared sizing across all screens) ── */
-  .setup-body, .score-section, .midround-wrap, .scorecard-wrap, .success-body {
-    flex: 1 1 auto;  /* matches .stage-scrolls — elastic, shrinks with min-height:0 */
-    min-height: 0;
-    overflow-y: auto;
-    background: #fff;
-  }
-  .hole-actions { background: #fff; }
+  /* zone flex handled by shared.css .stage-scrolls */
   /* ── SETUP ─────────────────────────────────────────── */
-  .setup-body { padding: 16px 24px; }
+  #screen-setup .stage-scrolls, #screen-course .stage-scrolls { padding: 16px 24px; }
   .player-row   { display: flex; gap: 8px; align-items: center; }
   .player-input {
     flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -303,7 +114,7 @@
 
   .start-btn { width: 100%; padding: 17px; margin-top: 16px; }
   /* ── SCORE SECTION ─────────────────────────────────── */
-  .score-section {
+  #screen-hole .stage-scrolls {
     display: flex; flex-direction: column;
     align-items: center; padding: 16px 24px 8px;
   }
@@ -380,10 +191,9 @@
   .dot.active { background: var(--green); width: 18px; border-radius: 3px; }
   .dot.scored { background: var(--green); opacity: 0.45; }
   /* NAV BUTTONS — fixed position, all screens */
-  .hole-actions { padding: 8px 24px 16px; display: flex; gap: 12px; flex-shrink: 0; }
   /* Hole screen: score counter never collapses; show scrollbar instead of crushing stage */
-  /* Hole screen score-section must not be a touch-scroll surface */
-  #screen-hole .score-section { overflow: hidden; }
+  /* Hole screen stage must not be a touch-scroll surface */
+  #screen-hole .stage-scrolls { overflow: hidden; }
   /* Scroll only on desktop (mouse) if viewport too short; mobile never needs this */
   @media (hover: hover) and (pointer: fine) {
     #screen-hole { overflow-y: auto; }
@@ -392,7 +202,7 @@
   .start-btn { padding: 15px; margin-top: 0; }
 
   /* ── SCORECARD ─────────────────────────────────────── */
-  .scorecard-wrap { padding: 16px 12px; overflow-x: hidden; }
+  #screen-card .stage-scrolls { padding: 16px 12px; overflow-x: hidden; }
   .sc-section { margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .sc-section { margin-bottom: 12px; overflow-x: auto; }
   .sc-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; table-layout: fixed; }
@@ -450,17 +260,17 @@
   }
   .discard-btn:hover { background: #fef2f2; }
   /* Mid-round 9-hole card */
-  .midround-wrap { padding: 16px 12px; }
+  #screen-midround .stage-scrolls { padding: 16px 12px; }
   .midround-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
   /* ── SUCCESS ───────────────────────────────────────── */
-  .success-body {
+  #screen-success .stage-scrolls {
     display: flex; flex-direction: column;
     align-items: center; justify-content: flex-start; padding: 24px 20px; text-align: center;
   }
   .success-icon { width: 80px; height: 80px; background: var(--green-pale); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; }
-  .success-body h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 14px; }
+  #screen-success .stage-scrolls h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 14px; }
   .success-title-error { font-size: 15px !important; font-weight: 400 !important; letter-spacing: 0 !important; white-space: nowrap; }
-  .success-body p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
+  #screen-success .stage-scrolls p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
   /* Round summary on Save Round screen — 4x2 grid, col 4 hero spans both rows */
   /* ── Pending rounds banner ── */
   .pending-banner {
@@ -620,14 +430,11 @@
 
   /* Historical entry mode — stats screen is skipped entirely (advanceHole called directly) */
   /* ── Add Scores form ─────────────────────────────── */
-  .as-body {
-    background: #fff;
-    flex: 1 1 auto;
+  #screen-add-scores .stage-scrolls {
     display: flex;
     flex-direction: column;
     gap: 20px;
     padding: 24px 20px 12px;
-    overflow-y: auto;
   }
   .as-field { display: flex; flex-direction: column; gap: 6px; }
   .as-label {
@@ -797,7 +604,7 @@
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
     .hole-num { font-size: 52px; }
-    .success-body { padding: 24px; }
+    #screen-success .stage-scrolls { padding: 24px; }
     .ss-hero .ss-val { font-size: 46px; }
 
   }
@@ -851,7 +658,7 @@
     </div>
     </div>
   </div>
-  <div class="setup-body">
+  <div class="stage-scrolls">
     <div class="player-row">
       <span class="player-input player-name-display" id="player-name" data-player-name>Paul</span>
     </div>
@@ -883,7 +690,7 @@
     </div>
     <div id="pending-quiet" class="pending-quiet hidden">Post when internet is available.</div>
   </div>
-  <div class="hole-actions" style="justify-content:center;">
+  <div class="nav-bar">
     <button class="btn-3d nav-btn" onclick="startRound()">START ROUND</button>
   </div>
   <div class="footer" data-nav></div>
@@ -904,7 +711,7 @@
     </div>
     </div>
   </div>
-  <div class="as-body">
+  <div class="stage-scrolls">
     <div class="as-field">
       <label class="as-label" for="as-date-input">Date Played</label>
       <input type="date" id="as-date-input" class="as-input">
@@ -929,7 +736,7 @@
       </div>
     </div>
   </div>
-  <div class="hole-actions">
+  <div class="nav-bar">
     <button class="btn-3d nav-btn" onclick="startHistoricalRound()">Start Entry</button>
   </div>
   <div class="footer" data-nav></div>
@@ -937,7 +744,7 @@
 
 <!-- ══════════════ HOLE ══════════════ -->
 <div class="screen" id="screen-hole">
-  <div class="hole-masthead">
+  <div class="masthead">
     <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="hole-course-name"></div>
@@ -954,7 +761,7 @@
     </div>
     </div>
   </div>
-  <div class="score-section">
+  <div class="stage-scrolls">
     <!-- Player chips -->
     <div class="player-chips" id="player-chips"></div>
     <!-- Score -->
@@ -971,7 +778,7 @@
       <div class="nav-dots" id="nav-dots"></div>
     </div>
   </div>
-  <div class="hole-actions">
+  <div class="nav-bar">
     <button class="btn-3d nav-btn" id="back-btn" onclick="prevHole()">HOME</button>
     <button class="btn-3d nav-btn" id="next-btn" onclick="nextHole()">NEXT</button>
   </div>
@@ -979,7 +786,7 @@
 </div>
 <!-- ══════════════ STATS ══════════════ -->
 <div class="screen" id="screen-stats">
-  <div class="hole-masthead">
+  <div class="masthead">
     <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="stats-course-name"></div>
@@ -1025,7 +832,7 @@
       </div>
     </div>
   </div>
-  <div class="hole-actions">
+  <div class="nav-bar">
     <button class="btn-3d nav-btn" onclick="statsBack()">BACK</button>
     <button class="btn-3d nav-btn" onclick="statsNext()">NEXT</button>
   </div>
@@ -1033,7 +840,7 @@
 </div>
 <!-- ══════════════ MID-ROUND 9-HOLE CARD ══════════════ -->
 <div class="screen" id="screen-midround">
-  <div class="card-masthead">
+  <div class="masthead">
     <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="midround-course-name"></div>
@@ -1047,7 +854,7 @@
     </div>
     </div>
   </div>
-  <div class="midround-wrap">
+  <div class="stage-scrolls">
     <div class="sc-section"><table class="sc-table" id="sc-midround"></table></div>
     <div class="nine-hole-toggle-wrap">
       <span class="nht-label">Continue</span>
@@ -1058,7 +865,7 @@
       <span class="nht-label">Post Now</span>
     </div>
   </div>
-  <div class="hole-actions">
+  <div class="nav-bar">
     <button class="btn-3d nav-btn" onclick="goBackFromMidround()">Back</button>
     <button class="btn-3d nav-btn" id="midround-next-btn" onclick="continueToBack9()">Next</button>
   </div>
@@ -1066,7 +873,7 @@
 </div>
 <!-- ══════════════ FINAL SCORECARD ══════════════ -->
 <div class="screen" id="screen-card">
-  <div class="card-masthead">
+  <div class="masthead">
     <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="card-course-name"></div>
@@ -1080,11 +887,11 @@
     </div>
     </div>
   </div>
-  <div class="scorecard-wrap">
+  <div class="stage-scrolls">
     <div class="sc-section"><table class="sc-table" id="sc-back"></table></div>
     <!-- <button class="discard-btn" onclick="discardRound()">Discard Round</button> -->
   </div>
-  <div class="hole-actions">
+  <div class="nav-bar">
     <button class="btn-3d nav-btn" onclick="goBackToRound()">Back</button>
     <button class="btn-3d nav-btn" onclick="submitRound()">Post Score</button>
   </div>
@@ -1092,7 +899,7 @@
 </div>
 <!-- ══════════════ SUCCESS ══════════════ -->
 <div class="screen" id="screen-success">
-  <div class="card-masthead">
+  <div class="masthead">
     <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="success-course-name"></div>
@@ -1114,7 +921,7 @@
       </div>
     </div>
   </div>
-  <div class="success-body">
+  <div class="stage-scrolls">
     <div id="success-spinner" class="spinner"></div>
     <h2 id="success-title">Posting…</h2>
     <!-- <p id="success-msg">Your scores have been submitted to Google Sheets.</p> -->
@@ -1154,7 +961,7 @@
       <div class="ss-cell"><span class="ss-val" id="ss-putts">–</span><span class="ss-lbl">PUTTS</span></div>
     </div>
   </div>
-  <div class="hole-actions">
+  <div class="nav-bar">
     <button class="btn-3d nav-btn" onclick="newRound()">Start New Round</button>
   </div>
   <div class="footer" data-nav></div>
@@ -1175,7 +982,7 @@
     </div>
     </div>
   </div>
-  <div class="setup-body" id="course-select-body">
+  <div class="stage-scrolls" id="course-select-body">
     <div class="course-search-row">
       <input type="text" id="course-search-input" class="course-search-input"
         placeholder="Course or club name…"
@@ -1187,7 +994,7 @@
     <div id="course-results"></div>
     <div id="tee-section" class="tee-section hidden"></div>
   </div>
-  <div class="hole-actions">
+  <div class="nav-bar">
     <button class="btn-3d nav-btn" onclick="showScreen('setup')">Back</button>
     <button class="btn-3d nav-btn" id="use-course-btn" onclick="useSelectedCourse()" style="opacity:0.45;pointer-events:none">Use Course</button>
   </div>
