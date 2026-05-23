@@ -89,7 +89,7 @@ body {
 .hole-masthead,
 .card-masthead {
   background: transparent;
-  padding: calc(24px + env(safe-area-inset-top)) 0 4px;
+  padding: calc(14px + env(safe-area-inset-top)) 0 4px;
   color: white;
   height: calc(208px + env(safe-area-inset-top));
   flex-shrink: 0;
@@ -129,7 +129,7 @@ body {
 @media (max-height: 750px) {
   .masthead,
   .hole-masthead,
-  .card-masthead      { height: calc(170px + env(safe-area-inset-top)); padding: calc(4px + env(safe-area-inset-top)) 0 4px; }
+  .card-masthead      { height: calc(170px + env(safe-area-inset-top)); padding: calc(0px + env(safe-area-inset-top)) 0 4px; }
   .header-upper       { margin-bottom: 4px; }
   .header-lower-top   { min-height: 74px; }
   .header-lower-bot   { min-height: 32px; }
