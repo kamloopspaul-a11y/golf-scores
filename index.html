@@ -1276,7 +1276,9 @@ function continueToBack9(){
   state.currentHole=9; showHole(9); showScreen('hole');
 }
 function goBackFromMidround(){
-  state.currentHole=8; showHole(8); showScreen('hole');
+  state.currentHole=8; showHole(8);
+  const statsOn=(function(){ try{ return JSON.parse(localStorage.getItem('profile')||'{}').recordStats!==false; }catch(e){ return true; } })();
+  if(!state.historicalMode && statsOn){ showStatsScreen(); } else { showScreen('hole'); }
 }
 function onPostNowToggle(el){
   const btn = document.getElementById('midround-next-btn');
@@ -1381,7 +1383,9 @@ function renderScoreCell(score,par){
   return `<td>${score}</td>`;
 }
 function goBackToRound(){
-  state.currentHole=state.totalHoles-1; showHole(state.currentHole); showScreen('hole');
+  state.currentHole=state.totalHoles-1; showHole(state.currentHole);
+  const statsOn=(function(){ try{ return JSON.parse(localStorage.getItem('profile')||'{}').recordStats!==false; }catch(e){ return true; } })();
+  if(!state.historicalMode && statsOn){ showStatsScreen(); } else { showScreen('hole'); }
 }
 // ── SUCCESS SUMMARY ──────────────────────────────────
 function courseHandicap(hi, teeKey){
