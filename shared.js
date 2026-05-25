@@ -42,16 +42,16 @@ const NAV_LINKS = [
   { id: 'analytics',  label: 'Analytics',  title: 'Analytics'  },
   { id: 'settings',   label: 'Settings',   title: 'Settings'   },
   { id: 'courses',    label: 'Courses',    title: 'Courses'    },
-  { id: 'add-scores', label: 'Scores',     title: 'Add Scores' },
+  { id: 'home',       label: 'Home',        title: 'Home'       },
 ];
 
 // Filled SVG icons — yellow via currentColor, 24×24 viewBox.
-// Analytics: bar chart  |  Settings: gear  |  Courses: hamburger  |  Scores: power
+// Analytics: bar chart  |  Settings: gear  |  Courses: hamburger  |  Home: house
 const NAV_ICONS = {
   analytics:   '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="13" width="5" height="8" rx="1"/><rect x="9.5" y="8" width="5" height="13" rx="1"/><rect x="16" y="4" width="5" height="17" rx="1"/></svg>',
   settings:    '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
   courses:     '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg>',
-  'add-scores':'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg>',
+  home:        '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>',
 };
 
 /**
@@ -79,7 +79,7 @@ function applyPageMeta(id) {
   if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
 }
 
-const APP_VERSION = 'v10.38';
+const APP_VERSION = 'v10.39';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
