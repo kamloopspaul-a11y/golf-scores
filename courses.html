@@ -1,37 +1,23 @@
 <!--
-  My Golf Scores — Add Course
+  My Golf Scores — Courses
   courses.html
-  v1.6 — 2026-05-21
-  - ADD COURSE: btn-3d 3D styling
-  - screen-basics: BACK|NEXT (green), removed Saved Courses section
-  - screen-holes: BACK|SAVE COURSE (green), all-caps
-  - Breadcrumb dynamic: Courses: Add / Courses: Edit per mode
-  - Edit mode title shows course name, badge retired
-  - goToLibrary() added for BACK from basics
-  v1.2 — 2026-05-12
+
+  MAJOR MILESTONES — full history in git log
+  v1.6 — May 2026
+  - Edit mode: breadcrumb dynamic (Courses: Add / Courses: Edit), title shows course name
+  - goToLibrary() added for BACK navigation from basics screen
+  v1.2 — May 2026
   - Migrated to 5-zone template: masthead · stageScrolls · navBar · footer
-  - Added shared.js: NAV_LINKS, renderFooterNav(), showPanel()
-  - Footer: green (transparent), nav rendered via [data-nav]
-  - CSS class names updated to canonical set:
-      hu-left → hu-breadcrumb, hu-right → hu-weather,
-      hu-dur → hu-duration, hl-title → header-lower-title,
-      .stage → .stage-scrolls
-v1.1 — 2026-05-11
-  - Screen 0: Course Library — all courses A-Z, pencil to edit, Add Course button
-  - Edit mode: pre-fills Screen 1 + Screen 2, saves back to same ID
+  - shared.js wired: NAV_LINKS, renderFooterNav(), showPanel()
+  - CSS class names updated to canonical set
+  v1.1 — May 2026
+  - Course Library (screen-library): all courses A-Z, pencil to edit, Add Course button
+  - Edit mode: pre-fills both screens, saves back to same ID
   - Red asterisk on empty CR/SR fields (advisory, non-blocking)
-  - screen-library is now the default landing screen
-v1.0 — 2026-05-11
-  - Screen 1: course name, 9/18 toggle, tee chips with CR/SR
-  - Screen 2: hole-by-hole entry
-  - Saves to localStorage courseCache (negative IDs for manual courses)
-  - Saved courses list with delete
+  v1.0 — May 2026
+  - Built: name/holes/tee chips+CR+SR (screen 1) → hole-by-hole par/yds/SI (screen 2)
+  - Saves to localStorage.courseCache (negative IDs for manually added courses)
 -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Golf Scores">

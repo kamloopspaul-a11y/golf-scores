@@ -98,7 +98,8 @@ body {
 .masthead-content {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 40px;
   flex: 1;
   padding: 0 20px;
 }
@@ -114,8 +115,8 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   row-gap: 3px;
-  margin-bottom: 14px;
 }
+
 .hu-breadcrumb { font-size: var(--fs-body);     color: var(--yellow); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hu-temp       { font-size: var(--fs-body);     color: rgba(255,255,255,0.8); text-align: right; white-space: nowrap; }
 .hu-date       { font-size: var(--fs-body-md);  color: rgba(255,255,255,0.85); white-space: nowrap; }
@@ -155,7 +156,6 @@ body {
 
 @media (max-height: 750px) {
   .masthead { height: calc(148px + env(safe-area-inset-top)); padding: calc(0px + env(safe-area-inset-top)) 0 4px; }
-  .header-upper       { margin-bottom: 4px; }
   .header-lower-top   { min-height: 74px; }
   .header-lower-bot   { min-height: 32px; }
   .header-lower-title { font-size: var(--fs-display-sm); }
