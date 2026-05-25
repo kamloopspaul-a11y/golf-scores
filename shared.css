@@ -39,6 +39,7 @@
   --border:         rgba(0,0,0,0.10);
   --yellow:         #f5c842;
   --row-alt:        #f2f2f2;
+  --sage-light:     #ddecd0;
 
   /* Score counter +/− button greys */
   --btn-gray:        #e8e8e8;
@@ -280,7 +281,7 @@ body {
   font-size: var(--fs-caption); font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text-secondary);
   padding: 16px 20px 6px;
-  background: var(--row-alt);
+  background: var(--sage-light);
   border-bottom: 1px solid var(--border);
 }
 /* Suppress border on the row immediately above a section header */
