@@ -60,7 +60,6 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     row-gap: 3px;
-    margin-bottom: 14px;
   }
   .hu-appname {
     font-size: 13px; color: var(--yellow); font-weight: 500;
@@ -69,18 +68,9 @@
     font-size: 12px; color: rgba(255,255,255,0.5);
     text-align: right;
   }
-  .header-lower      { display: flex; flex-direction: column; }
-  .header-lower-top  { min-height: 86px; display: flex; align-items: flex-end; }
-  .header-lower-bot  { min-height: 38px; display: flex; align-items: center; }
-  .header-lower-title {
-    font-size: 56px; font-weight: 600; letter-spacing: -2px;
-    color: white; line-height: 1; white-space: nowrap;
-  }
+  /* header-lower layout → shared.css .header-lower / .hl-left / .hl-right */
   @media (max-height: 667px) {
     .masthead { height: calc(210px + env(safe-area-inset-top)); padding-top: calc(36px + env(safe-area-inset-top)); }
-    .header-lower-top { min-height: 74px; }
-    .header-lower-bot { min-height: 32px; }
-    .header-lower-title { font-size: 46px; }
   }
 
   /* ── STAGE ── */
@@ -191,10 +181,8 @@
     <div class="hu-step" id="step-indicator">Step 1 of 2</div>
   </div>
   <div class="header-lower">
-    <div class="header-lower-top">
-      <div class="header-lower-title" id="masthead-title">Welcome</div>
-    </div>
-    <div class="header-lower-bot"></div>
+    <div class="hl-left" id="masthead-title">Welcome</div>
+    <div class="hl-right"></div>
   </div>
 </div>
 

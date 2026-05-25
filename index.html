@@ -86,11 +86,7 @@
     appearance: auto;
   }
 
-  .hole-num {
-    font-size: 64px; font-weight: 600; letter-spacing: -2px;
-    line-height: 1; color: white;
-  }
-  /* hole-stat-* replaced by .hole-info-* in shared.css */
+  /* hole number style → .hl-left.hl-hole in shared.css */
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   /* zone flex handled by shared.css .stage-scrolls */
   /* ── SETUP ─────────────────────────────────────────── */
@@ -603,7 +599,6 @@
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
-    .hole-num { font-size: 52px; }
     #screen-success .stage-scrolls { padding: 24px; }
     .ss-hero .ss-val { font-size: 46px; }
 
@@ -645,7 +640,6 @@
 <!-- ══════════════ SETUP ══════════════ -->
 <div class="screen active" id="screen-setup">
   <div class="masthead">
-    <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="setup-course-name"></div>
       <div class="hu-temp"></div>
@@ -653,8 +647,8 @@
       <div class="hu-wind"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title">Score Card</div></div>
-      <div class="header-lower-bot"></div>
+      <div class="hl-left">Score Card</div>
+      <div class="hl-right"></div>
     </div>
     </div>
   </div>
@@ -698,7 +692,6 @@
 <!-- ══════════════ ADD SCORES ══════════════ -->
 <div class="screen" id="screen-add-scores">
   <div class="masthead">
-    <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="as-course-name"></div>
       <div class="hu-temp"></div>
@@ -706,8 +699,8 @@
       <div class="hu-wind"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title">Add Scores</div></div>
-      <div class="header-lower-bot"></div>
+      <div class="hl-left">Add Scores</div>
+      <div class="hl-right"></div>
     </div>
     </div>
   </div>
@@ -745,16 +738,15 @@
 <!-- ══════════════ HOLE ══════════════ -->
 <div class="screen" id="screen-hole">
   <div class="masthead">
-    <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="hole-course-name"></div>
       <div class="hu-temp"></div>
       <div class="hu-date" id="hole-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower header-lower--hole">
-      <div class="hole-num" id="hole-num">1</div>
-      <div class="hole-info-stack">
+    <div class="header-lower">
+      <div class="hl-left hl-hole" id="hole-num">1</div>
+      <div class="hl-right">
         <span class="hole-info-line"><span class="hole-info-lbl">Par </span><span id="hole-par-display">4</span></span>
         <span class="hole-info-line"><span id="hole-yards-display">275</span><span class="hole-info-lbl"> Yds</span></span>
       </div>
@@ -787,16 +779,15 @@
 <!-- ══════════════ STATS ══════════════ -->
 <div class="screen" id="screen-stats">
   <div class="masthead">
-    <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="stats-course-name"></div>
       <div class="hu-temp"></div>
       <div class="hu-date" id="stats-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower header-lower--hole">
-      <div class="hole-num" id="stats-hole-num">1</div>
-      <div class="hole-info-stack">
+    <div class="header-lower">
+      <div class="hl-left hl-hole" id="stats-hole-num">1</div>
+      <div class="hl-right">
         <span class="hole-info-line"><span class="hole-info-lbl">Par </span><span id="stats-par-display">4</span></span>
         <span class="hole-info-line"><span id="stats-yards-display">275</span><span class="hole-info-lbl"> Yds</span></span>
       </div>
@@ -841,7 +832,6 @@
 <!-- ══════════════ MID-ROUND 9-HOLE CARD ══════════════ -->
 <div class="screen" id="screen-midround">
   <div class="masthead">
-    <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="midround-course-name"></div>
       <div class="hu-temp"></div>
@@ -849,8 +839,8 @@
       <div class="hu-wind"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title">Front 9</div></div>
-      <div class="header-lower-bot"></div>
+      <div class="hl-left">Front 9</div>
+      <div class="hl-right"></div>
     </div>
     </div>
   </div>
@@ -874,7 +864,6 @@
 <!-- ══════════════ FINAL SCORECARD ══════════════ -->
 <div class="screen" id="screen-card">
   <div class="masthead">
-    <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="card-course-name"></div>
       <div class="hu-temp"></div>
@@ -882,8 +871,8 @@
       <div class="hu-wind"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title" id="card-title">Back 9</div></div>
-      <div class="header-lower-bot"></div>
+      <div class="hl-left" id="card-title">Back 9</div>
+      <div class="hl-right"></div>
     </div>
     </div>
   </div>
@@ -900,7 +889,6 @@
 <!-- ══════════════ SUCCESS ══════════════ -->
 <div class="screen" id="screen-success">
   <div class="masthead">
-    <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="success-course-name"></div>
       <div class="hu-temp"></div>
@@ -908,8 +896,8 @@
       <div class="hu-wind"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title">Save Round</div></div>
-      <div class="header-lower-bot"></div>
+      <div class="hl-left">Save Round</div>
+      <div class="hl-right"></div>
       <button class="masthead-info-btn" id="masthead-info-btn" onclick="toggleMastheadInfo(event)" aria-label="Offline info">i</button>
       <div class="masthead-info-overlay" id="masthead-info-overlay">
         <button class="stats-help-close" onclick="toggleMastheadInfo(event)" aria-label="Close">&#x2715;</button>
@@ -919,7 +907,6 @@
         <div class="mio-dt">Posting Your Score</div>
         <div class="mio-dd">Internet service is required to post your Score and Stats to your data source.</div>
       </div>
-    </div>
   </div>
 </div>
   <div class="stage-scrolls">
@@ -970,7 +957,6 @@
 <!-- ══════════════ COURSE SELECT ══════════════ -->
 <div class="screen" id="screen-course">
   <div class="masthead">
-    <div class="masthead-content">
     <div class="header-upper">
       <div class="hu-breadcrumb" id="cs-course-name"></div>
       <div class="hu-temp"></div>
@@ -978,8 +964,8 @@
       <div class="hu-wind"></div>
     </div>
     <div class="header-lower">
-      <div class="header-lower-top"><div class="header-lower-title">Score Card</div></div>
-      <div class="header-lower-bot"></div>
+      <div class="hl-left">Score Card</div>
+      <div class="hl-right"></div>
     </div>
     </div>
   </div>
@@ -1487,7 +1473,7 @@ async function submitRound(){
   // Move to success screen immediately, showing spinner + "Posting…"
   if(spinner) spinner.classList.remove('hidden');
   if(title){ title.textContent='Posting…'; title.classList.remove('success-title-error'); }
-  const mhTitle = document.querySelector('#screen-success .header-lower-title');
+  const mhTitle = document.querySelector('#screen-success .hl-left');
   if(mhTitle) mhTitle.textContent='Save Round';
   const infoBtn = document.getElementById('masthead-info-btn');
   const infoOverlay = document.getElementById('masthead-info-overlay');
@@ -1499,11 +1485,11 @@ async function submitRound(){
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'Server rejected post');
     if(title) title.textContent='Posted';
-    const mhTitle = document.querySelector('#screen-success .header-lower-title');
+    const mhTitle = document.querySelector('#screen-success .hl-left');
     if(mhTitle) mhTitle.textContent='Save Round';
   } catch(e){
     if(title){ title.textContent='Unable to Post'; title.classList.add('success-title-error'); }
-    const mhTitleErr = document.querySelector('#screen-success .header-lower-title');
+    const mhTitleErr = document.querySelector('#screen-success .hl-left');
     if(mhTitleErr) mhTitleErr.textContent='Save Round';
     if(infoBtn) infoBtn.classList.add('visible');
     // Save to offline queue — payload keeps its roundId so retry is idempotent

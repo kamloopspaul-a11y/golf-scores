@@ -83,37 +83,22 @@ body {
 .screen.active { display: flex; }
 
 /* ── ZONE 1 — MASTHEAD ───────────────────────────────────────────────────── */
-/* Zone 1 — all screens */
+/* Fixed two-zone strip: header-upper (48px) + header-lower (68px).
+   Heights are locked — content fills or leaves empty space. No layout shift. */
 .masthead {
   background: transparent;
-  padding: calc(14px + env(safe-area-inset-top)) 0 4px;
+  padding: env(safe-area-inset-top) 20px 0;
   color: white;
-  height: calc(168px + env(safe-area-inset-top));
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
 }
 
-/* Masthead content wrapper — positions content block within masthead frame */
-.masthead-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 40px;
-  flex: 1;
-  padding: 0 20px;
-}
-
-/* When lower zone uses hole layout, switch to flex-start with explicit gap */
-.masthead-content:has(.header-lower--hole) {
-  justify-content: flex-start;
-  gap: 24px;
-}
-
-/* Upper header: 2-col grid — Course|Temp / Date|Wind */
+/* Upper zone — 2-col grid: Course+Date left / Temp+Wind right */
 .header-upper {
+  height: 48px;
+  margin-bottom: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-content: center;
   row-gap: 3px;
 }
 
@@ -122,27 +107,43 @@ body {
 .hu-date       { font-size: var(--fs-body-md);  color: rgba(255,255,255,0.85); white-space: nowrap; }
 .hu-wind       { font-size: var(--fs-body-md);  color: rgba(255,255,255,0.85); text-align: right; white-space: nowrap; }
 
-/* Lower header: 2-row strip — title row + PAR|YDS row */
-.header-lower     { display: flex; flex-direction: column; position: relative; }
-.header-lower-top { min-height: 86px; display: flex; align-items: flex-end; }
-.header-lower-bot { min-height: 38px; display: flex; align-items: center; justify-content: space-between; }
-.header-lower-title    { font-size: var(--fs-display); font-weight: 600; letter-spacing: -2px; color: white; line-height: 1; white-space: nowrap; }
-.header-lower-subtitle { font-size: var(--fs-body); color: white; }
-.header-lower-subtitle:empty { display: none; }
-
-/* Hole/Stats screens — single-row lower masthead */
-.header-lower--hole {
+/* Lower zone — 2-col row: title/hole-num left / Par+Yds right (or empty) */
+.header-lower {
+  height: 68px;
+  margin-bottom: 10px;
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  min-height: 60px;
+  position: relative;
 }
-.hole-info-stack {
+
+/* Left column — page title or hole number */
+.hl-left {
+  font-size: var(--fs-display);
+  font-weight: 600;
+  letter-spacing: -2px;
+  color: white;
+  line-height: 1;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Hole screens — larger font for hole number */
+.hl-left.hl-hole {
+  font-size: var(--fs-hole);
+}
+
+/* Right column — Par/Yds stack, or empty on non-hole screens */
+.hl-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
 }
+
 .hole-info-line {
   font-size: 17px;
   color: white;
@@ -155,10 +156,8 @@ body {
 }
 
 @media (max-height: 750px) {
-  .masthead { height: calc(148px + env(safe-area-inset-top)); padding: calc(0px + env(safe-area-inset-top)) 0 4px; }
-  .header-lower-top   { min-height: 74px; }
-  .header-lower-bot   { min-height: 32px; }
-  .header-lower-title { font-size: var(--fs-display-sm); }
+  .hl-left        { font-size: var(--fs-display-sm); }
+  .hl-left.hl-hole { font-size: var(--fs-hole-sm); }
 }
 
 /* ── ZONE 2 — STAGE ──────────────────────────────────────────────────────── */
