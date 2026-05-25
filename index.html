@@ -2079,6 +2079,12 @@ initTeePickerListener(); // wire delegated tee chip listener once
 seedCourseCache(); // silent background cache seed
 applyStatVisibility();
 
+// Handle cross-page panel navigation (e.g. ?panel=add-scores from settings.html)
+(function() {
+  const p = new URLSearchParams(window.location.search).get('panel');
+  if (p) { history.replaceState(null, '', window.location.pathname); showPanel(p); }
+})();
+
 fetchWeather();
 
 // Stats help overlay toggle

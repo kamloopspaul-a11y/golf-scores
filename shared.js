@@ -79,7 +79,7 @@ function applyPageMeta(id) {
   if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
 }
 
-const APP_VERSION = 'v10.41';
+const APP_VERSION = 'v10.42';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
@@ -117,10 +117,17 @@ function showPanel(name) {
     if (page !== 'index.html') window.location.href = 'index.html';
     return;
   }
+  if (name === 'add-scores') {
+    if (page !== 'index.html') {
+      window.location.href = 'index.html?panel=add-scores';
+    } else if (typeof window._handlePanel === 'function') {
+      window._handlePanel('add-scores');
+    }
+    return;
+  }
 
   // Stub — panels not yet built
   const stubs = {
-    'add-scores':    'Add Scores — coming soon',
     'pro-tips':      'Pro Tips — coming soon',
     'penalty-rules': 'Penalty Rules — coming soon',
     'quick-rules':   'Quick Rules — coming soon',

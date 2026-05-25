@@ -188,6 +188,34 @@
   <!-- STAGE SCROLLS -->
   <div class="stage-scrolls">
 
+    <div class="section-header">Admin</div>
+
+    <!-- Add Scores -->
+    <div class="setting-row link" onclick="showPanel('add-scores')">
+      <div class="setting-left">
+        <div class="setting-label">Add Scores</div>
+        <div class="setting-sublabel">Add previously unrecorded rounds to your records.</div>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+
+    <!-- Edit & Add Courses -->
+    <div class="setting-row link" onclick="showPanel('courses')">
+      <div class="setting-left">
+        <div class="setting-label">Edit &amp; Add Courses</div>
+        <div class="setting-sublabel">Add courses, update listings, set Home course.</div>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+
+    <!-- Change Email -->
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
+      <div class="setting-label">Change Email</div>
+      <input type="email" id="inp-email" class="setting-input"
+             placeholder="your@email.com"
+             onblur="saveEmail(this.value)">
+    </div>
+
     <div class="section-header">Tracking Your Stats</div>
 
     <!-- Track Your Stats — info card with expandable benchmarks -->
@@ -397,25 +425,6 @@
         <div class="report-status" id="report-status"></div>
       </div>
     </div><!-- /report-sub-panel -->
-
-    <div class="section-header">Admin</div>
-
-    <!-- Change Email -->
-    <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
-      <div class="setting-label">Change Email</div>
-      <input type="email" id="inp-email" class="setting-input"
-             placeholder="your@email.com"
-             onblur="saveEmail(this.value)">
-    </div>
-
-    <!-- Edit & Add Courses -->
-    <div class="setting-row link" onclick="showPanel('courses')">
-      <div class="setting-left">
-        <div class="setting-label">Edit &amp; Add Courses</div>
-        <div class="setting-sublabel">Add courses, update listings, set Home course.</div>
-      </div>
-      <div class="chevron">›</div>
-    </div>
 
   </div><!-- /stage-scrolls -->
   <!-- NAV BAR -->
