@@ -104,8 +104,8 @@ body {
 
 .hu-breadcrumb { font-size: var(--fs-body);     color: var(--yellow); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hu-temp       { font-size: var(--fs-body);     color: rgba(255,255,255,0.8); text-align: right; white-space: nowrap; }
-.hu-date       { font-size: var(--fs-body-md);  color: rgba(255,255,255,0.85); white-space: nowrap; }
-.hu-wind       { font-size: var(--fs-body-md);  color: rgba(255,255,255,0.85); text-align: right; white-space: nowrap; }
+.hu-date       { font-size: var(--fs-body);     color: rgba(255,255,255,0.85); white-space: nowrap; }
+.hu-wind       { font-size: var(--fs-body);     color: rgba(255,255,255,0.85); text-align: right; white-space: nowrap; }
 
 /* Lower zone — 2-col row: title/hole-num left / Par+Yds right (or empty) */
 .header-lower {
@@ -224,14 +224,20 @@ body {
   padding: 20px 20px calc(env(safe-area-inset-bottom) + 12px);
   color: white;
 }
-.footer-nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.footer-nav-grid {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
 .fnav-btn {
   background: none; border: none; color: var(--yellow);
-  font-size: var(--fs-micro); font-weight: 500; min-height: 34px;
-  padding: 4px 8px; text-align: center; cursor: pointer;
-  width: 100%; -webkit-tap-highlight-color: transparent; text-decoration: none;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0; cursor: pointer; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
-.fnav-btn:active { color: white; }
+.fnav-btn svg { width: 26px; height: 26px; }
+.fnav-btn:active { opacity: 0.6; }
 .footer-version { text-align: center; color: white; font-size: var(--fs-caption); font-weight: 500; margin-top: 6px; opacity: 0.7; letter-spacing: 0.03em; }
 
 /* ── ZONE 6 — SHARED COMPONENTS ──────────────────────────────────────────── */
