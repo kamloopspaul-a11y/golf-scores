@@ -1036,7 +1036,6 @@ function updateAllWeather() {
   document.querySelectorAll('.hu-temp').forEach(el => el.textContent = state.weatherTemp || '');
   document.querySelectorAll('.hu-wind').forEach(el => el.textContent = state.weatherWind || '');
   updateCourseNameDisplay();
-  applyPccVisibility();
   const dateStr=state.date?formatDate(state.date):'';
   ["setup-date-display","hole-date-display","stats-date-display","midround-date-display","card-date-display","success-date-display","as-date-display"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=dateStr;
@@ -1204,7 +1203,7 @@ function showStatsScreen(){
   document.getElementById('stats-yards-display').textContent = hole.yards;
   renderPlayerName(state.players[state.activePlayer]);
   syncStatSliders(i);
-  applyMetricVisibility();
+  applyStatVisibility();
   showScreen('stats');
 }
 function applyMetricVisibility(){
@@ -1238,6 +1237,11 @@ function applyPccVisibility() {
     const sel = document.getElementById('pcc-select');
     if (sel) sel.value = state.pccSelected != null ? String(state.pccSelected) : '';
   }
+}
+// ── STAT VISIBILITY (master — metric rows + PCC) ────────────────
+function applyStatVisibility() {
+  applyMetricVisibility();
+  applyPccVisibility();
 }
 
 function statsNext(){ advanceHole(); }
@@ -1558,7 +1562,7 @@ function newRound(){
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  if (name === 'setup') checkPendingQueue();
+  if (name === 'setup') { checkPendingQueue(); applyStatVisibility(); }
   updateAllWeather();
 }
 // ── GOLFCOURSEAPI CACHE LAYER ─────────────────────────
@@ -2073,6 +2077,7 @@ state.date=today; state.players=[(PROFILE.name || "Paul")];
 loadActiveCourse();
 initTeePickerListener(); // wire delegated tee chip listener once
 seedCourseCache(); // silent background cache seed
+applyStatVisibility();
 
 fetchWeather();
 
