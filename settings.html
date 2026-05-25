@@ -477,6 +477,16 @@
   function onMasterStatToggle(el) {
     saveProfile({ recordStats: el.checked });
     document.getElementById('stat-sub-panel').style.display = el.checked ? 'block' : 'none';
+    // When master turns ON, default all individual stats to ON
+    if (el.checked) {
+      const statKeys = ['statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS'];
+      const updates = {};
+      statKeys.forEach(function(key) {
+        var tog = document.getElementById('tog-' + key);
+        if (tog && !tog.checked) { tog.checked = true; updates[key] = true; }
+      });
+      if (Object.keys(updates).length) saveProfile(updates);
+    }
   }
 
   // ── Master report toggle ───────────────────────────────────────────────────
