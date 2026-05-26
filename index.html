@@ -454,16 +454,18 @@
   .as-holes-toggle input[type=radio] { accent-color: var(--green); }
   /* Score entry table */
   .as-score-table { width: 100%; border-collapse: collapse; }
-  .as-score-table thead th {
+  .as-score-table thead th { 
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--text-secondary);
     padding: 10px 8px; text-align: center;
     background: var(--green-pale); border-bottom: 2px solid var(--border);
   }
+  .as-score-table thead th:last-child { text-align: right; padding-right: 20px; }
   .as-score-table tbody tr { border-bottom: 1px solid var(--border); }
   .as-score-table tbody tr:nth-child(9) { border-bottom: 2px solid rgba(55,127,9,0.25); }
   .as-score-hole { font-size: 13px; color: var(--text-secondary); padding: 8px 12px; text-align: center; width: 44px; }
   .as-score-par  { font-size: 15px; font-weight: 600; color: var(--text-primary); text-align: center; width: 60px; }
+  .as-score-td { text-align: right; padding-right: 16px; }
   .as-score-input {
     width: 60px; height: 44px; margin: 4px 0;
     border: 1.5px solid #ddd; border-radius: 8px;
@@ -732,7 +734,7 @@
         </div>
       </div>
     </div>
-    <div class="section-header" id="as-scorecard-header" style="display:none">Scorecard</div>
+    <div class="section-header" id="as-scorecard-header" style="display:none">Enter Scores</div>
     <div id="as-score-grid"></div>
     <div class="as-status" id="as-status"></div>
   </div>
@@ -2047,7 +2049,7 @@ function buildScoreGrid() {
     html += '<tr>' +
       '<td class="as-score-hole">' + (i + 1) + '</td>' +
       '<td class="as-score-par">' + par + '</td>' +
-      '<td><input type="number" inputmode="numeric" class="as-score-input"' +
+      '<td class="as-score-td"><input type="number" inputmode="numeric" class="as-score-input"' +
       ' id="as-score-' + i + '" value="' + par + '" min="1" max="15" data-par="' + par + '"></td>' +
       '</tr>';
   });
