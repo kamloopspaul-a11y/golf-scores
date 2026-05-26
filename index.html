@@ -631,6 +631,10 @@
   }
   // ── Page-specific panel handler (shared.js calls this first) ──────────
   window._handlePanel = function(name) {
+    if (name === 'home') {
+      showScreen('setup');
+      return true;
+    }
     if (name === 'add-scores') {
       initAddScoresScreen();
       showScreen('add-scores');
@@ -739,7 +743,7 @@
     <div class="as-status" id="as-status"></div>
   </div>
   <div class="nav-bar">
-    <button class="btn-3d nav-btn" onclick="submitHistoricalRound()">Post Round</button>
+    <button class="btn-3d nav-btn" onclick="submitHistoricalRound()">Post Score</button>
   </div>
   <div class="footer" data-nav></div>
 </div>
