@@ -13,6 +13,8 @@ const ASSETS = [
   '/manifest.json',
   '/courses.json',
   '/shared.js',
+  '/assets/icons/arrow-up.svg',
+  '/assets/icons/arrow-down.svg',
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap'
 ];
 

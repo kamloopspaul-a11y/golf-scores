@@ -361,8 +361,8 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 28, 2026 (Session 14)
-**Version:** v10.20 / SW v97 (no changes this session — design/planning only)
+**Last worked:** May 28, 2026 (Session 15)
+**Version:** v10.50 / SW v97
 
 **Completed this session:**
 - Chrome design direction approved (see Design Thread below)
@@ -726,3 +726,28 @@ Reduce visual chrome to create the illusion of more screen space, while keeping 
 
 ### Mockup
 `Projects/Golf/2026-05-28-Golf-DesignMockup.html` — interactive phone-frame mockup, 4 screens. Reference only.
+
+---
+
+## Design Thread: Additional Diagnostics Report Section (2026-05-28)
+
+### Problem
+The Cost Breakdown table (Ball Striking / Short Game / Putting / Penalties → GPI Rating) is directly coupled to the GPI metric. When a player tracks only some stats, untracked values default to zero, silently skewing the GPI. Toggle compensation logic would be complex and fragile.
+
+### Decision
+Break the four cost groups out as a standalone **Additional Diagnostics** section within the report, separate from the GPI metric entirely.
+
+### Structure
+- **GPI Rating** — stays in Cost Breakdown as the summary number, unchanged
+- **Additional Diagnostics** — new section below Focus Areas (or between Cost Breakdown and Focus Areas — TBD at build time). Breaks out Ball Striking, Short Game, Putting, and Penalties with their per-round averages and plain-language readings.
+- **Standing note at the top of the section:** *"Full diagnostics require all six stats to be tracked. Enable all toggles in Settings for a complete report."*
+- **Focus Areas** — remains at the bottom as the plain-language interpretation
+
+### Why this works
+- No toggle compensation logic needed — the section is honest about what it requires
+- Positions full stat tracking as a reward (richer diagnostics) rather than a requirement
+- Focus Areas already bridges the interpretive gap for players with partial data
+- GPI Rating remains valid as a summary number regardless of which stats are tracked
+
+### Status
+Design thread — build after 20 rounds of real tracked data are in place and the Cost Breakdown is reviewed for clarity.

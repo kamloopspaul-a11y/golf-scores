@@ -1767,3 +1767,47 @@ Paul identified that the current chrome (green masthead + green footer) consumes
 ### Next session
 - Return to Dashboard metric list + chart-type mapping (still the queued item)
 - Design changes above are approved direction — implementation follows dashboard design decisions and courses.html fixes
+
+---
+
+## 2026-05-28 — Session 15 — Report copy fixes, GPI unhidden, diagnostics design thread
+
+**Version:** v10.50 / SW v97 (shared.js bumped; no SW changes)
+
+### Health project (start of session)
+- Pruned `Projects/Health/PROJECT.md` — removed all HealthBot scaffolding (deleted from Google Drive). Retained conditions, medications, prescription refill table, Interior Health notes, and parked future ideas.
+- Added three prescription refill reminder cues to `TODO_LIST.md` (Inspiolto June 28, Thyroid July 15, Pulmicort July 28 — each fires one week early).
+
+### Golf — files changed
+
+**settings.html (v10.50)**
+- GPI block unhidden — `display:none` removed from both the description/expandable block and the Include GPI toggle row. Real data now in place; dummy data cleared.
+- Added recommendation line to Track Your Stats sub-panel description: *"For complete diagnostics in your Performance Reports, we recommend tracking all stats."*
+
+**apps-script.gs**
+- "strokes lost" → "strokes gained" in two places: Round by Round footnote and GPI Rating row in Cost Breakdown.
+- Round by Round COST column: wrapped `TotalStrokesGained` in `Math.abs()` to strip the minus sign — values reflect strokes gained, not lost.
+- Footnote copy: "strokes gained to missed greens" → "strokes gained from missing greens."
+
+**shared.js**
+- `APP_VERSION` bumped v10.48 → v10.50.
+
+### Key discussions
+
+**Cost Breakdown data bug (identified, deferred)**
+- When stats are untracked, Putts defaults to 0 in Diagnostics. PuttingCost = 0 − 36 = −36, artificially tanking GPI.
+- Decision: start recording real data including Putts before any further report refinement. After ~20 rounds of real tracked data, revisit whether the Cost Breakdown communicates clearly or needs redesign.
+- No code fix applied — real data is the right first step.
+
+**Additional Diagnostics — new design thread (captured in PROJECT.md)**
+- The four GPI cost groups (Ball Striking, Short Game, Putting, Penalties) will be broken out as a separate *Additional Diagnostics* section within the report, independent of the GPI metric.
+- This sidesteps the toggle-compensation problem entirely — the section includes a standing note recommending all stats be tracked for a complete report.
+- Focus Areas section (already exists) remains as the plain-language interpretation at the end.
+- GPI Rating stays as the summary number; Additional Diagnostics is the supporting detail layer.
+
+**Settings — "complete diagnostics" nudge**
+- Recommendation to track all stats added to the Track Your Stats description in settings.html (see above).
+
+### Next session
+- Resume Dashboard metric list + chart-type mapping (still the priority — no code until agreed)
+- Commit: `git add -A && git reset HEAD .DS_Store && git commit -m "v10.50 — GPI block unhidden, Cost Breakdown copy fixes, settings recommendation notice" && git push`

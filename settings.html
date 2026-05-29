@@ -319,31 +319,30 @@
     <!-- GPI — unhidden 2026-05-28; block preserved in assets/snippets/gpi-settings-block.html -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        GPI is a simplified version that estimates Strokes Gained in a round across four areas of the game — ball striking, short game, putting, and penalties using stats you track.
+        Strokes Gained (per handicap range) is a benchmark across 4 areas of your game: ball striking, short game, putting, and penalties. The total of these 4 metrics is used to determine your Golf Performance Index.
       </div>
       <span id="gpi-more-btn" class="bench-expand-link" onclick="document.getElementById('gpi-more').classList.add('open');this.style.display='none';document.getElementById('gpi-less-btn').style.display='inline-block';">More ›</span>
 
       <div class="benchmarks" id="gpi-more">
-        <div class="bench-intro">Each area is weighted to reflect its real cost at your handicap level. Add them together and you get a single number: your Golf Performance Index (GPI). The lower, the better.</div>
         <div class="bench-intro">Average Strokes Gained per round by handicap.</div>
         <table class="bench-table">
           <thead>
             <tr>
-              <th>Hdcp</th>
-              <th>Tee</th>
-              <th>Aprch</th>
-              <th>Grns</th>
-              <th>Putts</th>
-              <th>Total</th>
+              <th>HANDICAP</th>
+              <th>TEE</th>
+              <th>APRCH</th>
+              <th>GRNS</th>
+              <th>PUTTS</th>
+              <th>TOTAL</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>Scratch</td><td>−0.8</td><td>−1.5</td><td>−0.5</td><td>−0.4</td><td>−3.2</td></tr>
-            <tr><td>5</td><td>−1.4</td><td>−3.0</td><td>−1.0</td><td>−0.8</td><td>−6.2</td></tr>
-            <tr><td>10</td><td>−2.0</td><td>−4.5</td><td>−1.5</td><td>−1.2</td><td>−9.2</td></tr>
-            <tr><td>15</td><td>−2.7</td><td>−6.0</td><td>−2.0</td><td>−1.5</td><td>−12.2</td></tr>
-            <tr><td>20</td><td>−3.4</td><td>−7.5</td><td>−2.5</td><td>−1.8</td><td>−15.2</td></tr>
-            <tr><td>25</td><td>−4.2</td><td>−9.0</td><td>−3.0</td><td>−2.2</td><td>−18.4</td></tr>
+            <tr><td>0–5 <span class="bench-hcp-sub">(Scratch)</span></td><td>+0.8</td><td>+1.5</td><td>+0.5</td><td>+0.4</td><td>+3.2</td></tr>
+            <tr><td>6–10 <span class="bench-hcp-sub">(Mid-Low)</span></td><td>+1.4</td><td>+3.0</td><td>+1.0</td><td>+0.8</td><td>+6.2</td></tr>
+            <tr><td>11–18 <span class="bench-hcp-sub">(Mid)</span></td><td>+2.0</td><td>+4.5</td><td>+1.5</td><td>+1.2</td><td>+9.2</td></tr>
+            <tr><td>19–25 <span class="bench-hcp-sub">(Mid-High)</span></td><td>+2.7</td><td>+6.0</td><td>+2.0</td><td>+1.5</td><td>+12.2</td></tr>
+            <tr><td>26–30 <span class="bench-hcp-sub">(High)</span></td><td>+3.4</td><td>+7.5</td><td>+2.5</td><td>+1.8</td><td>+15.2</td></tr>
+            <tr><td>31+ <span class="bench-hcp-sub">(Very High)</span></td><td>+4.2</td><td>+9.0</td><td>+3.0</td><td>+2.2</td><td>+18.4</td></tr>
           </tbody>
         </table>
         <div class="bench-close-row">

@@ -297,3 +297,8 @@ body {
 /* Setting labels — matches .lib-name in courses */
 .setting-label    { font-size: var(--fs-body-lg); font-weight: 700; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .setting-sublabel { font-size: var(--fs-micro);   color: var(--text-secondary); margin-top: 2px; }
+
+/* Trend arrows — SVG fill colours */
+.arrow-good .arrow-fill { fill: #2d7a09; }
+.arrow-bad  .arrow-fill { fill: #c0392b; }
+.arrow-flat .arrow-fill { fill: #999; }
