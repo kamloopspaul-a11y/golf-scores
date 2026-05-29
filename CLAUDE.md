@@ -1,5 +1,13 @@
 # CLAUDE.md
 
+> ⚠️ **Studio root must be mounted before starting work.**
+>
+> If `~/Documents/Studio` is not already mounted in this session, call `request_cowork_directory` with that path now. Root contains `CLAUDE.md` (session protocol), `TODO_LIST.md` (cadence cues including the Golf resume prompt), and `.claude-config` (credentials). Without root you are missing cadence checks, API keys, and cross-project context.
+>
+> Once root is confirmed mounted, read `Projects/Golf/PROJECT.md` to restore Golf session context.
+
+---
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

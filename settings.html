@@ -3,7 +3,7 @@
   settings.html
   v1.9 — 2026-05-18
   - TRACK CONDITIONS section (was Player Preferences): PCC description cleaned, no PCC name shown to user
-  - GPI block hidden (display:none); full block preserved in assets/snippets/gpi-settings-block.html
+  - GPI block visible (unhidden 2026-05-28); block also preserved in assets/snippets/gpi-settings-block.html
   - More ›/‹ Close toggle pattern: .bench-expand-link / .benchmarks.open — consistent across all expandable sections
   - Strokes gained bench-table in GPI (hidden): 6-col × 6-row, first-col width 28%, alt-row shading
   - Tracking Your Stats: corrected "most strokes lost" → "most strokes gained"
@@ -285,7 +285,7 @@
     <div id="stat-sub-panel" style="display: none;">
       <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0;">
         <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-          When ON, metric columns appear on your score card and are recorded each round. Select only the metrics you want to focus on — for short game, enable GIR and PUTTs. For ball striking, enable FIR and GIR. Unselected metrics stay hidden during play.
+          When ON, metric columns appear on your score card and are recorded each round. Select only the metrics you want to focus on — for short game, enable GIR and PUTTs. For ball striking, enable FIR and GIR. Unselected metrics stay hidden during play. For complete diagnostics in your Performance Reports, we recommend tracking all stats.
         </div>
       </div>
       <div class="stat-row">
@@ -316,8 +316,8 @@
 
     <div class="section-header">TRACK CONDITIONS</div>
 
-    <!-- GPI — hidden 2026-05-18; see assets/snippets/gpi-settings-block.html -->
-    <div class="setting-row" style="display:none; flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
+    <!-- GPI — unhidden 2026-05-28; block preserved in assets/snippets/gpi-settings-block.html -->
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
         GPI is a simplified version that estimates Strokes Gained in a round across four areas of the game — ball striking, short game, putting, and penalties using stats you track.
       </div>
@@ -352,7 +352,7 @@
         </div>
       </div>
     </div>
-    <div class="stat-row" style="display:none;">
+    <div class="stat-row">
       <span class="stat-row-label">Include GPI (Strokes Gained)</span>
       <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
     </div>

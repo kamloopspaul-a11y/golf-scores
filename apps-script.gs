@@ -44,7 +44,7 @@ const ROUND_WINDOWS  = [5, 10, 20];
 //  Diagnostics tab  (one row per round — computed by buildDiagnostics_)
 //  Round_ID | Date | Course | Score | FIR | GIR | UD | Putts | Penalties |
 //  BallStrikingGap | ShortGameOpp | MissedOpp | ShortGameEff |
-//  PuttsPerGIR | DiagnosticScore | BSCost | SGCost | PuttingCost | TotalStrokesLost |
+//  PuttsPerGIR | DiagnosticScore | BSCost | SGCost | PuttingCost | TotalStrokesGained |
 //  PCC_Selected | PCC_ScoreDelta | PCC_Flag | Round_Type
 //
 //  Settings tab  (Key | Value)
@@ -71,7 +71,7 @@ function diagnosticsHeader_() {
   return [
     'Round_ID', 'Date', 'Course', 'Score', 'FIR', 'GIR', 'UD', 'Putts', 'Penalties',
     'BallStrikingGap', 'ShortGameOpp', 'MissedOpp', 'ShortGameEff',
-    'PuttsPerGIR', 'DiagnosticScore', 'BSCost', 'SGCost', 'PuttingCost', 'TotalStrokesLost',
+    'PuttsPerGIR', 'DiagnosticScore', 'BSCost', 'SGCost', 'PuttingCost', 'TotalStrokesGained',
     'PCC_Selected', 'PCC_ScoreDelta', 'PCC_Flag', 'Round_Type'
   ];
 }
@@ -690,7 +690,7 @@ function styleDiagnosticsSheet_(sh) {
   sh.setFrozenRows(1);
   sh.setFrozenColumns(3);
   // Column widths
-  // 23 columns: Round_ID…TotalStrokesLost + PCC_Selected + PCC_ScoreDelta + PCC_Flag + Round_Type
+  // 23 columns: Round_ID…TotalStrokesGained + PCC_Selected + PCC_ScoreDelta + PCC_Flag + Round_Type
   const widths = [160, 90, 140, 55, 45, 45, 45, 55, 65, 100, 100, 85, 90, 85, 110, 65, 65, 80, 110, 70, 80, 65, 70];
   widths.forEach((w, i) => sh.setColumnWidth(i + 1, w));
 }
@@ -917,7 +917,7 @@ function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
   const avgBSCost   = avg('BSCost');
   const avgSGCost   = avg('SGCost');
   const avgPuttCost = avg('PuttingCost');
-  const avgTSL      = avg('TotalStrokesLost');
+  const avgTSL      = avg('TotalStrokesGained');
   const netAvg      = (avgScore - ch).toFixed(1);
 
   const f1   = v => parseFloat(v.toFixed(1));
@@ -950,7 +950,7 @@ function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
       <td style="text-align:center">${fInt(r.UD)}</td>
       <td style="text-align:center">${fInt(r.MissedOpp || 0)}</td>
       <td style="text-align:center">${fInt(r.Putts)}</td>
-      <td style="text-align:center;color:${scoreColour(r.TotalStrokesLost, 8, 15)};font-weight:bold">${f1(r.TotalStrokesLost)}</td>
+      <td style="text-align:center;color:${scoreColour(r.TotalStrokesGained, 8, 15)};font-weight:bold">${f1(Math.abs(r.TotalStrokesGained))}</td>
     </tr>`;
   }).join('');
 
@@ -1003,7 +1003,7 @@ function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
           <th>COST</th>
         </tr>
         <tr>
-          <td colspan="8" style="font-size:10px;color:#666;font-style:italic;text-align:left;padding:4px 4px 6px;border-bottom:1px solid #e0e8d8">Cost = estimated strokes lost to missed greens, failed up &amp; downs, putting above benchmark, and penalties. Lower is better.</td>
+          <td colspan="8" style="font-size:10px;color:#666;font-style:italic;text-align:left;padding:4px 4px 6px;border-bottom:1px solid #e0e8d8">Cost = estimated strokes gained from missing greens, failed up &amp; downs, putting above benchmark, and penalties. Lower is better.</td>
         </tr>
       </thead>
       <tbody>${roundRows}</tbody>
@@ -1060,7 +1060,7 @@ function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
         <tr>
           <td style="font-weight:700">GPI Rating</td>
           <td style="text-align:center;color:${scoreColour(avgTSL,8,15)};font-weight:700">${f1(avgTSL)}</td>
-          <td style="text-align:left">Estimated strokes lost per round. Lower is better.</td>
+          <td style="text-align:left">Estimated strokes gained per round. Lower is better.</td>
         </tr>
       </tbody>
     </table>

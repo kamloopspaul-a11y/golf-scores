@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-05-27 — Sheet cleanup + TotalStrokesGained rename + Apps Script deploy
+
+**Session type:** Data cleanup + rename + deployment. No UI code changes.
+
+### What was done
+
+**Google Sheets — all dummy data removed**
+- All three data tabs (Rounds, Diagnostics, Round_Meta) cleared of test/dummy records.
+- Dummy records identified by epoch dates (1899-12-31, 1900-01-01) and cross-referencing Paul's no-golf days (Mon/Thu/Sat).
+- May 18 Mt. Paul entry (score 63) confirmed as bad test data (Paul's actual scorecard: 47+39=86) — deleted.
+- Eaglepoint and Valley Golf Centre entries removed (Eaglepoint last played fall 2025; Valley GC tournament May 30, no scores to enter yet).
+- All three tabs now header-only and ready for real data entry.
+- Paul has April 2026 scorecards to enter — not just from May 10 onward.
+
+**Column S rename: TotalStrokesLost → TotalStrokesGained**
+- Diagnostics tab column S header updated in-sheet.
+- `apps-script.gs` updated — all 4 instances replaced (comment line 47, `diagnosticsHeader_()` array line 74, comment line 693, `avg()` call line 920, email template line 953).
+- Rename done with `replace_all: true` in Edit tool — confirmed zero instances of old name remain.
+
+**Apps Script deployed**
+- Full updated script written to clipboard via `write_clipboard`.
+- Paul pasted into Apps Script editor (Cmd+A → Cmd+V → Cmd+S) and deployed new version via Deploy → Manage deployments → New version.
+- `/exec` URL unchanged — no changes needed in `index.html`.
+
+### Open items
+- Paul's April 2026 scorecards ready to enter via Add Scores in the Golf PWA.
+- Dashboard deep dive deferred to next session (per 2026-05-27 planning entry above).
+
+
 ## 2026-05-22 — Stage Area shift fixed; footer overrides removed (v10.8 / SW v85)
 
 **Session approach — new standing rule:**
@@ -1624,3 +1653,117 @@ Discuss and agree first, then implement. A premature fix was caught and called o
 - Footer real estate reduction (same approach — shrink the zone)
 - Responsive breakpoint smoothing — 14px→4px margin jump at 750px is too aggressive, consider two breakpoints
 - SI data entry continues (Paul, from scorecards)
+
+---
+
+## 2026-05-27 — Dashboard Planning Session
+
+**Session type:** Design/planning only — no code changes.
+
+### What was discussed
+
+**Dashboard integration decision (resolved)**
+- Agreed to build the Analytics Dashboard inside the Golf project as `dashboard.html`, not as a separate app in `Dashboard/`.
+- Key reason: localStorage is domain-scoped. A separate PWA can't read Golf's local data (round state, courses, profile). No seams, no cross-origin issues, single deployment.
+- Dashboard/ directory served its purpose as an early research staging area. Research files migrated to Golf/ (see below).
+
+**5-Zone fit for dashboard**
+- `stageScore` suppressed on dashboard — gives `stageScrolls` the full middle zone.
+- Masthead trimmed to single row (app name + filter pills). Footer stays universal.
+- No hover dependency required — all charts must work with tap/touch only.
+
+**Chart types evaluated (interactive demo built)**
+
+1. **Line chart with rolling average** — dots (round scores) + 5-round rolling average line. Liked visually but rejected for mobile: no hover on iPhone, finger covers the dot. Not practical. Deferred or repurposed for email reports.
+
+2. **Sparkline / HI metric card** — tiny inline trend line paired with current HI value + "↓ improving" text. Approved. Simple, informative at a glance. Works as a hero card.
+
+3. **3-bar window comparison** — one 3-bar chart per metric (GIR, FIR, Putts, U&D). Three bars = Last 5 / Last 10 / Last 20 rounds. Darker bar = more recent. Rising bars = improvement. **Top pick of the session** — intuitive, no explanation needed, animation on render is appealing. Gets stronger as round count grows. Combine with opportunity-cost framing ("cost you X strokes/round") for full insight.
+
+4. **Hole heatmap (scorecard model)** — approved with refinements. Modelled after the in-app scorecard (HOLE / PAR / AVG rows). Color scale: lightest pastel green = best holes, darker greens = worse, yellow with square frame = worst hole in each nine (one per nine only). Black font throughout. No legend needed — numbers tell the story. Title: "Mt. Paul 20 Round Overview / Average Score & Strokes Gained per hole." Totals row: Front 9 · Back 9 · Round avg · Strokes Gained.
+
+**Color decisions**
+- Pink/white/blue in the scoring app: coincidental alignment with some golf apps (GHIN uses blue circles for birdies), not a hard industry standard. Red for under par is the universal convention. Existing palette kept.
+- Dashboard palette: green shades (lightest to darkest = best to worst) + yellow accent for worst-hole callout. Black text throughout. Consistent with Golf app green (#377f09).
+
+**Opportunity-cost framing confirmed as core differentiator**
+- "3-putts cost you 2.3 strokes/round" vs. raw counts — this framing is not standard in competitor apps and is the key value-add.
+- Strokes Lost model (BSCost / SGCost / PuttingCost / Penalties) already computed in Diagnostics tab — ready to visualise.
+- Next session: discuss this unique metric in depth, define all metrics + chart styles before any code.
+
+**Mobile vs. email split**
+- Dashboard (in-app): recency view — last 5/10/20 rounds, immediate patterns.
+- Email reports: longitudinal view — season trends, annual charts. Division is intentional, not a fallback.
+
+### Files migrated from Dashboard/ to Golf/
+- `DASHBOARD_RESEARCH.md` — (was GOLF_DASHBOARD_RESEARCH.md) full research doc: benchmarks, competitor analysis, insight phrases, chart patterns
+- `DASHBOARD_PROJECT.md` — Dashboard spec: data source plan, visual principles, open questions, decisions log
+- `DASHBOARD_SECURITY_NOTES.md` — security considerations for dashboard implementation
+
+### Next session
+- Deep dive on opportunity-cost / Strokes Lost metric — the unique diagnostic value-add
+- Define full metric list and which chart type maps to each
+- Nail down filter set (Last 5 / 10 / 20 pill buttons confirmed; course filter deferred)
+- No code until metric + chart design is fully agreed
+
+---
+
+## 2026-05-27 (File Organisation)
+
+**Did:**
+- Removed redundant files from the Golf project root to reduce clutter.
+- Renamed analytics-related planning files with `GPI-` prefix to group Dashboard/Analytics work clearly:
+  - `GPI-Analytics.txt`
+  - `GPI-GoogleConnectors.txt`
+  - `GPI-MetricsGuide.md`
+  - `GPI-Stats-Sheets Setup.txt`
+  - `GPI_RULES.md`
+- Added two reference screenshots to inform chart design planning:
+  - `GPI-ScoringChart.png` — scoring analytics from an external app
+  - `GPI-StrokesGainedChart.png` — strokes gained chart from an external app
+- Paul will continue adding screenshot references as chart candidates are reviewed.
+
+**Note:**
+- `GPI-` prefix convention established as the naming standard for all Golf Performance Intelligence (Dashboard) planning files.
+- No code changes. Filing system intact — Claude treats any file in the root without `GPI-` as app source or support files.
+
+---
+
+## 2026-05-28 — Session 14 — Chrome Design Direction (planning only, no code)
+
+**Session type:** Design/planning — no code changes.
+
+### What was discussed
+
+**Design direction approved** — inspired by dangrieve.com review.
+
+Paul identified that the current chrome (green masthead + green footer) consumes ~30% of screen height and reduces the Stage Area. The goal is to create the illusion of more screen space without sacrificing the fixed-layout architecture required for scoring screens.
+
+**Agreed visual direction:**
+- Thin green masthead — upper row only (course + weather + hamburger icon). Lower row removed from masthead.
+- Page title moved into stageScrolls, in green text on white/off-white background
+- Off-white content background (~#f5f4f0) for utility pages
+- White footer with green icons, subtle 1px top border
+- Full-screen hamburger nav overlay — large stacked text, dark green background
+
+**Scoring screen (hole screens):**
+- Upper masthead: thin green strip — identical to all other screens
+- Lower masthead: white background, hole number + Par/Yds in **green text** (not white on green)
+- Stats and counter stay on the same screen — no two-step flow. Keeps taps per hole at one, not two.
+- Stats migrate into stageScrolls zone as part of the planned 5-zone template migration
+- This naturally clears the Safari address bar concern (toggles no longer at the very bottom)
+- Toggle contrast on white background needs solving when implementation begins
+
+**Player name chip — remove.** App is single-player by design. The chip has no function.
+
+**Key insight:** The 5-zone template architecture decision (May 12) makes this design change feasible without a major overhaul. The Zone structure anticipated this layout naturally.
+
+**Mockup built:** `2026-05-28-Golf-DesignMockup.html` — interactive phone frame showing Home, Dashboard, Settings, and Hole screens. Used for evaluation only; not a production file.
+
+### Open items from this session
+- Toggle default state contrast (white toggle on white background) — needs design solution at build time
+- Stat toggles in stageScrolls: define visual treatment (labelled cards vs. bare toggles)
+
+### Next session
+- Return to Dashboard metric list + chart-type mapping (still the queued item)
+- Design changes above are approved direction — implementation follows dashboard design decisions and courses.html fixes

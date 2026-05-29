@@ -325,7 +325,7 @@ See `BUSINESS.md` for the full white-label-SaaS / golf-academy thread.
 ### Diagnostics Tab
 `apps-script.gs` now maintains a `Diagnostics` sheet — one row per round — rebuilt after every `doPost`. Columns:
 
-`Round_ID | Date | Course | Score | FIR | GIR | UD | Putts | Penalties | BallStrikingGap | ShortGameOpp | MissedOpp | ShortGameEff | PuttsPerGIR | DiagnosticScore | BSCost | SGCost | PuttingCost | TotalStrokesLost`
+`Round_ID | Date | Course | Score | FIR | GIR | UD | Putts | Penalties | BallStrikingGap | ShortGameOpp | MissedOpp | ShortGameEff | PuttsPerGIR | DiagnosticScore | BSCost | SGCost | PuttingCost | TotalStrokesGained`
 
 All values computed server-side from the vertical `Rounds` tab (18 rows per round aggregated into 1). Conditional formatting colours GIR, Putts, Short Game Efficiency, and Total Strokes Lost green/amber/red.
 
@@ -335,7 +335,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 | BSCost | (18 − GIR) × 0.5 | Strokes lost from missed greens |
 | SGCost | MissedOpp × 0.7 | Strokes lost from failed up-and-downs |
 | PuttingCost | Putts − 36 | Strokes lost on the greens (benchmark 36) |
-| TotalStrokesLost | BSCost + SGCost + PuttingCost + Penalties | Overall performance indicator |
+| TotalStrokesGained | BSCost + SGCost + PuttingCost + Penalties | Overall performance indicator |
 
 ### Email Reports
 `sendReport()` sends a rich HTML email covering the last N rounds (default 5). Triggered automatically after every 5th round posted AND optionally on a weekly schedule.
@@ -361,12 +361,13 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 19, 2026 (Session 6)
-**Version:** v9.90 / SW v64 · courses.html (tee chip + save fixes, unverified)
+**Last worked:** May 28, 2026 (Session 14)
+**Version:** v10.20 / SW v97 (no changes this session — design/planning only)
 
 **Completed this session:**
-- v9.89/v9.90 — tee chips pure toggle, continuous hole save, no default tee, Par badge removed, CR/SR save fix
-- courses.json — Eaglepoint updated with official scorecard (White + Red only, correct yardages + SI)
+- Chrome design direction approved (see Design Thread below)
+- dangrieve.com reviewed as design reference
+- Interactive mockup built: `2026-05-28-Golf-DesignMockup.html`
 
 **Standing rule:** No code changes without explicit agreement on what's being built first.
 
@@ -376,7 +377,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 - Hole data persistence: White data disappears on Back → Next. Root cause not found. Trace before fixing.
 - Tee order: sort by yardage added but untested end-to-end.
 
-**Next session: upload courses.html alongside PROJECT.md**
+**Next session:** Dashboard metric list + chart-type mapping (no code until design agreed). Chrome redesign follows dashboard decisions.
 
 **Build queue (in order):**
 1. ~~**Apps Script** — write `pccSelected` to Rounds tab~~ ✅ Done (Session 3)
@@ -386,9 +387,10 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 5. ~~**shared.css — Toggle switch canonical**~~ ✅ Done (Session 5)
 6. ~~**shared.css — Font type scale**~~ ✅ Done (Session 5)
 7. **courses.html fixes** — discuss first, then build (see outstanding above)
-8. **Course card tap cue** — "Change Course ›" sublabel on Start Round screen
-9. **Sample Performance Report**
-10. **Settings bridge** — localStorage → Sheets Settings tab
+8. **Chrome redesign** — approved direction (see Design Thread: Chrome Redesign 2026-05-28)
+9. **Course card tap cue** — "Change Course ›" sublabel on Start Round screen
+10. **Sample Performance Report**
+11. **Settings bridge** — localStorage → Sheets Settings tab
 
 #### Other pre-release tasks
 - Touch-target review for mobile
@@ -426,6 +428,11 @@ These apply to every form and every Apps Script write in this project.
 - Local storage during play; posts to Sheets only on submit
 - `COURSE` constant structured for future multi-course / GPS support
 - Webhook `/exec` URL stable across Apps Script redeploys
+
+## File Naming Conventions
+
+- **`GPI-` prefix** — reserved for Golf Performance Intelligence (Dashboard) planning and reference files only (e.g. `GPI-MetricsGuide.md`, `GPI-ScoringChart.png`). All `GPI-*` files are excluded from git via `.gitignore`. **Do not use this prefix for any working app file.**
+- **App source files** — `index.html`, `shared.css`, `shared.js`, `sw.js`, `courses.html`, `settings.html`, `onboarding.html`, `apps-script.gs`, `courses.json`.
 
 ## Notes for Claude (Golf-specific)
 
@@ -691,3 +698,31 @@ Plain language, not tables. Coach voice, not spreadsheet. Example: *"Your puttin
 
 ### Status
 Design thread — fully explored, not yet spec'd for build. Build after Add Course panel, Stat Entry screen, and Settings toggle layout are shipped.
+
+---
+
+## Design Thread: Chrome Redesign (approved 2026-05-28)
+
+### Direction
+Reduce visual chrome to create the illusion of more screen space, while keeping the fixed-layout architecture intact for scoring screens. Inspired by dangrieve.com review.
+
+### Approved changes — utility screens (Home, Dashboard, Settings, Courses, Add Scores)
+- **Masthead:** thin green strip, upper row only — course name (yellow) + weather + hamburger icon. Lower row removed.
+- **Page title:** moved into `stageScrolls` at top, **green text on white/off-white background**
+- **Content background:** off-white (~#f5f4f0) rather than pure white for stageScrolls zones
+- **Footer:** white background, green icons, subtle 1px `border-top`. Same nav links.
+- **Nav overlay:** hamburger opens full-screen dark overlay with large stacked white text menu items
+
+### Approved changes — scoring screens (hole, midround, card, success)
+- **Upper masthead:** thin green strip — identical to all other screens
+- **Lower masthead:** **white background**, hole number + Par/Yds in **green text** (was white on green)
+- **Stats stay on same screen as counter** — no two-step score→stats flow. Single-screen efficiency confirmed.
+- **Stats migrate into stageScrolls** as part of 5-zone template migration — no separate green footer on hole screens
+- **Player name chip — removed.** Solo player app; chip serves no purpose.
+
+### Open items at build time
+- Toggle contrast on white background — default state is white-on-white, needs visual solution (border, shadow, or tinted track)
+- Stat toggle visual treatment in stageScrolls — labelled cards vs. bare toggles TBD
+
+### Mockup
+`Projects/Golf/2026-05-28-Golf-DesignMockup.html` — interactive phone-frame mockup, 4 screens. Reference only.
