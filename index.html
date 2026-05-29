@@ -929,7 +929,7 @@
       <div class="ss-cell ss-hero">
         <button class="ss-info-btn" onclick="toggleStatsHelp(event)" aria-label="Stats help">i</button>
         <span class="ss-val" id="ss-actual">–</span>
-        <span class="ss-fine"><span id="ss-hi">HI: –</span> | <span id="ss-gpi">GPI: –</span></span>
+        <span class="ss-fine"><span id="ss-hi">HI: –</span> | <span id="ss-gpi">GPI: –</span><span id="ss-net" style="display:none">Net: –</span></span>
         <div id="stats-help-overlay" class="stats-help-overlay">
           <button class="stats-help-close" onclick="toggleStatsHelp(event)" aria-label="Close">✕</button>
           <h4>Round Stats</h4>
@@ -1427,14 +1427,32 @@ function renderSuccessSummary(){
   set("ss-putts",  puttsTotal);
   set("ss-actual", total);
   set("ss-hi",     "HI: " + HI);
-  set("ss-gpi",    "GPI: " + (typeof gpi !== "undefined" ? gpi : "–"));
+  const gpiOn = localStorage.getItem("statGPI") === "true";
+  const gpiEl  = document.getElementById("ss-gpi");
+  const netEl  = document.getElementById("ss-net");
+  if (gpiOn) {
+    if (gpiEl) { gpiEl.textContent = "GPI: " + (typeof gpi !== "undefined" ? gpi : "–"); gpiEl.style.display = ""; }
+    if (netEl) netEl.style.display = "none";
+  } else {
+    if (gpiEl) gpiEl.style.display = "none";
+    if (netEl) { netEl.textContent = "Net: " + net; netEl.style.display = ""; }
+  }
 }
 function clearSuccessSummary(){
   ["ss-fir","ss-gir","ss-pen","ss-ud","ss-xud","ss-putts","ss-actual"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent="–";
   });
   const hi=document.getElementById("ss-hi"); if(hi) hi.textContent="HI: –";
-  const gpiEl=document.getElementById("ss-gpi"); if(gpiEl) gpiEl.textContent="GPI: –";
+  const gpiOn = localStorage.getItem("statGPI") === "true";
+  const gpiEl2 = document.getElementById("ss-gpi");
+  const netEl2 = document.getElementById("ss-net");
+  if (gpiOn) {
+    if (gpiEl2) { gpiEl2.textContent = "GPI: –"; gpiEl2.style.display = ""; }
+    if (netEl2) netEl2.style.display = "none";
+  } else {
+    if (gpiEl2) gpiEl2.style.display = "none";
+    if (netEl2) { netEl2.textContent = "Net: –"; netEl2.style.display = ""; }
+  }
 }
 // ── SUBMIT ────────────────────────────────────────────
 async function submitRound(){
