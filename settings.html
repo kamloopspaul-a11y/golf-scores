@@ -133,8 +133,9 @@
   .bench-table tbody tr:nth-child(even) { background: var(--row-alt); }
   .bench-table td:first-child,
   .bench-table th:first-child { width: 42%; }
+  #gpi-more .bench-table { table-layout: auto; }
   #gpi-more .bench-table td:first-child,
-  #gpi-more .bench-table th:first-child { width: 28%; }
+  #gpi-more .bench-table th:first-child { width: auto; }
   .bench-hcp-sub { font-size: 11px; color: var(--text-muted); display: inline; }
   .bench-close-row {
     display: flex;
@@ -319,7 +320,7 @@
     <!-- GPI — unhidden 2026-05-28; block preserved in assets/snippets/gpi-settings-block.html -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        Strokes Gained (per handicap range) is a benchmark across 4 areas of your game: ball striking, short game, putting, and penalties. The total of these 4 metrics is used to determine your Golf Performance Index.
+        Strokes Gained (per handicap range) is a benchmark across 4 areas of your game: Ball Striking (BS), Short Game (SG), Putting, and Penalties (PEN). The total cost across these 4 areas determines your Golf Performance Index.
       </div>
       <span id="gpi-more-btn" class="bench-expand-link" onclick="document.getElementById('gpi-more').classList.add('open');this.style.display='none';document.getElementById('gpi-less-btn').style.display='inline-block';">More ›</span>
 
@@ -329,10 +330,10 @@
           <thead>
             <tr>
               <th>HANDICAP</th>
-              <th>TEE</th>
-              <th>APRCH</th>
-              <th>GRNS</th>
+              <th>BS</th>
+              <th>SG</th>
               <th>PUTTS</th>
+              <th>PEN</th>
               <th>TOTAL</th>
             </tr>
           </thead>
