@@ -222,7 +222,7 @@
     <!-- Track Your Stats — info card with expandable benchmarks -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        We suggest logging at least five rounds — golf has too much variance for a small sample to be reliable. Ten rounds is better. Twenty gives you real signal.
+        We suggest logging at least five rounds — ten rounds is better. Twenty gives you real signal.
       </div>
       <span class="bench-expand-link" id="bench-more" onclick="toggleBench()">More ›</span>
 
@@ -315,12 +315,12 @@
       </div>
     </div>
 
-    <div class="section-header">STROKES GAINED</div>
+    <div class="section-header">Tracking Your Performance</div>
 
     <!-- GPI — unhidden 2026-05-28; block preserved in assets/snippets/gpi-settings-block.html -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        Strokes Gained (per handicap range) is a benchmark across 4 areas of your game: Ball Striking (BS), Short Game (SG), Putting, and Penalties (PEN). The total cost across these 4 areas determines your Golf Performance Index.
+        Your Golf Performance Index (GPI) is the total of Strokes Gained (per handicap range) across 4 key areas: Ball Striking (BS), Short Game (SG), Putting, and Penalties (PEN).
       </div>
       <span id="gpi-more-btn" class="bench-expand-link" onclick="document.getElementById('gpi-more').classList.add('open');this.style.display='none';document.getElementById('gpi-less-btn').style.display='inline-block';">More ›</span>
 
@@ -353,7 +353,7 @@
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-row-label">Include GPI (Strokes Gained)</span>
+      <span class="stat-row-label">Track Your GPI</span>
       <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
     </div>
 
@@ -375,7 +375,7 @@
     <!-- Performance Reports description -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        Your stats are used to create a report on your performance using the key metrics you've selected. Please select how often you would like to have reports sent via email.
+        Receive custom email reports on your progress and which focus areas to work on.
       </div>
     </div>
 
@@ -390,10 +390,6 @@
 
       <!-- Round-count group — radio behaviour: selecting one clears the others -->
       <div class="stat-group-label">By Round Count <span style="font-weight:400;color:#999">(choose one)</span></div>
-      <div class="stat-row">
-        <span class="stat-row-label">Every 5 Rounds</span>
-        <label class="switch"><input type="checkbox" id="tog-freqEvery5" onchange="selectFreqRound('freqEvery5',this)"><span class="slider-bg"></span></label>
-      </div>
       <div class="stat-row">
         <span class="stat-row-label">Every 10 Rounds</span>
         <label class="switch"><input type="checkbox" id="tog-freqEvery10" onchange="selectFreqRound('freqEvery10',this)"><span class="slider-bg"></span></label>
