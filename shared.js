@@ -7,25 +7,11 @@
  *   NAV_LINKS           — canonical 8-link footer nav array
  *   showPanel(name)     — universal panel/navigation handler
  *   renderFooterNav(el) — writes the 4×2 nav grid into el
- *   renderMasthead(el, opts) — writes masthead HTML into el
  *
  * Auto-init: on DOMContentLoaded, renders footer nav into every
  * element that carries the [data-nav] attribute.
  *
  * ── Required CSS classes (define in each page) ───────────────────
- *
- * Masthead (renderMasthead output):
- *   .masthead             — green transparent, fixed height, flex-column
- *   .header-upper         — 2-col grid: breadcrumb|weather / date|duration
- *   .hu-breadcrumb        — yellow, 13px, top-left label
- *   .hu-weather           — white 80%, 13px, top-right
- *   .hu-date              — white 50%, 12px, bottom-left
- *   .hu-duration          — white 50%, 12px, bottom-right, text-right
- *   .header-lower         — flex-column
- *   .header-lower-top     — min-height 86px (74px small), align-items flex-end
- *   .header-lower-bot     — min-height 38px (32px small), align-items center
- *   .header-lower-title   — 56px (46px small), white, bold, letter-spacing -2px
- *   .header-lower-subtitle— 16px, white, par/yds strip; hidden when empty
  *
  * Footer nav (renderFooterNav output):
  *   .footer-nav-grid      — display:grid, grid-template-columns:1fr 1fr, gap:8px
@@ -63,8 +49,7 @@ function getNavEntry(id) {
 }
 
 /**
- * Applies a nav entry's title to document.title, .header-lower-title,
- * and .hu-breadcrumb. Called automatically for pages with data-page-id on <body>.
+ * Applies a nav entry's title to document.title and .hu-breadcrumb. Called automatically for pages with data-page-id on <body>.
  * Can also be called manually: applyPageMeta('courses') to override.
  * @param {string} id
  */
@@ -73,13 +58,11 @@ function applyPageMeta(id) {
   if (!entry) return;
   const t = entry.title || entry.label;
   document.title = t;
-  var titleEl = document.querySelector('.hl-left');
-  if (titleEl && !titleEl.dataset.noMeta) titleEl.textContent = t;
   var crumbEl = document.querySelector('.hu-breadcrumb');
   if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
 }
 
-const APP_VERSION = 'v10.68';
+const APP_VERSION = 'v10.70';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
@@ -197,63 +180,6 @@ function markActiveFooterBtn(el) {
 }
 
 
-// ── RENDER MASTHEAD ────────────────────────────────────────────────────────────
-/**
- * Renders canonical masthead HTML into `el`.
- * Requires the masthead CSS classes listed at the top of this file.
- *
- * @param {HTMLElement} el — the .masthead element
- * @param {Object}     opts
- *
- *   opts.breadcrumb   {string}  Yellow top-left label, e.g. "My Golf Scores"
- *   opts.weather      {string}  White top-right weather string, e.g. "12°C SW 15"
- *   opts.date         {string}  Muted bottom-left. Defaults to today (en-CA short).
- *                               Pass '' to suppress.
- *   opts.duration     {string}  Muted bottom-right round timer string.
- *
- *   opts.title        {string}  Large white title or hole number.
- *   opts.subtitle     {string}  Par · Yds strip in bot row (hole screens).
- *                               Pass '' or omit for non-hole screens.
- *
- *   // Optional IDs — assigned to rendered elements for live JS updates:
- *   opts.breadcrumbId {string}
- *   opts.weatherId    {string}
- *   opts.dateId       {string}
- *   opts.durationId   {string}
- *   opts.titleId      {string}
- *   opts.subtitleId   {string}
- */
-function renderMasthead(el, opts) {
-  if (!el) return;
-  const o = opts || {};
-
-  // Auto-date: Tue, May 12
-  const autoDate = new Date().toLocaleDateString('en-CA', {
-    weekday: 'short', month: 'short', day: 'numeric'
-  });
-
-  // Helper: add id attribute string if the key is present in opts
-  function maybeId(key) {
-    return o[key] ? ` id="${o[key]}"` : '';
-  }
-
-  el.innerHTML = `
-    <div class="header-upper">
-      <div class="hu-breadcrumb"${maybeId('breadcrumbId')}>${o.breadcrumb || ''}</div>
-      <div class="hu-weather"${maybeId('weatherId')}>${o.weather || ''}</div>
-      <div class="hu-date"${maybeId('dateId')}>${o.date !== undefined ? o.date : autoDate}</div>
-      <div class="hu-duration"${maybeId('durationId')}>${o.duration || ''}</div>
-    </div>
-    <div class="header-lower">
-      <div class="header-lower-top">
-        <div class="header-lower-title"${maybeId('titleId')}>${o.title || ''}</div>
-      </div>
-      <div class="header-lower-bot">
-        <div class="header-lower-subtitle"${maybeId('subtitleId')}>${o.subtitle || ''}</div>
-      </div>
-    </div>
-  `.trim();
-}
 
 
 // ── PLAYER NAME ───────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@
  *
  * Zones:
  *   0. Base        — :root vars (brand colours, font scale), html/body, desktop constraint
- *   1. Masthead    — .masthead, .header-upper, .header-lower-*
+ *   1. Masthead    — .masthead, .header-upper
  *   2. Stage       — .stage-scrolls (elastic middle zone)
  *   3. Toggle      — .switch / .slider-bg canonical (48 × 26 px, green-on-white)
  *   4. Nav bar     — .nav-bar, HOME button standard width
@@ -83,8 +83,7 @@ body {
 .screen.active { display: flex; }
 
 /* ── ZONE 1 — MASTHEAD ───────────────────────────────────────────────────── */
-/* Fixed two-zone strip: header-upper (48px) + header-lower (68px).
-   Heights are locked — content fills or leaves empty space. No layout shift. */
+/* Masthead — green strip: header-upper only. header-lower removed in favour of .hole-title in stage-scrolls. */
 .masthead {
   background: transparent;
   padding: env(safe-area-inset-top) 20px 0;
@@ -107,19 +106,17 @@ body {
 .hu-date       { font-size: var(--fs-body);     color: rgba(255,255,255,0.85); white-space: nowrap; }
 .hu-wind       { font-size: var(--fs-body);     color: rgba(255,255,255,0.85); text-align: right; white-space: nowrap; }
 
-/* Lower zone — 2-col row: title/hole-num left / Par+Yds right (or empty) */
-.header-lower {
-  height: 68px;
-  margin-bottom: 10px;
+/* Hole title zone — first child of stage-scrolls on hole screen: hole num left / par+yds right */
+.hole-title {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  position: relative;
+  width: 100%;
 }
 
-/* Left column — page title or hole number */
-.hl-left {
+/* Hole number */
+.hole-num {
   font-size: var(--fs-display);
   font-weight: 600;
   letter-spacing: -2px;
@@ -131,13 +128,13 @@ body {
   gap: 8px;
 }
 
-/* Hole screens — larger font for hole number */
-.hl-left.hl-hole {
+/* Hole number — larger display font */
+.hole-num {
   font-size: var(--fs-hole);
 }
 
-/* Right column — Par/Yds stack, or empty on non-hole screens */
-.hl-right {
+/* Par/Yds stack — right side of hole title */
+.hole-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -156,8 +153,7 @@ body {
 }
 
 @media (max-height: 750px) {
-  .hl-left        { font-size: var(--fs-display-sm); }
-  .hl-left.hl-hole { font-size: var(--fs-hole-sm); }
+  .hole-num { font-size: var(--fs-hole-sm); }
 }
 
 /* ── ZONE 2 — STAGE ──────────────────────────────────────────────────────── */
@@ -360,24 +356,10 @@ body {
   font-weight: 700;
 }
 
-/* Utility screens — single-row masthead only; hide header-lower */
-.header-lower { display: none; }
-
-/* Hole + Stats screens — white lower masthead strip with green text */
-#screen-hole .header-lower {
-  display: flex;
-  background: var(--skin-bg);
-  height: auto;
-  min-height: 76px;
-  margin-bottom: 0;
-  margin-left: -20px;
-  margin-right: -20px;
-  padding: 10px 20px 14px;
-}
-#screen-hole .hl-left,
-#screen-stats .hl-left       { color: var(--skin-primary); }
-#screen-hole .hole-info-line,
-#screen-stats .hole-info-line { color: var(--skin-primary); }
+/* Hole title zone — skin colours */
+.hole-title { background: var(--skin-bg); padding: 10px 0 14px; }
+.hole-num { color: var(--skin-primary); }
+.hole-info-line { color: var(--skin-primary); }
 
 /* Footer — white surface, green icons, nav labels, bold active label */
 .footer {
