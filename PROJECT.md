@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v9.88 / SW v62 — May 18, 2026
+**Version:** v10.56 / SW v129 — June 1, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
@@ -361,8 +361,8 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 28, 2026 (Session 15)
-**Version:** v10.50 / SW v97
+**Last worked:** May 28, 2026 (Session 15 — extended)
+**Version:** v10.53 / SW v126
 
 **Completed this session:**
 - Chrome design direction approved (see Design Thread below)
@@ -707,11 +707,24 @@ Design thread — fully explored, not yet spec'd for build. Build after Add Cour
 Reduce visual chrome to create the illusion of more screen space, while keeping the fixed-layout architecture intact for scoring screens. Inspired by dangrieve.com review.
 
 ### Approved changes — utility screens (Home, Dashboard, Settings, Courses, Add Scores)
-- **Masthead:** thin green strip, upper row only — course name (yellow) + weather + hamburger icon. Lower row removed.
-- **Page title:** moved into `stageScrolls` at top, **green text on white/off-white background**
-- **Content background:** off-white (~#f5f4f0) rather than pure white for stageScrolls zones
-- **Footer:** white background, green icons, subtle 1px `border-top`. Same nav links.
-- **Nav overlay:** hamburger opens full-screen dark overlay with large stacked white text menu items
+- **Masthead:** thin green strip, upper row only. No hamburger. **Breadcrumb text is contextual** — shows section name (e.g. "Analytics", "Settings", "Listings") not course name. Weather right-aligned.
+- **Page title:** moved into `stageScrolls` at top, **green text on off-white background**
+- **Content background:** off-white (~#f5f4f0) for stageScrolls zones
+- **Footer:** white background, 1px `border-top`. All nav icons **full dark green** — no dimmed/inactive state. Active item bold label only.
+- **Nav icons (production SVGs):** Home (filled house), Dash (3-bar chart), Courses (3 horizontal bars), Settings (gear)
+- **Hamburger removed.**
+
+### Home screen layout — LOCKED (2026-05-29)
+1. **Masthead** — thin green strip: breadcrumb "My Golf Scores" + weather
+2. **stageScrolls:**
+   - Page title: "My Golf Scores" (green, large)
+   - Page subtitle: today's date
+   - **Course card** — soft green background (#eef4e8), green border. Label reads **"Tap to Change Course ›"** (green, tappable). Course name in medium weight (500). Tee + Par below.
+   - **Course selection note:** for non-home courses, tee selection is a setup step before Start Round. Home course tee is the default from Settings.
+   - **PCC dropdown** (conditional — only shown if PCC is enabled in Settings). Uses official 5-value scale: Easier than normal / Normal / Light breeze / Steady wind or rain / Extreme. Replaces Record Stats toggle entirely.
+   - **Record Stats toggle removed** — governed by Settings, not surfaced on Home.
+   - **Start Round button** — full width, green
+3. **Footer nav** — universal white footer, all icons full dark green
 
 ### Approved changes — scoring screens (hole, midround, card, success)
 - **Upper masthead:** thin green strip — identical to all other screens
@@ -720,12 +733,134 @@ Reduce visual chrome to create the illusion of more screen space, while keeping 
 - **Stats migrate into stageScrolls** as part of 5-zone template migration — no separate green footer on hole screens
 - **Player name chip — removed.** Solo player app; chip serves no purpose.
 
-### Open items at build time
-- Toggle contrast on white background — default state is white-on-white, needs visual solution (border, shadow, or tinted track)
-- Stat toggle visual treatment in stageScrolls — labelled cards vs. bare toggles TBD
+### Hole screen layout — LOCKED (2026-05-29)
+Zone order top to bottom:
+1. **Masthead** — thin green upper strip (course + weather) + white lower strip (hole number + Par/Yds in green text)
+2. **stageScrolls** — three sub-sections with explicit spacing:
+   - Score counter (−/jewel/+) + score label — `padding-top: 30px` from masthead
+   - Progress dots — `margin-bottom: 24px` below score label; `margin-bottom: 36px` before toggles
+   - Stat toggles grid (3-col) — FIR, GIR, PEN, U&D, X-UD, PUTTS
+3. **Putts input** — mini −/+ stepper inline in toggle grid. No keyboard. Same tap pattern as score counter.
+4. **Nav bar** — Back / Next buttons
+5. **Footer nav** — universal white footer, green icons (light = inactive, full = active)
 
-### Mockup
-`Projects/Golf/2026-05-28-Golf-DesignMockup.html` — interactive phone-frame mockup, 4 screens. Reference only.
+### Open items at build time
+- Toggle contrast on white background — default state needs visual solution (border, shadow, or tinted track)
+
+### Mockups
+- `Projects/Golf/2026-05-28-Golf-DesignMockup.html` — v1 (reference, with hamburger)
+- `Projects/Golf/2026-05-29-Golf-DesignMockup-v2.html` — v2 (approved direction: no hamburger, green icon footer, locked hole screen layout)
+
+
+### Settings screen layout — LOCKED (2026-05-29)
+Mirrors production settings.html structure exactly. New chrome applied on top.
+
+**Section order:**
+1. **Admin** — Edit & Add Courses (link row), Add Scores (link row), Change Email (inline input)
+2. **Tracking Your Stats** — sublabel description + "More ›" expandable benchmark table + Track Your Stats master toggle + indented sub-panel (FIR, GIR, PEN, UD, X-UD, PUTTs individual toggles + sub-description)
+3. **Tracking Your Performance** — sublabel description + "More ›" expandable GPI benchmark table + Track Your GPI toggle
+4. **Track Conditions** — sublabel description + Record Playing Conditions toggle
+5. **Performance Reports** — sublabel description + Receive Reports master toggle + indented sub-panel (By Round Count group: Every 10 / Every 20; By Calendar group: BiWeekly / Monthly; Annual: Year End Summary)
+
+**Typography/layout conventions (carry into skin):**
+- Section headers: 11px, 700, uppercase, letter-spacing 0.08em, `var(--text-light)`, border-bottom
+- Row labels: 15px, `var(--text-dark)`
+- Sublabels/descriptions: 13–14px, `var(--text-light)`, line-height 1.4–1.5
+- "More ›" / "‹ Close" links: 13px, `var(--green)`
+- Group labels: 12px, 600, `var(--text-dark)`
+- Toggles: 44×26px green track, white thumb
+- Sub-panel rows indented 16px left
+- Chevron links: › in #ccc
+
+---
+
+## Skin: Spring Green (LOCKED 2026-05-29 — implementation deferred)
+
+All approved chrome redesign decisions are bundled as the **Spring Green** skin. A skin is a single self-contained CSS block (`:root` overrides + component rules) that can be swapped to change the entire app's visual identity without touching layout or logic.
+
+### Skin concept
+- Every colour, font weight, radius, and shadow used across the redesign lives in one `/* SKIN: Spring Green */` CSS section
+- Swapping skins = replacing that one block
+- Layout zones (masthead, stageScrolls, navBar, footer), JS logic, and data structures are skin-agnostic
+
+### Spring Green palette
+| Token | Value | Usage |
+|---|---|---|
+| `--skin-primary` | `#377f09` | Masthead bg, buttons, active icons, jewel, toggles ON |
+| `--skin-primary-light` | `#eef4e8` | Course card bg, off-white tints |
+| `--skin-primary-border` | `#c8ddb0` | Course card border |
+| `--skin-bg` | `#f5f4f0` | stageScrolls background |
+| `--skin-surface` | `#ffffff` | Cards, footer, nav-bar |
+| `--skin-text-primary` | `#1a1a1a` | Main labels |
+| `--skin-text-secondary` | `#888888` | Sublabels, placeholders |
+| `--skin-border` | `#e0ddd8` | Row dividers, card borders |
+| `--skin-icon` | `#377f09` | All footer nav icons (no dim state) |
+| `--skin-masthead-text` | `#ffffff` | Masthead breadcrumb + weather |
+
+### Spring Green typography
+- **App font:** system-ui / -apple-system stack (no web font import)
+- **Page title:** 30px, 800, `--skin-primary`, letter-spacing −0.03em
+- **Section headers:** 11px, 700, uppercase, letter-spacing 0.08em, `--skin-text-secondary`
+- **Row labels:** 15px, 400–600, `--skin-text-primary`
+- **Sublabels:** 13–14px, 400, `--skin-text-secondary`
+
+### Spring Green component rules
+- **Masthead:** single row, `padding: 48px 20px 14px`, no lower row on utility screens
+- **Masthead breadcrumb:** contextual section name (not course name), white, 13px, 700
+- **Footer:** white bg, `border-top: 1px solid #e5e2dc`, icons 22×22px filled SVG, all `--skin-icon`, active = bold label
+- **Buttons (primary):** `border-radius: 14px`, full green, 18px 800
+- **Toggle switch:** 44×26px, green track ON / #d0d0d0 OFF, white 22px thumb
+- **Cards:** `border-radius: 16px`, `box-shadow: 0 2px 10px rgba(0,0,0,0.05)`
+- **Hole lower masthead:** white bg, hole number 64px 900 green, Par/Yds 17px 600 green
+
+### Spring Green icon set (production SVGs — filled, `fill="currentColor"`, 24×24 viewBox)
+| Icon | Screen | SVG path summary |
+|---|---|---|
+| **Home** | Footer | Filled house — `M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z` |
+| **Analytics** | Footer | 3 filled bars (heights: short/mid/tall) — `rect x=3 y=13`, `rect x=9.5 y=8`, `rect x=16 y=4` |
+| **Courses** | Footer | 3 horizontal filled bars — `rect y=5`, `rect y=10.5`, `rect y=16`, all `width=18 rx=1.5` |
+| **Settings** | Footer | Filled gear — `M19.14 12.94…` (full path in `shared.js` ICONS.settings) |
+
+**Rendering rules:**
+- Size: `width: 22px; height: 22px` in footer
+- Colour: all `var(--skin-icon)` (#377f09) — no stroke, no outline variant
+- No dim/inactive state — all icons render at full `--skin-icon` green
+- Active screen: bold footer label only (`font-weight: 700`)
+- Source of truth: `shared.js` NAV_ICONS object — do not duplicate paths inline
+
+### Spring Green trend arrows
+SVG triangles (`assets/icons/arrow-up.svg`, `arrow-down.svg`) with colour controlled via CSS class. Same semantic meaning used in email via Unicode ▲/▼ with inline colour.
+
+| Class | Fill | Meaning |
+|---|---|---|
+| `arrow-good` | `#2d7a09` (dark green) | Improving — HI going down, GPI going down |
+| `arrow-bad` | `#c0392b` (red) | Worsening — HI going up, GPI going up |
+| `arrow-flat` | `#999` (grey) | No meaningful change |
+
+**Skin rule:** arrow colours are semantic, not brand — `arrow-good` and `arrow-bad` stay fixed across skins. Only `arrow-flat` could be overridden per skin if needed.
+
+**Usage:**
+- PWA hero sub-line: `HI: 20 ▼ | GPI: 14.2 ▼` (SVG arrows, colour via class)
+- Email reports: Unicode ▼/▲ with `color` inline style — no SVG dependency
+- HI arrow: down = green (improving), up = red (worsening)
+- Arrows activate once Apps Script wires GPI + previous HI into post response (still queued)
+
+### Mockups
+- `Projects/Golf/2026-05-28-Golf-DesignMockup.html` — v1 (reference, pre-refinement)
+- `Projects/Golf/2026-05-29-Golf-DesignMockup-v2.html` — **v2 = approved Spring Green reference** (Home, Dashboard, Settings, Hole 7)
+
+### Screens locked for implementation
+- ✅ Home screen (2026-05-29) — **implemented 2026-06-01**
+- ✅ Hole screen (2026-05-29) — **implemented 2026-06-01**
+- ✅ Settings screen (2026-05-29) — **implemented 2026-06-01**
+- ⬜ Dashboard (deferred — no data to show yet)
+- ⬜ Courses / Add Scores (not yet designed)
+
+### Implementation order — ✅ COMPLETE 2026-06-01
+1. ✅ Extract Spring Green skin block into `shared.css` under `/* SKIN: Spring Green */`
+2. ✅ Apply to `settings.html` first
+3. ✅ `index.html` utility screens (Home)
+4. ✅ Hole screens (header-lower restyle via CSS; no stat toggle migration needed)
 
 ---
 

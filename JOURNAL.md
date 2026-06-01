@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-06-01 — Session 17 — Spring Green skin implementation
+
+**Version:** v10.56 / SW v129
+
+### Files changed
+- `shared.css` — Spring Green skin block appended (~116 lines). Skin tokens, system font, stage bg (#f5f4f0), section headers, page-title/page-subtitle classes, masthead breadcrumb (white 13px 700), header-lower hidden globally (utility screens), hole/stats header-lower re-enabled with white bg + green text + negative margin bleed, footer (white, border-top, green icons, fnav-label, bold active), setup-course-card updates.
+- `shared.js` — `renderFooterNav()` updated to include `.fnav-label` spans. `markActiveFooterBtn()` added — marks active nav button on DOMContentLoaded based on `data-page-id` or pathname. `APP_VERSION` bumped v10.55 → v10.56.
+- `settings.html` — Google Fonts link removed. `<div class="page-title">Settings</div>` added as first element in stage-scrolls. Comment version bumped v1.9 → v1.10.
+- `index.html` — Google Fonts link removed. `<div class="page-title">Home</div>` added to `#screen-setup` stage-scrolls.
+- `sw.js` — Cache name bumped golf-scores-v128 → v129. Google Fonts URL removed from ASSETS array.
+
+### Engineering:debug audit results
+- One bug found and fixed: duplicate `page-title` div injected into `#screen-stats` by overly broad string replacement — removed.
+- All other findings were acceptable (DM Sans fallback graceful, courses/onboarding unaffected, active footer marking logic verified).
+- Verdict: clean revision.
+
+### Spring Green skin implementation notes
+- header-lower on utility screens suppressed via `display: none` in skin block — breadcrumb provides orientation context
+- Hole/stats screens keep header-lower with white background and green text (hole number + par/yds)
+- Full-bleed achieved via `margin: 0 -20px` on header-lower cancelling masthead's 20px horizontal padding
+- Footer now white with border-top; all icons green (#377f09); labels added below icons; active = bold label
+- Stage-scrolls background changed from white to #f5f4f0 (Spring Green skin-bg) across all screens
+
+### Next session
+- Push to GitHub
+- Visual QA on device (or screenshot)
+- Dashboard metric list + chart-type mapping (still top priority)
+- Apps Script: wire GPI + previous HI into post response for trend arrows
+- settings.html STROKES GAINED second paragraph still needs writing
+
+---
+
+
 ## 2026-05-27 — Sheet cleanup + TotalStrokesGained rename + Apps Script deploy
 
 **Session type:** Data cleanup + rename + deployment. No UI code changes.
@@ -1811,3 +1844,123 @@ Paul identified that the current chrome (green masthead + green footer) consumes
 ### Next session
 - Resume Dashboard metric list + chart-type mapping (still the priority — no code until agreed)
 - Commit: `git add -A && git reset HEAD .DS_Store && git commit -m "v10.50 — GPI block unhidden, Cost Breakdown copy fixes, settings recommendation notice" && git push`
+
+---
+
+## 2026-05-28 — Session 15 continued — Settings redesign, SVG arrows, hero sub-line
+
+**Version:** v10.52 / SW v126
+
+### Files changed
+
+**settings.html**
+- STROKES GAINED section created — GPI block moved out of TRACK CONDITIONS, given its own section header between Tracking Your Stats and Track Conditions
+- First paragraph rewritten to: "Strokes Gained (per handicap range) is a benchmark across 4 areas of your game: ball striking, short game, putting, and penalties. The total of these 4 metrics is used to determine your Golf Performance Index."
+- Second paragraph (redundant) removed
+- Table headers updated to ALL CAPS matching Tracking Your Stats style: HANDICAP, TEE, APRCH, GRNS, PUTTS, TOTAL
+- Handicap column changed from single digits to ranges with sub-labels: 0–5 (Scratch), 6–10 (Mid-Low), 11–18 (Mid), 19–25 (Mid-High), 26–30 (High), 31+ (Very High)
+- Table values changed from minus to plus signs throughout (strokes gained framing)
+
+**assets/icons/arrow-up.svg + arrow-down.svg** (new)
+- Simple triangle SVGs, colour controlled via CSS class
+- `.arrow-good .arrow-fill { fill: #2d7a09 }` — green, improving
+- `.arrow-bad .arrow-fill { fill: #c0392b }` — red, worsening
+- `.arrow-flat .arrow-fill { fill: #999 }` — grey, no change
+- Added to SW cache (v126), usable across all PWA screens
+- Email reports use Unicode ▼/▲ with inline colour — same visual meaning, no file dependency
+
+**shared.css**
+- Arrow CSS classes added (arrow-good, arrow-bad, arrow-flat)
+
+**sw.js**
+- Cache bumped v125 → v126
+- arrow-up.svg and arrow-down.svg added to ASSETS list
+
+**index.html**
+- Hero sub-line updated: Net Score removed as primary display
+- GPI/Net swap logic added: if `statGPI` = true → show GPI, hide Net; if false → show Net, hide GPI
+- Player never sees a confusing dash — always sees a meaningful second metric
+- Both HI and GPI will get trend arrows when Apps Script wires up previous-value comparison (same task)
+
+**shared.js**
+- APP_VERSION bumped v10.50 → v10.51 → v10.52
+
+### Design decisions locked
+
+- **Trend arrows** — SVG for PWA, Unicode inline colour for email. Same semantic, right tool per context.
+- **Hero sub-line** — `HI: 20 ▼ | GPI: 14.2 ▼` when GPI on; `HI: 20 ▼ | Net: 70` when GPI off
+- **Net Score** — not removed, demoted. Serves as the fallback for players not tracking GPI. Rec players don't need Net as a headline metric.
+- **HI trend arrow** — down = green (improving), up = red (worsening). Same logic as GPI.
+- **Needle-moving expectations** — HI: meaningful trend after 15–20 rounds. GPI: readable after 5, meaningful after 10–15. Both require real tracked data — dummy/zero data produces garbage numbers.
+
+### Next session
+- Dashboard metric list + chart-type mapping (still the priority)
+- Apps Script: wire GPI + previous HI into post response to enable trend arrows
+- Strokes Gained section in settings — second paragraph still needs to be written
+
+---
+
+## 2026-05-28 — Session 15 wrap-up — Settings screen final touches
+
+**Version:** v10.53 / SW v126
+
+### Files changed
+**settings.html**
+- Paragraph rewritten: "Strokes Gained (per handicap range) is a benchmark across 4 areas of your game: Ball Striking (BS), Short Game (SG), Putting, and Penalties (PEN). The total cost across these 4 areas determines your Golf Performance Index."
+- Column headings updated: HANDICAP | BS | SG | PUTTS | PEN | TOTAL
+- Table width fix: `.benchmarks { width: 100% }` — table now matches text width above it
+- Golfity.com data and footnote retained — own model deferred until real HI data established
+
+**shared.js**
+- APP_VERSION bumped v10.52 → v10.53 (visual deploy confirmation)
+
+### Note for next Settings review
+- Revisit the STROKES GAINED section for anything overlooked — second paragraph not yet written
+- More › button behaviour to confirm (table appeared expanded by default in screenshot)
+- Consider whether "Include GPI (Strokes Gained)" toggle label is the clearest possible wording
+- Apps Script wiring still needed: return GPI + previous HI in post response to enable trend arrows
+
+### Next session priorities
+1. Dashboard metric list + chart-type mapping (top priority — no code until agreed)
+2. Apps Script: wire GPI + prev HI into post response for trend arrows
+3. Revisit settings.html STROKES GAINED section
+
+## 2026-05-29 — Session 16 — Spring Green skin design (planning only, no code)
+
+**Session type:** Design/planning — no code changes to production files.
+
+### Copy/UI fixes shipped (v10.55 / SW v128)
+- courses.html: removed EXPORT COURSES button and HOME button from nav-bar
+- settings.html: 6 copy/UI changes — "Tracking Your Stats" variance clause removed; section heading STROKES GAINED → "Tracking Your Performance"; GPI paragraph rewritten; toggle label "Include GPI (Strokes Gained)" → "Track Your GPI"; Performance Reports description updated; Every 5 Rounds toggle removed
+- settings.html: Track Your Stats sub-panel description shortened to new copy
+- shared.js / sw.js: bumped v10.54 / SW v127 then v10.55 / SW v128
+
+### Spring Green skin — design locked
+
+Reviewed `2026-05-28-Golf-DesignMockup.html` (v1) and iterated to `2026-05-29-Golf-DesignMockup-v2.html` (v2, approved reference).
+
+**Decisions locked:**
+- Hamburger removed — no nav overlay
+- Masthead: single thin green strip, contextual breadcrumb (section name, not course name), weather right-aligned
+- Footer: white bg, all icons full dark green (no dim state), active = bold label, production SVG icons
+- Home screen: green-tinted course card, "Tap to Change Course ›", PCC dropdown conditional, Record Stats removed
+- Hole screen: counter → score label → dots → stat toggles → Back/Next → footer nav; Putts as mini stepper; spacing locked (30px top, 24px below score label, 36px below dots)
+- Settings screen: mirrors production structure — section headers, sublabels, More › drawers, tables, toggle rows, group labels, sub-panel indentation
+
+**Skin architecture agreed:**
+- Spring Green = one self-contained `/* SKIN: Spring Green */` CSS block in `shared.css`
+- Swapping skins = replacing that block only; layout/logic untouched
+- Palette, typography, and component rules fully documented in PROJECT.md
+
+### Files changed
+- `Projects/Golf/2026-05-29-Golf-DesignMockup-v2.html` — created (approved Spring Green reference mockup)
+- `Projects/Golf/PROJECT.md` — Settings screen locked, Spring Green skin section added
+- `Projects/Golf/JOURNAL.md` — this entry
+
+### Next session
+- Implementation deferred — Paul will signal when ready
+- Suggested order: settings.html → index.html utility screens → hole screens last
+
+### Session close addendum
+- PROJECT.md updated: trend arrows added to Spring Green skin notes (colour table, semantic rules, PWA vs email usage, Apps Script wiring reminder)
+- All three close-out files confirmed updated: JOURNAL.md, PROJECT.md, TODO_LIST.md

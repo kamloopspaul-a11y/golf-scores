@@ -1,0 +1,12 @@
+Changes - May 29, 2026 - Created Skin, called it Spring Green.
+
+Courses Screen
+Remove Export Courses and Home Buttons (We already show a Home button in the footer.)
+
+Settings Screen
+* Tracking Your Stats - Remove  "- golf has too much variance for a small sample to be reliable"
+* Strokes Gained - Change section heading to Tracking Your Performance
+  - Change leading paragraph to "Your Golf Performance Index (GPI) is the total of Strokes Gained (per handicap range) across 4 key areas: Ball Striking (BS), Short Game (SG), Putting, and Penalties (PEN). 
+  - Change Toggle text Include GPI (Strokes Gained) to Track Your GPI
+* Performance Reports - Change description to Receive custom email reports on your progress and which focus areas to work on. 
+  - Remove Every 5 Rounds Toggle option. 

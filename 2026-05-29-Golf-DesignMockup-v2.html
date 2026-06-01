@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Golf App — Design Mockup v2</title>
+  <style>
+    :root {
+      --green: #377f09;
+      --green-light: #a8d080;
+      --white: #ffffff;
+      --off-white: #f5f4f0;
+      --text-dark: #1a1a1a;
+      --text-mid: #555;
+      --text-light: #888;
+      --border: #e0ddd8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 28px 20px 40px;
+    }
+
+    .mockup-label {
+      color: #aaa;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: #111;
+      border-radius: 50px;
+      padding: 12px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.08);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: var(--off-white);
+    }
+
+    .notch {
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 34px;
+      background: #111;
+      border-radius: 0 0 20px 20px;
+      z-index: 200;
+    }
+
+    .screen-tabs {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 500px;
+    }
+    .screen-tab {
+      padding: 8px 18px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #aaa;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .screen-tab.active { background: var(--green); border-color: var(--green); color: white; }
+
+    /* ---- SCREENS ---- */
+    .screen {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    .screen.active { display: flex; }
+
+    /* ---- THIN MASTHEAD (no hamburger) ---- */
+    .masthead-new {
+      background: var(--green);
+      padding: 48px 20px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      gap: 10px;
+    }
+    .mh-course {
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      flex: 1;
+    }
+    .mh-weather {
+      color: rgba(255,255,255,0.8);
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* ---- STAGE ---- */
+    .stage {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      background: var(--off-white);
+      padding: 22px 20px 12px;
+    }
+    .page-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--green);
+      letter-spacing: -0.03em;
+      margin-bottom: 3px;
+    }
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 22px;
+    }
+
+    /* ---- WHITE FOOTER — GREEN ICONS ---- */
+    .footer-new {
+      background: var(--white);
+      border-top: 1px solid #e5e2dc;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 0 30px;
+      flex-shrink: 0;
+    }
+    .fi {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--green);
+      font-size: 9px;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+    }
+    .fi.active { color: var(--green); font-weight: 700; }
+    .fi svg {
+      width: 22px; height: 22px;
+    }
+
+    /* ---- HOME SCREEN ---- */
+    .course-card {
+      background: #eef4e8;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      border: 1px solid #c8ddb0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    }
+    .cc-label { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .cc-name { font-size: 22px; font-weight: 500; color: var(--text-dark); margin-bottom: 2px; }
+    .cc-tee { font-size: 13px; color: var(--green); font-weight: 600; }
+
+    .toggle-row {
+      background: white;
+      border-radius: 16px;
+      padding: 15px 18px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .tl-main { font-size: 15px; color: var(--text-dark); font-weight: 600; }
+    .tl-sub { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+    .sw {
+      width: 52px; height: 30px;
+      background: var(--green);
+      border-radius: 15px;
+      position: relative; flex-shrink: 0;
+    }
+    .sw::after {
+      content: '';
+      position: absolute;
+      width: 26px; height: 26px;
+      background: white; border-radius: 50%;
+      top: 2px; right: 2px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .start-btn {
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      width: 100%;
+      padding: 18px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+    }
+
+    /* ---- DASHBOARD ---- */
+    .hi-hero {
+      background: var(--green);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 16px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hi-lbl { font-size: 11px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+    .hi-val { font-size: 48px; font-weight: 900; line-height: 1; }
+    .hi-trend { font-size: 13px; opacity: 0.85; margin-top: 6px; }
+    .section-hdr { font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 4px 0 10px; letter-spacing: 0.02em; }
+    .metric-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .mc-title { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+    .bars { display: flex; align-items: flex-end; gap: 10px; height: 64px; margin-bottom: 8px; }
+    .bg { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+    .b { width: 100%; border-radius: 6px 6px 0 0; }
+    .bl { font-size: 10px; color: var(--text-light); }
+    .mc-note { font-size: 12px; color: var(--text-light); }
+
+    /* ---- SETTINGS ---- */
+    .sec-title {
+      font-size: 11px; font-weight: 700; color: var(--text-light);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin: 18px 0 8px;
+    }
+    .sec-title:first-of-type { margin-top: 0; }
+    .sgroup {
+      border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--border); margin-bottom: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .srow {
+      background: white;
+      padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .srow:last-child { border-bottom: none; }
+    .sr-lbl { font-size: 15px; color: var(--text-dark); }
+    .sr-val { font-size: 14px; color: var(--text-light); display: flex; align-items: center; gap: 6px; }
+    .sw-sm {
+      width: 44px; height: 26px;
+      background: var(--green); border-radius: 13px;
+      position: relative; flex-shrink: 0;
+    }
+    .sw-sm::after {
+      content: ''; position: absolute;
+      width: 22px; height: 22px; background: white; border-radius: 50%;
+      top: 2px; right: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .sw-sm.off { background: #d0d0d0; }
+    .sw-sm.off::after { right: auto; left: 2px; }
+
+    /* ---- HOLE SCREEN ---- */
+    .masthead-hole { flex-shrink: 0; }
+    .mh-upper {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 48px 20px 10px;
+      background: var(--green);
+    }
+    .mh-upper .course { color: white; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
+    .mh-upper .wx { color: rgba(255,255,255,0.8); font-size: 12px; }
+    .mh-lower {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding: 10px 20px 14px; min-height: 86px;
+      background: white;
+      border-bottom: 1px solid #eee;
+    }
+    .hole-num { font-size: 64px; font-weight: 900; color: var(--green); line-height: 1; }
+    .hole-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+    .hole-line { font-size: 17px; font-weight: 600; color: var(--green); }
+
+    .stage-hole {
+      flex: 1 1 auto; background: white;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start; gap: 0; padding-top: 30px;
+    }
+    .dots { display: flex; gap: 6px; margin-bottom: 36px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; }
+    .dot.on { background: var(--green); }
+    .counter { display: flex; align-items: center; gap: 28px; margin-bottom: 4px; }
+    .cbtn {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #f2f2f0; border: 1.5px solid #ddd;
+      font-size: 26px; display: flex; align-items: center; justify-content: center;
+      color: var(--text-dark); cursor: pointer;
+    }
+    .jewel {
+      width: 82px; height: 82px; border-radius: 50%;
+      background: var(--green); color: white;
+      font-size: 38px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .score-label { font-size: 13px; color: #999; margin-bottom: 24px; }
+
+    .hole-navbar {
+      background: white; border-top: 1px solid #e8e8e8;
+      display: flex; justify-content: space-between;
+      padding: 12px 24px 16px; flex-shrink: 0;
+    }
+    .nbtn {
+      padding: 13px 34px; border-radius: 12px;
+      font-size: 15px; font-weight: 700; border: none; cursor: pointer;
+    }
+    .nbtn-back { background: #f2f2f0; color: var(--text-dark); border: 1px solid #ddd; }
+    .nbtn-next { background: var(--green); color: white; }
+
+    /* Hole stats footer — white bg with green toggles */
+    .hole-footer {
+      background: white;
+      border-top: 1px solid #e5e2dc;
+      padding: 10px 20px calc(20px + env(safe-area-inset-bottom, 10px));
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+      flex-shrink: 0;
+    }
+    .si { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .si-lbl { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.05em; }
+    .si-sw {
+      width: 50px; height: 28px;
+      background: var(--green-light); border-radius: 14px; position: relative;
+    }
+    .si-sw::after {
+      content: ''; position: absolute;
+      width: 24px; height: 24px; background: white; border-radius: 50%;
+      top: 2px; left: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .note-bar {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      text-align: center;
+      padding: 10px 20px;
+      letter-spacing: 0.03em;
+      margin-top: 18px;
+      border-radius: 8px;
+      max-width: 500px;
+    }
+
+    /* Putts mini stepper */
+    .putts-stepper {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ps-btn {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--green-light);
+      color: white; font-size: 16px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; line-height: 1;
+    }
+    .ps-val {
+      font-size: 18px; font-weight: 800; color: var(--green);
+      min-width: 16px; text-align: center;
+    }
+
+    /* hole-footer inside stage */
+    .hole-footer {
+      width: 100%;
+      background: transparent;
+      border-top: 1px solid #eee;
+      padding: 12px 20px 0;
+    }
+
+    /* ---- SETTINGS (production-accurate) ---- */
+    .s-section-header {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-light);
+      padding: 18px 0 6px; border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .s-section-header:first-of-type { padding-top: 4px; }
+    .s-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+      gap: 10px;
+    }
+    .s-link { cursor: pointer; }
+    .s-left { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .s-label { font-size: 15px; color: var(--text-dark); }
+    .s-sub { font-size: 13px; color: var(--text-light); line-height: 1.4; }
+    .s-chevron { font-size: 20px; color: #ccc; }
+    .s-more-link {
+      font-size: 13px; color: var(--green); cursor: pointer;
+      margin-top: 6px; display: inline-block;
+    }
+    .s-toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 0; border-bottom: 1px solid var(--border);
+    }
+    .s-group-label {
+      font-size: 12px; font-weight: 600; color: var(--text-dark);
+      padding: 10px 0 4px;
+    }
+    .s-bench-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .s-bench-table th {
+      background: #f0ede8; color: var(--text-mid);
+      padding: 5px 6px; text-align: left; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.04em;
+    }
+    .s-bench-table td {
+      padding: 5px 6px; border-bottom: 1px solid #eee;
+      color: var(--text-dark);
+    }
+    .s-bench-table tr:last-child td { border-bottom: none; }
+
+  </style>
+</head>
+<body>
+
+<div class="mockup-label">Golf App · Design Mockup v2 · No hamburger · Green icon footer</div>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="phone-screen">
+
+    <!-- HOME -->
+    <div class="screen active" id="screen-home">
+      <div class="masthead-new">
+        <div class="mh-course">My Golf Scores</div>
+        <div class="mh-weather">18°C · SW 12 km/h</div>
+      </div>
+      <div class="stage">
+        <div class="page-title">My Golf Scores</div>
+        <div class="page-subtitle">Friday, May 29</div>
+        <div class="course-card">
+          <div class="cc-label" style="color:var(--green);cursor:pointer;">Tap to Change Course ›</div>
+          <div class="cc-name">Mt. Paul</div>
+          <div class="cc-tee">Mens Blue · Par 64</div>
+        </div>
+        <div class="toggle-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+          <div class="tl-main">Playing Conditions</div>
+          <select style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;color:var(--text-dark);background:var(--off-white);appearance:auto;">
+            <option value="">Record today's weather conditions…</option>
+            <option value="-1">Easier than normal (firm, helpful wind)</option>
+            <option value="0">Normal / calm</option>
+            <option value="1">Light breeze / mild</option>
+            <option value="2">Steady wind or rain</option>
+            <option value="3">Extreme (gale, torrential rain)</option>
+          </select>
+        </div>
+        <button class="start-btn">Start Round</button>
+      </div>
+      <div class="footer-new">
+        <div class="fi active">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          HOME
+        </div>
+        <div class="fi">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="13" width="5" height="8" rx="1"/><rect x="9.5" y="8" width="5" height="13" rx="1"/><rect x="16" y="4" width="5" height="17" rx="1"/></svg>
+          DASH
+        </div>
+        <div class="fi">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg>
+          COURSES
+        </div>
+        <div class="fi">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          SETTINGS
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="screen" id="screen-dash">
+      <div class="masthead-new">
+        <div class="mh-course">Analytics</div>
+        <div class="mh-weather">18°C · SW 12 km/h</div>
+      </div>
+      <div class="stage">
+        <div class="page-title">Performance</div>
+        <div class="page-subtitle">Last 20 rounds · Mens Blue</div>
+        <div class="hi-hero">
+          <div>
+            <div class="hi-lbl">Handicap Index</div>
+            <div class="hi-val">20.4</div>
+            <div class="hi-trend">↓ improving · was 22.1</div>
+          </div>
+          <svg width="96" height="44" viewBox="0 0 96 44">
+            <polyline points="0,38 16,32 32,30 48,34 64,24 80,17 96,12" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2.5" stroke-linejoin="round"/>
+            <polyline points="0,38 16,32 32,30 48,34 64,24 80,17 96,12" fill="none" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="96" cy="12" r="4" fill="white"/>
+          </svg>
+        </div>
+        <div class="section-hdr">Strokes Lost Per Round</div>
+        <div class="metric-card">
+          <div class="mc-title">Greens in Regulation</div>
+          <div class="bars">
+            <div class="bg"><div class="b" style="height:38px;background:#c5e0aa;"></div><div class="bl">Last 20</div></div>
+            <div class="bg"><div class="b" style="height:50px;background:#7dba57;"></div><div class="bl">Last 10</div></div>
+            <div class="bg"><div class="b" style="height:64px;background:#377f09;"></div><div class="bl">Last 5</div></div>
+          </div>
+          <div class="mc-note">3.1 → 4.2 → 5.8 avg · cost 2.1 strokes/round</div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-title">Putts per Round</div>
+          <div class="bars">
+            <div class="bg"><div class="b" style="height:64px;background:#c5e0aa;"></div><div class="bl">Last 20</div></div>
+            <div class="bg"><div class="b" style="height:50px;background:#7dba57;"></div><div class="bl">Last 10</div></div>
+            <div class="bg"><div class="b" style="height:38px;background:#377f09;"></div><div class="bl">Last 5</div></div>
+          </div>
+          <div class="mc-note">38.2 → 36.8 → 35.1 · saving 3.1/round</div>
+        </div>
+      </div>
+      <div class="footer-new">
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>HOME</div>
+        <div class="fi active"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="13" width="5" height="8" rx="1"/><rect x="9.5" y="8" width="5" height="13" rx="1"/><rect x="16" y="4" width="5" height="17" rx="1"/></svg>DASH</div>
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg>COURSES</div>
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>SETTINGS</div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="screen-settings">
+      <div class="masthead-new">
+        <div class="mh-course">Settings</div>
+        <div class="mh-weather">18°C · SW 12 km/h</div>
+      </div>
+      <div class="stage">
+        <div class="page-title">Settings</div>
+
+        <!-- ADMIN -->
+        <div class="s-section-header">Admin</div>
+        <div class="s-row s-link">
+          <div class="s-left"><div class="s-label">Edit &amp; Add Courses</div><div class="s-sub">Add courses, update listings, set Home course.</div></div>
+          <div class="s-chevron">›</div>
+        </div>
+        <div class="s-row s-link">
+          <div class="s-left"><div class="s-label">Add Scores</div><div class="s-sub">Add previously unrecorded rounds to your records.</div></div>
+          <div class="s-chevron">›</div>
+        </div>
+        <div class="s-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+          <div class="s-label">Change Email</div>
+          <input type="email" placeholder="your@email.com" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:#fafafa;color:var(--text-dark);">
+        </div>
+
+        <!-- TRACKING YOUR STATS -->
+        <div class="s-section-header">Tracking Your Stats</div>
+        <div class="s-row" style="flex-direction:column;align-items:flex-start;gap:0;border-bottom:none;">
+          <div class="s-sub" style="font-size:14px;line-height:1.5;">We suggest logging at least five rounds — ten rounds is better. Twenty gives you real signal.</div>
+          <span class="s-more-link" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block';this.textContent=this.textContent.includes('More')?'‹ Close':'More ›'">More ›</span>
+          <div style="display:none;margin-top:10px;">
+            <div class="s-sub" style="margin-bottom:8px;">Knowing where you should be is just as important as knowing where you are. Benchmarks by handicap range:</div>
+            <table class="s-bench-table">
+              <thead><tr><th>HCP</th><th>FIR%</th><th>GIR%</th><th>PEN</th><th>PUTTS</th></tr></thead>
+              <tbody>
+                <tr><td>0–5</td><td>65%</td><td>65%</td><td>0.5</td><td>29</td></tr>
+                <tr><td>6–10</td><td>55%</td><td>50%</td><td>0.8</td><td>31</td></tr>
+                <tr><td>11–18</td><td>45%</td><td>35%</td><td>1.2</td><td>33</td></tr>
+                <tr><td>19–25</td><td>35%</td><td>22%</td><td>1.8</td><td>35</td></tr>
+                <tr><td>26+</td><td>25%</td><td>14%</td><td>2.4</td><td>37</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="s-toggle-row">
+          <span class="s-label">Track Your Stats</span>
+          <div class="sw-sm"></div>
+        </div>
+        <div style="padding-left:16px;">
+          <div class="s-sub" style="font-size:13px;padding:8px 0 4px;">These metrics (including Failed Up and Downs X-UD) appear after each hole played during your round.</div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">FIR</span><div class="sw-sm"></div></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">GIR</span><div class="sw-sm"></div></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">PEN</span><div class="sw-sm"></div></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">UD</span><div class="sw-sm"></div></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">X-UD</span><div class="sw-sm off"></div></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">PUTTs</span><div class="sw-sm"></div></div>
+        </div>
+
+        <!-- TRACKING YOUR PERFORMANCE -->
+        <div class="s-section-header">Tracking Your Performance</div>
+        <div class="s-row" style="flex-direction:column;align-items:flex-start;gap:0;border-bottom:none;">
+          <div class="s-sub" style="font-size:14px;line-height:1.5;">Your Golf Performance Index (GPI) is the total of Strokes Gained (per handicap range) across 4 key areas: Ball Striking (BS), Short Game (SG), Putting, and Penalties (PEN).</div>
+          <span class="s-more-link">More ›</span>
+        </div>
+        <div class="s-toggle-row">
+          <span class="s-label">Track Your GPI</span>
+          <div class="sw-sm"></div>
+        </div>
+
+        <!-- TRACK CONDITIONS -->
+        <div class="s-section-header">Track Conditions</div>
+        <div class="s-row" style="flex-direction:column;align-items:flex-start;gap:0;border-bottom:none;">
+          <div class="s-sub" style="font-size:14px;line-height:1.5;">Factors like weather and course conditions can influence scoring. Recording conditions helps spot anomalies.</div>
+        </div>
+        <div class="s-toggle-row">
+          <span class="s-label">Record Playing Conditions</span>
+          <div class="sw-sm off"></div>
+        </div>
+
+        <!-- PERFORMANCE REPORTS -->
+        <div class="s-section-header">Performance Reports</div>
+        <div class="s-row" style="flex-direction:column;align-items:flex-start;gap:0;border-bottom:none;">
+          <div class="s-sub" style="font-size:14px;line-height:1.5;">Receive custom email reports on your progress and which focus areas to work on.</div>
+        </div>
+        <div class="s-toggle-row"><span class="s-label">Receive Reports</span><div class="sw-sm"></div></div>
+        <div style="padding-left:16px;">
+          <div class="s-group-label">By Round Count <span style="font-weight:400;color:#999;">(choose one)</span></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">Every 10 Rounds</span><div class="sw-sm off"></div></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">Every 20 Rounds</span><div class="sw-sm"></div></div>
+          <div class="s-group-label" style="margin-top:10px;">By Calendar <span style="font-weight:400;color:#999;">(choose one)</span></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">BiWeekly</span><div class="sw-sm off"></div></div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">Monthly</span><div class="sw-sm off"></div></div>
+          <div class="s-group-label" style="margin-top:10px;">Annual</div>
+          <div class="s-toggle-row"><span class="s-label" style="color:#777;">Year End Summary <span style="font-size:11px;color:#999;">(Nov 15)</span></span><div class="sw-sm"></div></div>
+        </div>
+
+      </div>
+      <div class="footer-new">
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>HOME</div>
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="13" width="5" height="8" rx="1"/><rect x="9.5" y="8" width="5" height="13" rx="1"/><rect x="16" y="4" width="5" height="17" rx="1"/></svg>DASH</div>
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg>COURSES</div>
+        <div class="fi active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>SETTINGS</div>
+      </div>
+    </div>
+
+    <!-- HOLE SCREEN -->
+    <div class="screen" id="screen-hole">
+      <div class="masthead-hole">
+        <div class="mh-upper">
+          <span class="course">Mt. Paul GC</span>
+          <span class="wx">18°C · SW 12 km/h</span>
+        </div>
+        <div class="mh-lower">
+          <div class="hole-num">7</div>
+          <div class="hole-stack">
+            <div class="hole-line">Par 4</div>
+            <div class="hole-line">342 yds</div>
+          </div>
+        </div>
+      </div>
+      <div class="stage-hole">
+        <!-- Score counter -->
+        <div class="counter">
+          <div class="cbtn">−</div>
+          <div class="jewel">5</div>
+          <div class="cbtn">+</div>
+        </div>
+        <div class="score-label">Bogey +1</div>
+        <!-- Progress dots -->
+        <div class="dots">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot on"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+        <!-- Stat toggles -->
+        <div class="hole-footer">
+          <div class="si"><div class="si-lbl">FIR</div><div class="si-sw"></div></div>
+          <div class="si"><div class="si-lbl">GIR</div><div class="si-sw"></div></div>
+          <div class="si"><div class="si-lbl">PEN</div><div class="si-sw"></div></div>
+          <div class="si"><div class="si-lbl">U&amp;D</div><div class="si-sw"></div></div>
+          <div class="si"><div class="si-lbl">X-UD</div><div class="si-sw"></div></div>
+          <!-- Putts — mini stepper, no keyboard -->
+          <div class="si">
+            <div class="si-lbl">PUTTS</div>
+            <div class="putts-stepper">
+              <div class="ps-btn">−</div>
+              <div class="ps-val">2</div>
+              <div class="ps-btn">+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Nav buttons -->
+      <div class="hole-navbar">
+        <button class="nbtn nbtn-back">Back</button>
+        <button class="nbtn nbtn-next">Next</button>
+      </div>
+      <!-- Footer nav -->
+      <div class="footer-new">
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>HOME</div>
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="13" width="5" height="8" rx="1"/><rect x="9.5" y="8" width="5" height="13" rx="1"/><rect x="16" y="4" width="5" height="17" rx="1"/></svg>DASH</div>
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg>COURSES</div>
+        <div class="fi"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>SETTINGS</div>
+      </div>
+    </div>
+
+  </div><!-- phone-screen -->
+</div><!-- phone -->
+
+<div class="screen-tabs">
+  <div class="screen-tab active" onclick="show('home',this)">Home</div>
+  <div class="screen-tab"       onclick="show('dash',this)">Dashboard</div>
+  <div class="screen-tab"       onclick="show('settings',this)">Settings</div>
+  <div class="screen-tab"       onclick="show('hole',this)">Hole 7</div>
+</div>
+
+<div class="note-bar">
+  v2 — No hamburger · White footer with green icons (light = inactive, full = active) · Hole stats on white bg
+</div>
+
+<script>
+  function show(id, tab) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.screen-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+    tab.classList.add('active');
+  }
+</script>
+</body>
+</html>

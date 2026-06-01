@@ -79,7 +79,7 @@ function applyPageMeta(id) {
   if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
 }
 
-const APP_VERSION = 'v10.55';
+const APP_VERSION = 'v10.56';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ function renderFooterNav(el) {
   NAV_LINKS.forEach(link => {
     const btn = document.createElement('button');
     btn.className     = 'fnav-btn';
-    btn.innerHTML     = NAV_ICONS[link.id] || '';
+    btn.innerHTML = (NAV_ICONS[link.id] || '') + '<span class="fnav-label">' + link.label + '</span>';
     btn.dataset.panel = link.id;
     btn.setAttribute('aria-label', link.label);
     btn.title         = link.label;
@@ -170,6 +170,30 @@ function renderFooterNav(el) {
   el.innerHTML = '';
   el.appendChild(grid);
   el.appendChild(ver);
+  markActiveFooterBtn(el);
+}
+
+// ── MARK ACTIVE FOOTER BUTTON ─────────────────────────────────────────────────
+/**
+ * Adds .active class to the footer button matching the current page/panel.
+ * Reads data-page-id from <body> (set on settings.html, courses.html).
+ * Falls back to 'home' for index.html.
+ * @param {HTMLElement} el — the footer container element
+ */
+function markActiveFooterBtn(el) {
+  var pageId = document.body && document.body.dataset.pageId;
+  var activeId;
+  if (pageId) {
+    activeId = pageId;
+  } else {
+    var page = window.location.pathname.split('/').pop() || 'index.html';
+    if (page === 'settings.html') activeId = 'settings';
+    else if (page === 'courses.html') activeId = 'courses';
+    else activeId = 'home';
+  }
+  el.querySelectorAll('.fnav-btn').forEach(function(btn) {
+    if (btn.dataset.panel === activeId) btn.classList.add('active');
+  });
 }
 
 

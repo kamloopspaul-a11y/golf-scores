@@ -1,7 +1,7 @@
 // My Golf Scores — Service Worker
 // Network-first for HTML, cache-first for assets
 
-const CACHE_NAME = 'golf-scores-v128';
+const CACHE_NAME = 'golf-scores-v129';
 const ASSETS = [
   '/',
   '/index.html',
@@ -15,7 +15,6 @@ const ASSETS = [
   '/shared.js',
   '/assets/icons/arrow-up.svg',
   '/assets/icons/arrow-down.svg',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap'
 ];
 
 // Install — pre-cache assets, take over immediately
