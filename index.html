@@ -89,7 +89,7 @@
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   /* zone flex handled by shared.css .stage-scrolls */
   /* ── SETUP ─────────────────────────────────────────── */
-  #screen-setup .stage-scrolls, #screen-course .stage-scrolls { padding: 16px 24px; }
+  #screen-setup .stage-scrolls, #screen-course .stage-scrolls { padding: 0; }
   .player-row   { display: flex; gap: 8px; align-items: center; }
   .player-input {
     flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -157,7 +157,7 @@
   .start-btn { padding: 15px; margin-top: 0; }
 
   /* ── SCORECARD ─────────────────────────────────────── */
-  #screen-card .stage-scrolls { padding: 16px 12px; overflow-x: hidden; }
+  #screen-card .stage-scrolls { padding: 0; overflow-x: hidden; }
   .sc-section { margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .sc-section { margin-bottom: 12px; overflow-x: auto; }
   .sc-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; table-layout: fixed; }
@@ -215,7 +215,7 @@
   }
   .discard-btn:hover { background: #fef2f2; }
   /* Mid-round 9-hole card */
-  #screen-midround .stage-scrolls { padding: 16px 12px; }
+  #screen-midround .stage-scrolls { padding: 0; }
   .midround-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
   /* ── SUCCESS ───────────────────────────────────────── */
   #screen-success .stage-scrolls {
@@ -368,7 +368,7 @@
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
 
   /* ── Add Scores screen ──────────────────────────────── */
-  #screen-add-scores .stage-scrolls { padding: 0; gap: 0; }
+  #screen-add-scores .stage-scrolls { padding: 0; }
   .as-form-body {
     display: flex; flex-direction: column; gap: 16px;
     padding: 16px 20px 20px;
@@ -546,7 +546,7 @@
     .score-indicator { width: 92px; height: 92px; }
     .score-jewel { width: 74px; height: 74px; }
     .score-inner-num { font-size: 36px; }
-    #screen-success .stage-scrolls { padding: 24px; }
+    #screen-success .stage-scrolls { padding: 0; }
     .ss-hero .ss-val { font-size: 46px; }
 
   }
