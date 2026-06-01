@@ -16,7 +16,7 @@
  *   3. Toggle      — .switch / .slider-bg canonical (48 × 26 px, green-on-white)
  *   4. Nav bar     — .nav-bar, HOME button standard width
  *   5. Footer      — .footer, .footer-nav-grid, .fnav-btn, .footer-version
- *   6. Components  — .btn-3d, .btn-grey, .section-header, .setting-row, .setting-label
+ *   6. Components  — .btn-3d, .section-header, .setting-row, .setting-label
  */
 
 /* ── ZONE 0 — BASE ───────────────────────────────────────────────────────── */
@@ -268,12 +268,6 @@ body {
 .btn-3d:active { transform: translateY(4px); top: 4px; box-shadow: 0 2px 0 #164803, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18); }
 .btn-3d:disabled { background: linear-gradient(180deg, #aaa 0%, #888 100%); box-shadow: 0 6px 0 #555; cursor: default; transform: none; top: 0; }
 
-/* Grey variant — secondary / cancel actions */
-.btn-grey {
-  background: linear-gradient(180deg, #888 0%, #666 50%, #444 100%);
-  box-shadow: 0 6px 0 #222, 0 8px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
-}
-.btn-grey:active { box-shadow: 0 2px 0 #222, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18); }
 
 /* Section headers — SCORE CARD / FEEDBACK / ACCOUNT / TOOLS */
 .section-header {
