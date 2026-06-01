@@ -314,7 +314,7 @@ body {
 /* System font stack — no web font import */
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: var(--skin-bg);
+  background: var(--skin-primary);
 }
 
 /* Masthead explicitly green so top safe area stays correct */
