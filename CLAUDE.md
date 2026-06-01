@@ -120,6 +120,64 @@ These are settled — do not reopen without explicit instruction:
 
 Email reports fire automatically when `totalRounds % n === 0` for any window in `ROUND_WINDOWS = [5, 10, 20]`. To trigger manually, run `sendReport()` in the Apps Script editor.
 
+
+## Global Enforcement Rules — Spring Green Architecture (2026-06-01)
+
+These rules govern all future development. They exist because the shared zone framework took significant effort to establish and must not be eroded by per-page exceptions.
+
+### 1. Global files are the single source of truth
+
+| File | Controls |
+|------|---------|
+| `shared.css` | All colours, spacing, typography, layout zones, skin tokens |
+| `shared.js` | Footer nav rendering, active state, page meta, version |
+
+No style property that affects a shared zone (masthead, stage, page title, footer, nav bar) may be set in a local `<style>` block or inline `style=""` attribute. If a rule needs to exist, it goes in `shared.css`. If it applies everywhere, it goes in the base zones or the skin block. If it is truly screen-specific, scope it with an ID selector (`#screen-hole`) in `shared.css` — never in the local file.
+
+### 2. Non-hole screen zone structure is fixed and identical
+
+Every non-hole screen (Home, Settings, Courses, Add Scores, Save Round, Scorecard) must have exactly these zones in order:
+
+1. **Masthead** — green strip, breadcrumb left / weather right, single row only (`.header-lower` hidden via skin)
+2. **Page Title** — `<div class="page-title">` as the first child of `.stage-scrolls`
+3. **Stage** — `.stage-scrolls`, background `--skin-bg`, scrollable content
+4. **Nav Bar** — `.nav-bar` if a primary action button is needed (optional)
+5. **Footer** — `.footer[data-nav]`, background `--skin-bg`, rendered by `renderFooterNav()`
+
+Hole screens are the only exception and are explicitly scoped with `#screen-hole` / `#screen-stats` selectors.
+
+### 3. Page titles are mandatory on all non-hole screens
+
+Every non-hole screen must have `<div class="page-title">Label</div>` as the first child of `.stage-scrolls`. The label is the screen's plain-language name. Style is defined once in `shared.css` — never overridden locally.
+
+### 4. No inline styles
+
+`style=""` attributes are banned except for two cases:
+- `display: none` / `display: block` toggled by JavaScript at runtime
+- Truly one-off numeric values with no class equivalent (e.g. a specific `width` on a generated element)
+
+If a style appears more than once inline, it becomes a class in `shared.css`.
+
+### 5. Local `<style>` block hygiene
+
+Each page's local `<style>` block is permitted only for:
+- Elements that are genuinely unique to that page (e.g. `.bench-table` in settings, score grid in add-scores)
+- JavaScript-driven state classes (e.g. `.open`, `.active`, `.hidden`)
+
+Any rule in a local block that targets a shared zone class (`.masthead`, `.stage-scrolls`, `.footer`, `.section-header`, `.setting-row`, `.btn-3d`) must be reviewed and moved to `shared.css` or deleted.
+
+### 6. Version bump on every push, no exceptions
+
+Every `git push` requires:
+- `APP_VERSION` incremented in `shared.js`
+- `CACHE_NAME` incremented in `sw.js`
+
+No push without a version bump. This is a front-end development verification requirement.
+
+### 7. Skin block is self-contained
+
+The `/* SKIN: Spring Green */` block in `shared.css` is the only place skin-specific overrides live. Changing the skin means replacing that block only. No skin values (colours, radii, font-weight overrides) may leak into base zones or local files.
+
 ## STANDING RULE — Development Context
 
 **This is NOT a PWA. It is a web app in development hosted on GitHub Pages.**

@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-06-01 — Session 17 continued — Skin refinements + Global Rules
+
+### Skin fixes shipped this session (v10.57–v10.61)
+- Bottom safe area green bleed: body→white (v10.57, reverted), then .screen{bg:skin-bg} (correct fix)
+- Masthead top safe area: .masthead{bg:skin-primary} explicit — body stays green
+- Footer zone: bg→skin-bg; nav buttons bg→skin-bg (blend with footer, not white)
+- Footer icons: 22px→25px (Apple HIG tab bar spec)
+- Nav grouping: justify-content→center, gap tightened
+- Home screen: page-title→"Home Course", player chip removed, "START ROUND"→"START"
+- Hole screen header-lower: bg→skin-bg to match stage
+
+### Pending (not yet pushed)
+- v10.62 / SW v135: header-upper margin-bottom:0 fix for Settings offset
+
+### Global Enforcement Rules written
+- 7 rules added to CLAUDE.md governing all future development
+- Core principle: shared.css and shared.js are the single source of truth; no shared-zone styles in local files
+
+### Queued for next session
+- Push v10.62 / SW v135 and verify Settings offset resolved
+- Audit settings.html + courses.html local style blocks against enforcement rules
+- Remove player chip from Hole screens
+- Add page-title to Courses screen
+- Divider/rule line audit (one at a time, Paul to decide)
+- Dashboard metric list + chart-type mapping (no code until agreed)
+
+---
+
 ## 2026-06-01 — Session 17 — Spring Green skin implementation
 
 **Version:** v10.56 / SW v129
