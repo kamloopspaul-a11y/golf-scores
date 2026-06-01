@@ -314,6 +314,7 @@ body {
 /* System font stack — no web font import */
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--skin-bg);
 }
 
 /* Masthead explicitly green so top safe area stays correct */
@@ -595,3 +596,62 @@ body {
 }
 .pending-btn-repost { background: var(--green); color: #fff; }
 .pending-btn-discard { background: rgba(0,0,0,0.12); color: #1a1a1a; }
+
+/* ── ZONE 12 — HOME SCREEN COMPONENTS ───────────────────────────────────── */
+
+.setup-course-card {
+  margin: 0 20px 0;
+  padding: 16px 18px;
+  background: var(--green-pale);
+  border-radius: 12px;
+  border: 1px solid rgba(55,127,9,0.15);
+  min-height: 88px;
+  text-align: left;
+}
+.setup-course-name {
+  font-size: 18px; font-weight: 700; color: var(--green);
+  text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2;
+}
+.setup-course-hint {
+  font-size: 11px; color: var(--text-muted);
+  margin-top: 3px; line-height: 1.3;
+}
+.setup-course-meta {
+  font-size: 13px; color: var(--text-secondary);
+  margin-top: 4px; line-height: 1.3;
+}
+.setup-tee-picker {
+  margin: 12px 20px 4px;
+  text-align: center;
+}
+.setup-tee-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.7px; color: var(--text-muted); margin-bottom: 8px;
+}
+.setup-tee-strip {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+}
+.setup-tee-chip {
+  padding: 7px 18px; border-radius: 20px;
+  border: 1.5px solid var(--border); background: var(--card);
+  font-size: 14px; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; touch-action: manipulation; transition: all 0.15s;
+}
+.setup-tee-chip.active { background: var(--green); color: white; border-color: var(--green); }
+.pcc-setup-row { display: none; margin: 12px 20px 0; }
+.pcc-setup-select {
+  width: 100%; padding: 10px 14px;
+  background: var(--card); border: 1px solid rgba(55,127,9,0.25);
+  border-radius: 12px;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  font-size: 15px; color: var(--text-primary);
+  outline: none; cursor: pointer;
+  -webkit-appearance: auto; appearance: auto;
+}
+.player-row { display: flex; gap: 8px; align-items: center; padding: 0 20px; }
+.player-input {
+  flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500;
+  color: var(--text-primary); outline: none; transition: border-color 0.2s;
+}
+.player-input:focus { border-color: var(--green); }
