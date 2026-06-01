@@ -89,7 +89,6 @@
   /* ── CONTENT AREA (shared sizing across all screens) ── */
   /* zone flex handled by shared.css .stage-scrolls */
   /* ── SETUP ─────────────────────────────────────────── */
-  #screen-setup .stage-scrolls, #screen-course .stage-scrolls { padding: 0; }
   .player-row   { display: flex; gap: 8px; align-items: center; }
   .player-input {
     flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -128,8 +127,6 @@
     display: flex; align-items: center; justify-content: center;
   }
   /* Jewel score — plain, no rings on score entry screen */
-  .score-ring       { display: none; }
-  .score-ring-outer { display: none !important; }
   .score-jewel {
     width: 90px; height: 90px; border-radius: 50%;
     background: #377f09;
@@ -139,13 +136,6 @@
     font-size: 44px; font-weight: 900; color: white;
     position: relative; z-index: 1;
   }
-  .nav-dots {
-    display: flex; justify-content: center; gap: 5px;
-    padding: 8px 0; flex-wrap: nowrap;
-  }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all 0.2s; cursor: pointer; }
-  .dot.active { background: var(--green); width: 18px; border-radius: 3px; }
-  .dot.scored { background: var(--green); opacity: 0.45; }
   /* NAV BUTTONS — fixed position, all screens */
   /* Hole screen: score counter never collapses; show scrollbar instead of crushing stage */
   /* Hole screen stage must not be a touch-scroll surface */
@@ -153,55 +143,9 @@
   @media (hover: hover) and (pointer: fine) {
     #screen-hole { overflow-y: auto; }
   }
-  .nav-btn { flex: 1; padding: 15px; text-transform: uppercase; letter-spacing: 0.04em; }
   .start-btn { padding: 15px; margin-top: 0; }
 
   /* ── SCORECARD ─────────────────────────────────────── */
-  #screen-card .stage-scrolls { padding: 0; overflow-x: hidden; }
-  .sc-section { margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .sc-section { margin-bottom: 12px; overflow-x: auto; }
-  .sc-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; table-layout: fixed; }
-  .sc-table th:first-child, .sc-table td:first-child { width: 52px; }
-  .sc-table th, .sc-table td { width: 28px; }
-  .sc-table th {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-primary);
-    padding: 7px 4px; text-align: center;
-    border-bottom: 2px solid var(--border); background: var(--green-pale);
-  }
-  .sc-table th:first-child { text-align: left; padding-left: 8px; }
-  .sc-table td { padding: 7px 4px; text-align: center; border-top: 1px solid var(--border); color: var(--text-primary); }
-  .sc-table td:first-child { text-align: left; padding-left: 8px; font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
-  .sc-table .par-row td { color: var(--text-muted); font-size: 12px; font-weight: 400; }
-  .sc-table .tot-col { font-weight: 700; }
-  .row-alt { background: var(--row-alt); }
-  /* Score cell styles — monochrome, no blue/red */
-  .birdie-cell {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px;
-    border: 1.5px solid #333; border-radius: 50%;
-    color: #1a1a1a; font-size: 13px; font-weight: 500;
-    vertical-align: middle; line-height: 1;
-  }
-  /* Eagle = double circle via box-shadow */
-  .eagle-cell {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 20px; height: 20px;
-    border: 1.5px solid #333; border-radius: 50%;
-    box-shadow: 0 0 0 2.5px #333;
-    color: #1a1a1a; font-size: 12px; font-weight: 500;
-    vertical-align: middle; line-height: 1;
-    margin: 3px;
-  }
-  .bogey-cell {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px;
-    border: 1.5px solid #333; border-radius: 0;
-    color: #1a1a1a; font-size: 13px; font-weight: 500;
-    vertical-align: middle; line-height: 1;
-  }
-  .double-bogey-cell { color: var(--text-primary); }
-  .hio-cell    { font-weight: 700; color: var(--text-primary); }
   /* Card action buttons */
   .card-actions { display: flex; gap: 12px; margin-top: 4px; }
   .back-card-btn { flex: 1; padding: 16px; }
@@ -215,7 +159,6 @@
   }
   .discard-btn:hover { background: #fef2f2; }
   /* Mid-round 9-hole card */
-  #screen-midround .stage-scrolls { padding: 0; }
   .midround-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
   /* ── SUCCESS ───────────────────────────────────────── */
   #screen-success .stage-scrolls {
@@ -228,19 +171,6 @@
   #screen-success .stage-scrolls p  { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 40px; }
   /* Round summary on Save Round screen — 4x2 grid, col 4 hero spans both rows */
   /* ── Pending rounds banner ── */
-  .pending-banner {
-    background: var(--yellow, #f5c518); color: #1a1a1a;
-    border-radius: 10px; padding: 12px 14px; margin: 12px 16px 0;
-    font-size: 14px; font-weight: 500; line-height: 1.4;
-  }
-  .pending-banner.hidden { display: none; }
-  .pending-banner-btns { display: flex; gap: 10px; margin-top: 10px; }
-  .pending-btn {
-    flex: 1; padding: 8px 0; border: none; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-  }
-  .pending-btn-repost { background: var(--green, #377f09); color: #fff; }
-  .pending-btn-discard { background: rgba(0,0,0,0.12); color: #1a1a1a; }
   .pending-quiet {
     margin: 10px 16px 0; padding: 10px 14px;
     background: rgba(255,255,255,0.15); border-radius: 10px;
@@ -368,7 +298,6 @@
   .fg-right { text-align: right; color: rgba(255,255,255,0.85); align-self: center; justify-self: end; }
 
   /* ── Add Scores screen ──────────────────────────────── */
-  #screen-add-scores .stage-scrolls { padding: 0; }
   .as-form-body {
     display: flex; flex-direction: column; gap: 16px;
     padding: 16px 20px 20px;
@@ -537,7 +466,6 @@
   .tee-option.selected { border-color: var(--green); background: var(--green-pale); }
   .tee-option-name   { font-size: 15px; font-weight: 600; color: var(--text-primary); }
   .tee-option-detail { font-size: 13px; color: var(--text-secondary); text-align: right; }
-  .hidden { display: none !important; }
 
   /* ── SMALL-SCREEN ADJUSTMENTS (iPhone SE / mini class) ── */
   @media (max-height: 750px) {
@@ -705,8 +633,6 @@
       <div class="score-row">
         <button class="score-btn" onclick="adjustScore(-1)">−</button>
         <div class="score-indicator">
-          <div class="score-ring" id="score-ring"></div>
-          <div class="score-ring-outer" id="outer-ring"></div>
           <div class="score-jewel"><div class="score-inner-num" id="score-num">4</div></div>
         </div>
         <button class="score-btn" onclick="adjustScore(1)">+</button>
@@ -1045,19 +971,7 @@ function updateScoreDisplay(index){
   const par=state.holeList[index].par;
   const diff=score-par;
   document.getElementById('score-num').textContent=score;
-  const ring=document.getElementById('score-ring');
-  const outer=document.getElementById('outer-ring');
-  ring.className='score-ring';
-  outer.className='score-ring-outer'; outer.style.display='none';
-  if(score===1){
-    ring.classList.add('hio'); outer.style.display='block';
-  } else if(diff<=-2){
-    ring.classList.add('eagle'); outer.style.display='block'; outer.classList.add('eagle-outer');
-  } else if(diff===-1){
-    ring.classList.add('birdie'); outer.style.display='block';
-  } else if(diff>=1){
-    ring.classList.add('bogey');
-  }
+
 }
 function adjustScore(delta){
   const i=state.currentHole;
