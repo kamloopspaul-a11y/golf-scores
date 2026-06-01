@@ -598,10 +598,6 @@
       <div class="hu-date" id="setup-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower">
-      <div class="hl-left">Score Card</div>
-      <div class="hl-right"></div>
-    </div>
   </div>
   <div class="stage-scrolls">
     <div class="page-title">Home Course</div>
@@ -647,12 +643,9 @@
       <div class="hu-date" id="as-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower">
-      <div class="hl-left">Add Scores</div>
-      <div class="hl-right"></div>
-    </div>
   </div>
   <div class="stage-scrolls">
+    <div class="page-title">Add Scores</div>
     <div class="section-header">Round Details</div>
     <div class="as-form-body">
       <div class="as-field">
@@ -766,12 +759,9 @@
       <div class="hu-date" id="midround-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower">
-      <div class="hl-left">Front 9</div>
-      <div class="hl-right"></div>
-    </div>
   </div>
   <div class="stage-scrolls">
+    <div class="page-title">Front 9</div>
     <div class="sc-section"><table class="sc-table" id="sc-midround"></table></div>
     <div class="nine-hole-toggle-wrap">
       <span class="nht-label">Continue</span>
@@ -797,12 +787,9 @@
       <div class="hu-date" id="card-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower">
-      <div class="hl-left" id="card-title">Back 9</div>
-      <div class="hl-right"></div>
-    </div>
   </div>
   <div class="stage-scrolls">
+    <div class="page-title" id="card-title">Back 9</div>
     <div class="sc-section"><table class="sc-table" id="sc-back"></table></div>
     <!-- <button class="discard-btn" onclick="discardRound()">Discard Round</button> -->
   </div>
@@ -821,21 +808,18 @@
       <div class="hu-date" id="success-date-display"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower">
-      <div class="hl-left">Save Round</div>
-      <div class="hl-right"></div>
-      <button class="masthead-info-btn" id="masthead-info-btn" onclick="toggleMastheadInfo(event)" aria-label="Offline info">i</button>
-      <div class="masthead-info-overlay" id="masthead-info-overlay">
-        <button class="stats-help-close" onclick="toggleMastheadInfo(event)" aria-label="Close">&#x2715;</button>
-        <div class="mio-heading">No Internet Service</div>
-        <div class="mio-dt">Round Saved</div>
-        <div class="mio-dd">We saved your round to your phone. It will be there when you are ready to post your score.</div>
-        <div class="mio-dt">Posting Your Score</div>
-        <div class="mio-dd">Internet service is required to post your Score and Stats to your data source.</div>
-      </div>
+    <button class="masthead-info-btn" id="masthead-info-btn" onclick="toggleMastheadInfo(event)" aria-label="Offline info">i</button>
+    <div class="masthead-info-overlay" id="masthead-info-overlay">
+      <button class="stats-help-close" onclick="toggleMastheadInfo(event)" aria-label="Close">&#x2715;</button>
+      <div class="mio-heading">No Internet Service</div>
+      <div class="mio-dt">Round Saved</div>
+      <div class="mio-dd">We saved your round to your phone. It will be there when you are ready to post your score.</div>
+      <div class="mio-dt">Posting Your Score</div>
+      <div class="mio-dd">Internet service is required to post your Score and Stats to your data source.</div>
     </div>
   </div>
   <div class="stage-scrolls">
+    <div class="page-title" id="success-masthead-title">Save Round</div>
     <div id="success-spinner" class="spinner"></div>
     <h2 id="success-title">Posting…</h2>
     <!-- <p id="success-msg">Your scores have been submitted to Google Sheets.</p> -->
@@ -889,12 +873,9 @@
       <div class="hu-date" id="cs-date"></div>
       <div class="hu-wind"></div>
     </div>
-    <div class="header-lower">
-      <div class="hl-left">Score Card</div>
-      <div class="hl-right"></div>
-    </div>
   </div>
   <div class="stage-scrolls" id="course-select-body">
+    <div class="page-title">Select Course</div>
     <div class="course-search-row">
       <input type="text" id="course-search-input" class="course-search-input"
         placeholder="Course or club name…"
@@ -1377,7 +1358,7 @@ async function submitRound(){
   // Move to success screen immediately, showing spinner + "Posting…"
   if(spinner) spinner.classList.remove('hidden');
   if(title){ title.textContent='Posting…'; title.classList.remove('success-title-error'); }
-  const mhTitle = document.querySelector('#screen-success .hl-left');
+  const mhTitle = document.getElementById('success-masthead-title');
   if(mhTitle) mhTitle.textContent='Save Round';
   const infoBtn = document.getElementById('masthead-info-btn');
   const infoOverlay = document.getElementById('masthead-info-overlay');
@@ -1389,11 +1370,11 @@ async function submitRound(){
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'Server rejected post');
     if(title) title.textContent='Posted';
-    const mhTitle = document.querySelector('#screen-success .hl-left');
+    const mhTitle = document.getElementById('success-masthead-title');
     if(mhTitle) mhTitle.textContent='Save Round';
   } catch(e){
     if(title){ title.textContent='Unable to Post'; title.classList.add('success-title-error'); }
-    const mhTitleErr = document.querySelector('#screen-success .hl-left');
+    const mhTitleErr = document.getElementById('success-masthead-title');
     if(mhTitleErr) mhTitleErr.textContent='Save Round';
     if(infoBtn) infoBtn.classList.add('visible');
     // Save to offline queue — payload keeps its roundId so retry is idempotent
@@ -2077,7 +2058,7 @@ function toggleMastheadInfo(e) {
 document.addEventListener('click', function(e) {
   const overlay = document.getElementById('masthead-info-overlay');
   if (!overlay) return;
-  if (overlay.classList.contains('open') && !overlay.closest('.header-lower').contains(e.target)) {
+  if (overlay.classList.contains('open') && !overlay.closest('.masthead').contains(e.target)) {
     overlay.classList.remove('open');
   }
 });

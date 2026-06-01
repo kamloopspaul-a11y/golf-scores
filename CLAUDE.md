@@ -138,17 +138,21 @@ No style property that affects a shared zone (masthead, stage, page title, foote
 
 Every non-hole screen (Home, Settings, Courses, Add Scores, Save Round, Scorecard) must have exactly these zones in order:
 
-1. **Masthead** — green strip, breadcrumb left / weather right, single row only (`.header-lower` hidden via skin)
-2. **Page Title** — `<div class="page-title">` as the first child of `.stage-scrolls`
+1. **Masthead** — green strip, breadcrumb left / weather right, single row only (`.header-lower` hidden globally via skin block)
+2. **Page Title** — `<div class="page-title">` as the **first child of `.stage-scrolls`** on every screen. Title scrolls with content. Never placed in the masthead.
 3. **Stage** — `.stage-scrolls`, background `--skin-bg`, scrollable content
 4. **Nav Bar** — `.nav-bar` if a primary action button is needed (optional)
 5. **Footer** — `.footer[data-nav]`, background `--skin-bg`, rendered by `renderFooterNav()`
 
-Hole screens are the only exception and are explicitly scoped with `#screen-hole` / `#screen-stats` selectors.
+The sole exception is `#screen-hole`, which places the hole number + par/yds as a `header-lower` inside `stage-scrolls` (not the masthead). `#screen-stats` has been merged into `#screen-hole` and no longer exists.
 
-### 3. Page titles are mandatory on all non-hole screens
+### 3. Page titles are mandatory on all screens
 
-Every non-hole screen must have `<div class="page-title">Label</div>` as the first child of `.stage-scrolls`. The label is the screen's plain-language name. Style is defined once in `shared.css` — never overridden locally.
+Every screen must have a page title as the first child of `.stage-scrolls`:
+- All screens except hole: `<div class="page-title">Label</div>` — plain-language name, style defined once in `shared.css`, never overridden locally.
+- Hole screen: `<div class="header-lower">` with hole number left / par+yds right — same position rule, different element.
+
+Dynamic titles (e.g. Add Course ↔ Edit Course, Save Round ↔ error state) use an `id` on the `.page-title` element and are updated via `getElementById` — never via class-based querySelector.
 
 ### 4. No inline styles
 
