@@ -203,7 +203,7 @@ body {
 /* ── ZONE 4 — NAV BAR ────────────────────────────────────────────────────── */
 .nav-bar {
   flex: 0 0 auto;
-  background: var(--card);
+  background: var(--skin-bg);
   padding: 8px 16px calc(12px + env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
@@ -323,8 +323,8 @@ body {
 /* Masthead explicitly green so top safe area stays correct */
 .masthead { background: var(--skin-primary); }
 
-/* Remove header-upper bottom gap — was for spacing before header-lower; not needed with it hidden */
-.header-upper { margin-bottom: 0; }
+/* Header-upper bottom padding — 10px extra breathing room below thin masthead */
+.header-upper { margin-bottom: 10px; }
 
 /* Screen covers full 100dvh — skin-bg prevents green body bleed at bottom safe area */
 .screen { background: var(--skin-bg); }
@@ -364,11 +364,9 @@ body {
 .header-lower { display: none; }
 
 /* Hole + Stats screens — white lower masthead strip with green text */
-#screen-hole .header-lower,
-#screen-stats .header-lower {
+#screen-hole .header-lower {
   display: flex;
   background: var(--skin-bg);
-  border-bottom: 1px solid var(--skin-border);
   height: auto;
   min-height: 76px;
   margin-bottom: 0;
@@ -384,7 +382,6 @@ body {
 /* Footer — white surface, green icons, nav labels, bold active label */
 .footer {
   background: var(--skin-bg);
-  border-top: 1px solid var(--skin-border);
   padding: 10px 0 calc(env(safe-area-inset-bottom) + 10px);
   color: inherit;
 }
