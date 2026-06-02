@@ -361,23 +361,28 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** May 28, 2026 (Session 15 — extended)
-**Version:** v10.53 / SW v126
+**Last worked:** June 2, 2026 (Session 16)
+**Version:** v10.85 / SW v158
 
 **Completed this session:**
-- Chrome design direction approved (see Design Thread below)
-- dangrieve.com reviewed as design reference
-- Interactive mockup built: `2026-05-28-Golf-DesignMockup.html`
+- Spring Green architecture fully deployed (shared.css skin block, zone structure locked)
+- onboarding.html deleted — replaced by seedProfile() loading profile.json on boot
+- profile.json subsequently removed from repo (privacy) — local copy at ~/Documents/Studio/Projects/Golf/profile.json
+- Broken first-run check (if with no body) was causing entire JS block to fail — fixed
+- Safari top chrome white stripe: confirmed iOS 26 WebKit bug — theme-color dropped in iOS 26, chrome tint now derived from body background-color. No CSS fix available. Targeted for iOS 26.2. Tolerate in browser mode; standalone (Add to Home Screen) works correctly.
+- Save button in Settings now navigates to index.html directly
 
-**Standing rule:** No code changes without explicit agreement on what's being built first.
+**Standing rule:** Search online FIRST when a browser/CSS behaviour is unexpected — do not spend time trying CSS fixes before checking if it is a known platform bug.
 
-**Outstanding — courses.html (MUST discuss before any coding):**
-- Tee chip UX: Paul wants radio-button style — one tee at a time for hole data entry. Discuss exact behaviour.
-- Phone localStorage: Eaglepoint still has 4 old tees. Need sync code fix to overwrite stale seeded data from courses.json on load.
-- Hole data persistence: White data disappears on Back → Next. Root cause not found. Trace before fixing.
-- Tee order: sort by yardage added but untested end-to-end.
+**Standing rule:** Never comment out a redirect that is part of an if statement — remove the entire block or replace with a no-op.
 
-**Next session:** Dashboard metric list + chart-type mapping (no code until design agreed). Chrome redesign follows dashboard decisions.
+**Outstanding:**
+- Home course not auto-loading from profile on fresh cache clear (activeCourse key not set from homeCourse)
+- courses.html tee chip UX: radio-button style, one tee at a time for hole data entry
+- Phone localStorage: Eaglepoint stale tee data sync fix
+- Hole data persistence: yardage disappears on Back → Next (root cause not found)
+
+**Next session:** Confirm app fully working after v10.85 syntax fix, then resume build queue.
 
 **Build queue (in order):**
 1. ~~**Apps Script** — write `pccSelected` to Rounds tab~~ ✅ Done (Session 3)
