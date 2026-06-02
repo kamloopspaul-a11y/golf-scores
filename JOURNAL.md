@@ -2047,3 +2047,48 @@ Local style blocks stripped to screen-specific only. `stage-scrolls` stays `padd
 - Dashboard metric list + chart-type mapping (no code until agreed)
 - Apps Script: wire GPI + previous HI into post response for trend arrows
 - Courses screen: ADD COURSE button centering/sizing still being refined
+
+---
+
+## 2026-06-02 — Session 16
+
+**Version:** v10.85 / SW v158
+
+### Summary
+Painful session. Most time lost chasing a Safari browser chrome colour bug that turned out to be a known iOS 26 WebKit issue. Key lesson: search online first when CSS behaviour is unexpected.
+
+### Changes
+
+**onboarding.html removed**
+- Deleted permanently. First-run setup replaced by `seedProfile()` — async function that fetches `profile.json` from GitHub Pages on boot if no profile exists in localStorage, then reloads.
+- Mirrors the `seedCourseCache()` pattern — survives cache clears.
+- `profile.json` subsequently removed from the repo (privacy concern — contained name and email). Local copy retained at `~/Documents/Studio/Projects/Golf/profile.json`.
+
+**Syntax error fix (critical)**
+- Commenting out the onboarding redirect left a bare `if (!p.setupComplete)` with no body — a JavaScript syntax error that crashed the entire `<script>` block. Zero JS was running: no course selection, no profile, nothing.
+- Fixed by removing the entire dead first-run check block. `seedProfile()` handles first-run now.
+
+**Settings Save button**
+- Changed from `showPanel('home')` to `window.location.href = 'index.html'`.
+
+**theme-color meta tag**
+- Added `<meta name="theme-color" content="#377f09">` to all HTML pages (index, courses, settings, onboarding — now deleted).
+- Does not resolve the white stripe (see iOS 26 bug below).
+
+**Body background attempts**
+- Tried body gradient (green → skin-bg) to satisfy both top and bottom Safari chrome — accidentally applied to all elements via sed replace-all. Reverted.
+- Reverted body to `var(--skin-bg)` — correct approach; bottom chrome now cream.
+
+### iOS 26 Safari Chrome Bug (tolerated)
+- iOS 26 dropped `theme-color` support. Safari now derives top and bottom chrome tint from `body { background-color }`.
+- No way to set top and bottom chrome to different colours via CSS.
+- White stripe above green masthead in browser mode is unavoidable until iOS 26.2 (fix reportedly merged in WebKit).
+- Standalone mode (Add to Home Screen) works correctly — no Safari chrome visible.
+- WebKit bug: https://bugs.webkit.org/show_bug.cgi?id=300965
+
+### Standing Rules Added
+- **Search first** — before trying CSS fixes for unexpected browser behaviour, check if it is a known platform bug.
+- **Never comment out a redirect inside an if statement** — remove the entire block or replace with a no-op.
+
+### Files changed
+`index.html`, `shared.js`, `sw.js`, `settings.html`, `courses.html`, `onboarding.html` (deleted), `profile.json` (added then deleted), `PROJECT.md`
