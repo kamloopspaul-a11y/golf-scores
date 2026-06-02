@@ -365,7 +365,7 @@ body {
 /* Footer — white surface, green icons, nav labels, bold active label */
 .footer {
   background: var(--skin-bg);
-  padding: 10px 0 calc(env(safe-area-inset-bottom) + 10px);
+  padding: 10px 0 calc(env(safe-area-inset-bottom) + 120px);
   color: inherit;
 }
 .footer-nav-grid {
