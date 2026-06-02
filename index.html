@@ -1267,6 +1267,9 @@ async function repostPending() {
   if (msg) msg.textContent = posted === 1 ? 'Posted!' : 'All ' + posted + ' rounds posted!';
   setTimeout(() => checkPendingQueue(), 1500);
 }
+
+// Auto-retry pending rounds when connection is restored
+window.addEventListener('online', function() { repostPending(); });
 function ignorePending() {
   const banner = document.getElementById('pending-banner');
   const quiet  = document.getElementById('pending-quiet');
@@ -1355,6 +1358,16 @@ function loadActiveCourse() {
                  (c.club_name + ' – ' + c.course_name) === activeCourseData.name;
         });
         if (match) activeCourseData.apiId = match.id;
+      }
+    } else {
+      // Fallback: if activeCourse was wiped, resolve home course from profile
+      const homeName = (PROFILE.homeCourse || 'mt. paul').toLowerCase();
+      const homeMatch = Object.values(_getCache()).find(function(c) {
+        return (c.club_name || '').toLowerCase().includes(homeName);
+      });
+      if (homeMatch) {
+        activeCourseData = { name: homeMatch.club_name, apiId: homeMatch.id };
+        saveActiveCourseData(activeCourseData);
       }
     }
   } catch(e) { activeCourseData = null; }
@@ -1638,248 +1651,6 @@ function initTeePickerListener() {
 }
 
 
-// ── PROFILE SEED (from profile.json) ─────────────────
-// On first launch (no profile in localStorage), fetches profile.json and seeds
-// localStorage — survives cache clears the same way courseCache does.
-const PROFILE_JSON_URL = 'https://kamloopspaul-a11y.github.io/golf-scores/profile.json';
-
-async function seedProfile() {
-  try {
-    const existing = JSON.parse(localStorage.getItem('profile') || '{}');
-    if (existing.setupComplete) return; // already set up
-    const res = await fetch(PROFILE_JSON_URL, { cache: 'no-cache' });
-    if (!res.ok) return;
-    const data = await res.json();
-    localStorage.setItem('profile', JSON.stringify(data));
-    location.reload(); // reload so PROFILE constant picks up new data
-  } catch(e) { /* silent fail */ }
-}
-
-// ── REGIONAL COURSE SEED (from courses.json) ─────────
-// On first launch (cache < 5 courses), fetches courses.json from GitHub Pages
-// and seeds localStorage courseCache — zero API sessions consumed.
-const COURSES_JSON_URL = 'https://kamloopspaul-a11y.github.io/golf-scores/courses.json';
-
-async function seedCourseCache() {
-  const cache = _getCache();
-  if (Object.keys(cache).length >= 5) return; // already seeded
-  try {
-    const res = await fetch(COURSES_JSON_URL, { cache: 'no-cache' });
-    if (!res.ok) return;
-    const data = await res.json();
-    for (const [key, course] of Object.entries(data)) {
-      if (key === '_meta') continue;
-      if (!getCachedCourse(course.id)) saveCourseToCache(course);
-    }
-  } catch(e) { /* silent fail — offline is fine */ }
-}
-
-
-// ── ADD SCORES ───────────────────────────────────────
-function initAddScoresScreen() {
-  const di = document.getElementById('as-date-input');
-  if (di && !di.value) di.value = new Date().toISOString().split('T')[0];
-
-  const sel = document.getElementById('as-course-select');
-  if (!sel) return;
-  const cache = _getCache();
-  const courses = Object.values(cache)
-    .filter(c => c.club_name)
-    .sort((a, b) => (a.club_name||'').localeCompare(b.club_name||''));
-
-  sel.innerHTML = '<option value="">— Select a course —</option>';
-  let defaultId = null;
-  courses.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.club_name;
-    // Default to home course from profile, fallback to Mt. Paul
-    const homeName = ((PROFILE.homeCourse || 'mt. paul')).toLowerCase();
-    if (!defaultId || (c.club_name||'').toLowerCase().includes(homeName)) defaultId = c.id;
-    sel.appendChild(opt);
-  });
-  if (defaultId) { sel.value = defaultId; asOnCourseChange(); }
-}
-
-function asOnCourseChange() {
-  const sel    = document.getElementById('as-course-select');
-  const teeSel = document.getElementById('as-tee-select');
-  const hField = document.getElementById('as-holes-field');
-  const grid   = document.getElementById('as-score-grid');
-  const hdr    = document.getElementById('as-scorecard-header');
-  if (!sel || !teeSel) return;
-
-  const course = getCachedCourse(sel.value);
-  teeSel.innerHTML = '';
-  if (grid) grid.innerHTML = '';
-  if (hdr)  hdr.style.display = 'none';
-  if (!hField) return;
-
-  if (!course) {
-    teeSel.innerHTML = '<option value="">— Select course first —</option>';
-    hField.style.display = 'none';
-    return;
-  }
-
-  const allTees = ((course.tees || {}).male || [])
-    .map((t, i) => ({ idx: i, teeBox: t }));
-
-  if (!allTees.length) {
-    teeSel.innerHTML = '<option value="">No tee data</option>';
-  } else {
-    teeSel.innerHTML = '';
-    allTees.forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t.idx;
-      opt.textContent = t.teeBox.tee_name +
-        (t.teeBox.course_rating ? '  CR ' + t.teeBox.course_rating : '');
-      teeSel.appendChild(opt);
-    });
-    teeSel._teeList = allTees;
-    const blueIdx = allTees.findIndex(t => t.teeBox.tee_name === 'Blue');
-    if (blueIdx >= 0) teeSel.selectedIndex = blueIdx;
-  }
-
-  // Show 9/18 toggle only for 9-hole courses
-  const sampleTee = allTees[0] && allTees[0].teeBox;
-  const numHoles = sampleTee ? (sampleTee.holes || []).length : 18;
-  hField.style.display = numHoles === 9 ? 'block' : 'none';
-  const r18 = document.getElementById('as-holes-18');
-  if (r18) r18.checked = true;
-
-  buildScoreGrid();
-}
-
-function buildScoreGrid() {
-  const tSel  = document.getElementById('as-tee-select');
-  const grid  = document.getElementById('as-score-grid');
-  const hdr   = document.getElementById('as-scorecard-header');
-  const statusEl = document.getElementById('as-status');
-  if (!grid) return;
-
-  const teeList  = tSel ? (tSel._teeList || []) : [];
-  const teeIdx   = tSel ? parseInt(tSel.value, 10) : NaN;
-  const teeEntry = teeList[teeIdx];
-
-  if (!teeEntry) {
-    grid.innerHTML = '';
-    if (hdr) hdr.style.display = 'none';
-    return;
-  }
-
-  let holes = teeEntry.teeBox.holes || [];
-  const play18 = document.getElementById('as-holes-18');
-  if (holes.length === 9 && play18 && play18.checked) holes = [...holes, ...holes];
-
-  if (hdr) hdr.style.display = 'block';
-  if (statusEl) { statusEl.textContent = ''; statusEl.className = 'as-status'; }
-
-  let html = '<table class="as-score-table"><thead><tr><th>#</th><th>Par</th><th>Score</th></tr></thead><tbody>';
-  holes.forEach(function(h, i) {
-    var par = h.par || 4;
-    html += '<tr>' +
-      '<td class="as-score-hole">' + (i + 1) + '</td>' +
-      '<td class="as-score-par">' + par + '</td>' +
-      '<td class="as-score-td"><input type="number" inputmode="numeric" class="as-score-input"' +
-      ' id="as-score-' + i + '" value="' + par + '" min="1" max="15" data-par="' + par + '"></td>' +
-      '</tr>';
-  });
-  html += '</tbody></table>';
-  grid.innerHTML = html;
-}
-
-async function submitHistoricalRound() {
-  const di       = document.getElementById('as-date-input');
-  const cSel     = document.getElementById('as-course-select');
-  const tSel     = document.getElementById('as-tee-select');
-  const statusEl = document.getElementById('as-status');
-
-  if (!di || !di.value)     { alert('Please select a date played.'); return; }
-  if (!cSel || !cSel.value) { alert('Please select a course.'); return; }
-
-  const course   = getCachedCourse(cSel.value);
-  if (!course) { alert('Course data not found.'); return; }
-
-  const teeList  = tSel ? (tSel._teeList || []) : [];
-  const teeIdx   = parseInt(tSel.value, 10);
-  const teeEntry = teeList[teeIdx];
-  if (!teeEntry) { alert('Please select tees.'); return; }
-
-  const inputs = document.querySelectorAll('.as-score-input');
-  if (!inputs.length) { alert('No scorecard loaded — select a course and tees first.'); return; }
-
-  let holes = teeEntry.teeBox.holes || [];
-  const play18 = document.getElementById('as-holes-18');
-  if (holes.length === 9 && play18 && play18.checked) holes = [...holes, ...holes];
-
-  const holePayload = holes.map(function(h, i) {
-    const input = document.getElementById('as-score-' + i);
-    const score = input ? parseInt(input.value, 10) : h.par;
-    return {
-      hole: i + 1, par: h.par, strokeIndex: h.index || null,
-      score: isNaN(score) ? h.par : score,
-      putts: null, fir: null, gir: null, ud: null, xud: null, pen: null
-    };
-  });
-
-  const roundId = (crypto && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : Date.now().toString(36) + Math.random().toString(36).slice(2);
-
-  const teeBox = teeEntry.teeBox;
-  const payload = {
-    roundId:      roundId,
-    date:         di.value,
-    course:       course.club_name,
-    courseId:     course.id,
-    tees:         teeBox.tee_name,
-    courseRating: teeBox.course_rating || null,
-    slopeRating:  teeBox.slope_rating  || null,
-    par:          teeBox.par_total || holes.reduce(function(s, h) { return s + h.par; }, 0),
-    holes:        holePayload
-  };
-
-  if (!SHEETS_URL) {
-    alert('Google Sheets URL not set. Please configure it in Settings.');
-    return;
-  }
-
-  if (statusEl) { statusEl.textContent = 'Posting…'; statusEl.className = 'as-status as-status-posting'; }
-
-  try {
-    const res  = await fetch(SHEETS_URL, { method: 'POST', body: JSON.stringify({...payload, secret: WEBHOOK_SECRET}) });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'Server error');
-    if (statusEl) { statusEl.textContent = 'Round posted successfully.'; statusEl.className = 'as-status as-status-ok'; }
-    // Reset scores to par for next entry, clear date
-    document.querySelectorAll('.as-score-input').forEach(function(inp) { inp.value = inp.dataset.par; });
-    if (di) di.value = '';
-    checkPendingQueue();
-  } catch(e) {
-    const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
-    if (!queue.find(function(q) { return q.roundId === payload.roundId; })) {
-      queue.push({...payload, savedAt: new Date().toISOString()});
-      localStorage.setItem('pendingRounds', JSON.stringify(queue));
-    }
-    if (statusEl) {
-      statusEl.textContent = 'No connection — round saved locally and will post when online.';
-      statusEl.className = 'as-status as-status-fail';
-    }
-    checkPendingQueue();
-  }
-}
-
-// ── INIT ──────────────────────────────────────────────
-const today=new Date().toISOString().split('T')[0];
-state.date=today; state.players=[(PROFILE.name || "Paul")];
-// Sync player-name display from profile
-(function(){ const el=document.getElementById('player-name'); const pn=PROFILE.name||'Paul'; if(el){ if(el.tagName==='INPUT') el.value=pn; else el.textContent=pn; }})();
-// Restore persisted round start time (survives app close/reopen mid-round)
-
-loadActiveCourse();
-initTeePickerListener(); // wire delegated tee chip listener once
-seedCourseCache(); // silent background cache seed
-seedProfile();     // seed default profile if none exists
 applyStatVisibility();
 
 // Handle cross-page panel navigation (e.g. ?panel=add-scores from settings.html)
