@@ -751,14 +751,6 @@
 </div>
 <audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
 <script>
-// ── FIRST-RUN CHECK ───────────────────────────────────
-(function(){
-  try {
-    const p = JSON.parse(localStorage.getItem('profile') || '{}');
-    if (!p.setupComplete) // window.location.replace('onboarding.html');
-  } catch(e) { // window.location.replace('onboarding.html'); }
-})();
-
 // ── PROFILE (read once at startup) ───────────────────
 const PROFILE = (function(){
   try { return JSON.parse(localStorage.getItem('profile') || '{}'); } catch(e) { return {}; }
