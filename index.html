@@ -755,8 +755,8 @@
 (function(){
   try {
     const p = JSON.parse(localStorage.getItem('profile') || '{}');
-    if (!p.setupComplete) window.location.replace('onboarding.html');
-  } catch(e) { window.location.replace('onboarding.html'); }
+    if (!p.setupComplete) // window.location.replace('onboarding.html');
+  } catch(e) { // window.location.replace('onboarding.html'); }
 })();
 
 // ── PROFILE (read once at startup) ───────────────────

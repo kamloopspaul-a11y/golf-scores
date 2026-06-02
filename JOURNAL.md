@@ -1992,3 +1992,58 @@ Reviewed `2026-05-28-Golf-DesignMockup.html` (v1) and iterated to `2026-05-29-Go
 ### Session close addendum
 - PROJECT.md updated: trend arrows added to Spring Green skin notes (colour table, semantic rules, PWA vs email usage, Apps Script wiring reminder)
 - All three close-out files confirmed updated: JOURNAL.md, PROJECT.md, TODO_LIST.md
+
+---
+
+## 2026-06-01 — Session 18 — Spring Green skin finalisation + CSS audit
+
+**Version:** v10.76 / SW v149
+
+### Summary
+Full-day session focused on centralising the Spring Green skin and locking global CSS conventions. No new features — all structural/visual cleanup.
+
+### Hole Screen redesign
+- Merged `#screen-stats` into `#screen-hole` — stats now display on the same screen as the score counter, below the progress dots
+- Score counter `+/−` buttons: replaced grey 3D gradient with green circles (white label), matching Putts stepper
+- Putts stepper bumped to 44px (Apple HIG compliant)
+- Score jewel: replaced silver radial gradient with flat dark green circle
+- Score rings (`score-ring`, `score-ring-outer`) removed — CSS, HTML, and JS
+- Player chip removed from all screens — CSS, HTML, JS (`buildPlayerChips`, `switchPlayer`)
+- `.btn-grey` removed from shared.css — all buttons green
+- Nav bar and footer background changed to `var(--skin-bg)` — matches stage
+- Rule lines removed: below page title, below dots, within stats rows
+- Progress dots: `flex-wrap: nowrap`
+
+### Naming / architecture cleanup
+- `header-lower` renamed to `.hole-title` — no longer a masthead concept
+- `hl-left` → `.hole-num`, `hl-right` → `.hole-meta`
+- `renderMasthead()` removed from shared.js (dead code)
+- `querySelector('.hl-left')` removed from `applyPageMeta()` (dead reference)
+
+### Global page title rule (locked)
+- All screen titles moved to `stage-scrolls` as first child (`.page-title`)
+- `header-lower` removed from masthead on all screens — settings.html, courses.html, index.html
+- Exception: `#screen-hole` uses `.hole-title` (hole num + par/yds) in stage-scrolls
+- Rule locked in `CLAUDE.md` Global Enforcement Rules
+
+### CSS audit — local → shared.css
+Migrated to shared.css: `.form-section`, `.field-label`, `.field-input`, `.setting-input`, `.seg-control`, `.seg-btn`, `.tee-chip`, `.del-btn`, `.toggle-wrap`, `.toggle-label`, `.chevron`, `.setting-row.link`, `.coming-soon`, `.edit-badge`, `.nav-dots`, `.dot`, `.nav-btn`, `.sc-table` + scorecard cells, `.pending-banner`, `.setup-course-card`, `.pcc-setup-row`, `.setup-tee-picker`, `.player-row`, `.player-input`
+
+Local style blocks stripped to screen-specific only. `stage-scrolls` stays `padding: 0` globally — components own their horizontal padding.
+
+### Body background fix
+- Body bg: `var(--skin-primary)` (green) — covers iOS top safe area above masthead
+- `.screen` bg: `var(--skin-bg)` (#f5f4f0) — covers everything visible to user
+- Eliminates green bleed at bottom, white flash at top on iPhone
+
+### Mockup created
+- `2026-06-01-Golf-HoleScreen-Mockup.html` — iterative hole screen design reference
+
+### Files changed
+`index.html`, `shared.css`, `shared.js`, `sw.js`, `settings.html`, `courses.html`, `CLAUDE.md`
+
+### Open items
+- Global Enforcement Audit (settings.html + courses.html) — partially completed today; remaining local CSS still to review
+- Dashboard metric list + chart-type mapping (no code until agreed)
+- Apps Script: wire GPI + previous HI into post response for trend arrows
+- Courses screen: ADD COURSE button centering/sizing still being refined

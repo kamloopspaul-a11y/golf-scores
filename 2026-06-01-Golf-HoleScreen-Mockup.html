@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hole Screen Mockup — Golf PWA</title>
+<style>
+  :root {
+    --green: #377f09;
+    --green-light: #a8d080;
+    --off-white: #f5f4f0;
+    --text-dark: #1a1a1a;
+    --text-mid: #555;
+    --text-light: #888;
+    --border: #e0ddd8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    background: #222;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 32px 16px;
+    gap: 16px;
+  }
+  .label {
+    color: #aaa;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Phone shell */
+  .phone {
+    width: 375px;
+    height: 780px;
+    background: var(--off-white);
+    border-radius: 44px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  /* ── MASTHEAD — thin strip ── */
+  .masthead {
+    background: var(--green);
+    padding: 44px 20px 10px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .course-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.01em;
+  }
+  .weather {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  /* ── HOLE INFO — top of stage ── */
+  .hole-info {
+    width: 100%;
+    background: white;
+    padding: 14px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .hole-num {
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--green);
+    line-height: 1;
+  }
+  .hole-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-end;
+  }
+  .hole-meta span {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  /* ── STAGE ── */
+  .stage {
+    flex: 1 1 auto;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    padding-top: 20px;
+    padding-bottom: 0;
+  }
+
+  /* Counter — tight to masthead */
+  .counter {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    margin-bottom: 16px;
+  }
+  .cbtn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--green);
+    border: none;
+    font-size: 26px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+  }
+  .jewel {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    font-size: 38px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .score-label {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 16px;
+  }
+
+  /* Progress dots */
+  .dots {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ddd;
+  }
+  .dot.on { background: var(--green); }
+
+  /* ── STAT ROWS ── */
+  .stats {
+    width: 100%;
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 0;
+  }
+  .stat-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    letter-spacing: 0.02em;
+  }
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 1px;
+  }
+
+  /* Toggle switch */
+  .toggle {
+    width: 48px;
+    height: 26px;
+    background: #d1d5db;
+    border-radius: 13px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--green); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: left 0.15s;
+  }
+  .toggle.on::after { left: 20px; }
+
+  /* Putts stepper inline */
+  .putts-stepper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ps-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    line-height: 1;
+    user-select: none;
+  }
+  .ps-val {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--green);
+    min-width: 28px;
+    text-align: center;
+  }
+
+  /* ── BACK / NEXT ── */
+  .hole-navbar {
+    background: white;
+    border-top: 1px solid #e8e8e8;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 24px 16px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+  .nbtn {
+    padding: 13px 32px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    color: white;
+    position: relative;
+    top: 0;
+    transition: transform 0.08s, box-shadow 0.08s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nbtn-back, .nbtn-next {
+    background: linear-gradient(180deg, #4a9e0d 0%, #377f09 50%, #1f4d05 100%);
+    box-shadow: 0 6px 0 #164803, 0 8px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  .nbtn:active {
+    transform: translateY(4px);
+    top: 4px;
+    box-shadow: 0 2px 0 #164803, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+
+  /* ── FOOTER NAV ── */
+  .footer-nav {
+    background: white;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 8px 0 20px;
+    flex-shrink: 0;
+  }
+  .fnav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    color: var(--green);
+  }
+  .fnav-btn.active .fnav-label { font-weight: 700; }
+  .fnav-btn svg { width: 25px; height: 25px; fill: currentColor; }
+  .fnav-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* annotation bar */
+  .note {
+    background: rgba(255,255,255,0.07);
+    color: #aaa;
+    font-size: 11px;
+    text-align: center;
+    padding: 8px 20px;
+    border-radius: 8px;
+    max-width: 375px;
+    letter-spacing: 0.03em;
+  }
+</style>
+</head>
+<body>
+
+<div class="label">Hole Screen — Layout Mockup — 2026-06-01</div>
+
+<div class="phone">
+
+  <!-- MASTHEAD — thin strip -->
+  <div class="masthead">
+    <span class="course-name">Mt. Paul GC</span>
+    <span class="weather">18°C · SW 12 km/h</span>
+  </div>
+
+  <!-- STAGE -->
+  <div class="stage">
+
+    <!-- Hole info — top of content -->
+    <div class="hole-info">
+      <div class="hole-num">7</div>
+      <div class="hole-meta">
+        <span>Par 4</span>
+        <span>342 yds</span>
+      </div>
+    </div>
+
+    <!-- Counter — raised close to masthead -->
+    <div class="counter">
+      <div class="cbtn">−</div>
+      <div class="jewel">5</div>
+      <div class="cbtn">+</div>
+    </div>
+    <!-- Progress dots — below counter -->
+    <div class="dots">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <div class="dot on"></div><div class="dot"></div><div class="dot"></div>
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+
+    <!-- Stat rows — below dots, above nav -->
+    <div class="stats">
+      <div class="stat-row">
+        <div>
+          <div class="stat-name">FIR</div>
+          <div class="stat-sub">Fairway in Regulation</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+      <div class="stat-row">
+        <div>
+          <div class="stat-name">GIR</div>
+          <div class="stat-sub">Green in Regulation</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+      <div class="stat-row">
+        <div>
+          <div class="stat-name">PEN</div>
+          <div class="stat-sub">Penalty strokes</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+      <div class="stat-row">
+        <div>
+          <div class="stat-name">U&amp;D</div>
+          <div class="stat-sub">Up and Down</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+      <div class="stat-row">
+        <div>
+          <div class="stat-name">X-UD</div>
+          <div class="stat-sub">Failed Up and Down</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+      <div class="stat-row">
+        <div>
+          <div class="stat-name">PUTTS</div>
+        </div>
+        <div class="putts-stepper">
+          <div class="ps-btn">−</div>
+          <div class="ps-val">2</div>
+          <div class="ps-btn">+</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /stage -->
+
+  <!-- BACK / NEXT -->
+  <div class="hole-navbar">
+    <button class="nbtn nbtn-back">Back</button>
+    <button class="nbtn nbtn-next">Next</button>
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="footer-nav">
+    <div class="fnav-btn">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span class="fnav-label">Home</span>
+    </div>
+    <div class="fnav-btn">
+      <svg viewBox="0 0 24 24"><rect x="3" y="13" width="5" height="8" rx="1"/><rect x="9.5" y="8" width="5" height="13" rx="1"/><rect x="16" y="4" width="5" height="17" rx="1"/></svg>
+      <span class="fnav-label">Dash</span>
+    </div>
+    <div class="fnav-btn active">
+      <svg viewBox="0 0 24 24"><path d="M3 5h18M3 10.5h18M3 16h18"/><rect x="3" y="4" width="18" height="3" rx="1.5" fill="currentColor"/><rect x="3" y="9.5" width="18" height="3" rx="1.5" fill="currentColor"/><rect x="3" y="15" width="18" height="3" rx="1.5" fill="currentColor"/></svg>
+      <span class="fnav-label">Courses</span>
+    </div>
+    <div class="fnav-btn">
+      <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.92c.04-.3.07-.62.07-.93s-.03-.64-.07-1l2.13-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.36-.07.7-.07 1s.03.64.07 1l-2.11 1.63c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.63z"/></svg>
+      <span class="fnav-label">Settings</span>
+    </div>
+  </div>
+
+</div><!-- /phone -->
+
+<div class="note">counter → score label → dots → stat rows → Back/Next → footer nav</div>
+
+</body>
+</html>

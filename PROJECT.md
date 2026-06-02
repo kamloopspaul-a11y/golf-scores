@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v10.56 / SW v129 — June 1, 2026
+**Version:** v10.76 / SW v149 — June 1, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
