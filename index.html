@@ -1645,6 +1645,24 @@ function initTeePickerListener() {
   });
 }
 
+
+// ── PROFILE SEED (from profile.json) ─────────────────
+// On first launch (no profile in localStorage), fetches profile.json and seeds
+// localStorage — survives cache clears the same way courseCache does.
+const PROFILE_JSON_URL = 'https://kamloopspaul-a11y.github.io/golf-scores/profile.json';
+
+async function seedProfile() {
+  try {
+    const existing = JSON.parse(localStorage.getItem('profile') || '{}');
+    if (existing.setupComplete) return; // already set up
+    const res = await fetch(PROFILE_JSON_URL, { cache: 'no-cache' });
+    if (!res.ok) return;
+    const data = await res.json();
+    localStorage.setItem('profile', JSON.stringify(data));
+    location.reload(); // reload so PROFILE constant picks up new data
+  } catch(e) { /* silent fail */ }
+}
+
 // ── REGIONAL COURSE SEED (from courses.json) ─────────
 // On first launch (cache < 5 courses), fetches courses.json from GitHub Pages
 // and seeds localStorage courseCache — zero API sessions consumed.
@@ -1869,6 +1887,7 @@ state.date=today; state.players=[(PROFILE.name || "Paul")];
 loadActiveCourse();
 initTeePickerListener(); // wire delegated tee chip listener once
 seedCourseCache(); // silent background cache seed
+seedProfile();     // seed default profile if none exists
 applyStatVisibility();
 
 // Handle cross-page panel navigation (e.g. ?panel=add-scores from settings.html)
