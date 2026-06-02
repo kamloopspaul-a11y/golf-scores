@@ -199,7 +199,7 @@ body {
 /* ── ZONE 4 — NAV BAR ────────────────────────────────────────────────────── */
 .nav-bar {
   flex: 0 0 auto;
-  background: linear-gradient(to bottom, var(--skin-primary) 0%, var(--skin-bg) 180px);
+  background: var(--skin-bg);
   padding: 8px 16px calc(12px + env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
@@ -324,17 +324,17 @@ body {
 .header-upper { margin-bottom: 10px; }
 
 /* Screen covers full 100dvh — skin-bg prevents green body bleed at bottom safe area */
-.screen { background: linear-gradient(to bottom, var(--skin-primary) 0%, var(--skin-bg) 180px); }
+.screen { background: var(--skin-bg); }
 /* Monospace elements — system fallback for DM Mono */
 .sc-table, .player-input, .score-inner-num {
   font-family: 'Courier New', 'Menlo', monospace;
 }
 
 /* Stage background */
-.stage-scrolls { background: linear-gradient(to bottom, var(--skin-primary) 0%, var(--skin-bg) 180px); }
+.stage-scrolls { background: var(--skin-bg); }
 
 /* Section headers */
-.section-header { background: linear-gradient(to bottom, var(--skin-primary) 0%, var(--skin-bg) 180px); }
+.section-header { background: var(--skin-bg); }
 
 /* Page title — large green heading in stage-scrolls on utility screens */
 .page-title {
@@ -358,13 +358,13 @@ body {
 }
 
 /* Hole title zone — skin colours */
-.hole-title { background: linear-gradient(to bottom, var(--skin-primary) 0%, var(--skin-bg) 180px); padding: 10px 0 14px; }
+.hole-title { background: var(--skin-bg); padding: 10px 0 14px; }
 .hole-num { color: var(--skin-primary); }
 .hole-info-line { color: var(--skin-primary); }
 
 /* Footer — white surface, green icons, nav labels, bold active label */
 .footer {
-  background: linear-gradient(to bottom, var(--skin-primary) 0%, var(--skin-bg) 180px);
+  background: var(--skin-bg);
   padding: 10px 0 calc(env(safe-area-inset-bottom) + 10px);
   color: inherit;
 }
@@ -380,7 +380,7 @@ body {
   min-width: 44px;
   height: auto;
   padding: 8px 10px;
-  background: linear-gradient(to bottom, var(--skin-primary) 0%, var(--skin-bg) 180px);
+  background: var(--skin-bg);
   border-radius: 10px;
 }
 .fnav-btn svg { width: 25px; height: 25px; }
