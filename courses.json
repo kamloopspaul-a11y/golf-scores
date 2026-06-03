@@ -1,23 +1,23 @@
 {
   "_meta": {
-    "_comment": "My Golf Scores — regional course seed file (Kamloops area). Loaded at first launch and merged into localStorage courseCache.",
+    "_comment": "My Golf Scores \u2014 regional course seed file (Kamloops area). Loaded at first launch and merged into localStorage courseCache.",
     "_format_version": "1",
     "_updated": "2026-05-22",
     "_instructions": [
       "Keys are course IDs (strings). API courses use positive integer IDs matching GolfCourseAPI.com.",
       "Manual courses (no API record) use NEGATIVE integer IDs: '-1', '-2', etc.",
       "Each entry: id, club_name, course_name, location {address?, city, state, country, latitude?, longitude?},",
-      "  tees { male: [...], female: [...] } — each tee:",
+      "  tees { male: [...], female: [...] } \u2014 each tee:",
       "  tee_name, course_rating, slope_rating, number_of_holes, par_total, total_yards,",
-      "  holes: [{par, yardage}, ...] — 18 entries.",
+      "  holes: [{par, yardage}, ...] \u2014 18 entries.",
       "cachedAt: ISO date (YYYY-MM-DD).",
       "To add a manual course: copy an existing entry, assign a new negative ID, fill in the data, append at end."
     ]
   },
   "1": {
     "id": 1,
-    "club_name": "Bighorn Golf & Country Club",
-    "course_name": "Bighorn Golf & Country Club",
+    "club_name": "Bighorn",
+    "course_name": "Bighorn",
     "phone": "250-571-7888",
     "location": {
       "address": "1000 Clubhouse Dr, Kamloops, BC V2H 1T9",
@@ -775,10 +775,10 @@
   },
   "2": {
     "id": 2,
-    "club_name": "Chinook Cove Golf Club",
-    "course_name": "Chinook Cove Golf Club",
+    "club_name": "Chinook Cove",
+    "course_name": "Chinook Cove",
     "location": {
-      "address": "5045 Boulder Mountain Rd, Barrière, BC V0E 1E0, Canada",
+      "address": "5045 Boulder Mountain Rd, Barri\u00e8re, BC V0E 1E0, Canada",
       "city": "Barriere",
       "state": "BC",
       "country": "Canada",
@@ -1590,8 +1590,8 @@
   },
   "4": {
     "id": 4,
-    "club_name": "Kamloops Golf Club",
-    "course_name": "Kamloops Golf Club",
+    "club_name": "Kamloops GC",
+    "course_name": "Kamloops GC",
     "location": {
       "address": "3125 Tranquille Rd, Kamloops, BC V2B 8B6, Canada",
       "city": "Kamloops",
@@ -2185,8 +2185,8 @@
   },
   "5": {
     "id": 5,
-    "club_name": "Meadow Creek Golf Club",
-    "course_name": "Meadow Creek Golf Club",
+    "club_name": "Meadow Creek",
+    "course_name": "Meadow Creek",
     "phone": "250-523-6666",
     "notes": "9-hole course played twice for 18. Some holes use different tee boxes on back 9 (reflected in yardages). Tee names WHITE/BLUE and RED/GOLD indicate mixed tee sets.",
     "location": {
@@ -2535,8 +2535,8 @@
   },
   "6": {
     "id": 6,
-    "club_name": "Mt. Paul GC",
-    "course_name": "Mt. Paul GC",
+    "club_name": "Mt. Paul",
+    "course_name": "Mt. Paul",
     "phone": "250-374-4653",
     "location": {
       "city": "Kamloops",
@@ -2752,8 +2752,8 @@
   },
   "7": {
     "id": 7,
-    "club_name": "Pineridge Golf Course",
-    "course_name": "Pineridge Golf Course",
+    "club_name": "Pineridge",
+    "course_name": "Pineridge",
     "phone": "250-573-4333",
     "location": {
       "address": "4725 East Trans Canada Hwy, Kamloops, BC V2C 4S4",
@@ -3102,8 +3102,8 @@
   },
   "8": {
     "id": 8,
-    "club_name": "Rivershore Golf Links",
-    "course_name": "Rivershore Golf Links",
+    "club_name": "Rivershore",
+    "course_name": "Rivershore",
     "location": {
       "address": "330 Rivershore Dr, Kamloops, BC V2H 1S1, Canada",
       "city": "Kamloops",
@@ -3779,8 +3779,8 @@
   },
   "9": {
     "id": 9,
-    "club_name": "Sun Peaks Golf Resort",
-    "course_name": "Sun Peaks Golf Resort",
+    "club_name": "Sun Peaks",
+    "course_name": "Sun Peaks",
     "location": {
       "address": "3220 Village Way, Sun Peaks, BC V0E 5N0, Canada",
       "city": "Sun Peaks",
@@ -4374,8 +4374,8 @@
   },
   "10": {
     "id": 10,
-    "club_name": "Talking Rock Golf Club",
-    "course_name": "Talking Rock Golf Club",
+    "club_name": "Talking Rock",
+    "course_name": "Talking Rock",
     "location": {
       "address": "1663 Little Shuswap Lake Rd, Chase, BC V0E 1M2, Canada",
       "city": "Chase",
@@ -5215,8 +5215,8 @@
   },
   "11": {
     "id": 11,
-    "club_name": "The Dunes At Kamloops",
-    "course_name": "The Dunes At Kamloops",
+    "club_name": "The Dunes",
+    "course_name": "The Dunes",
     "location": {
       "address": "652 Dunes Dr, Kamloops, BC V2B 8M8, Canada",
       "city": "Kamloops",
