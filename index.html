@@ -1875,6 +1875,36 @@ state.date=today; state.players=[(PROFILE.name || "Paul")];
 loadActiveCourse();
 initTeePickerListener(); // wire delegated tee chip listener once
 seedCourseCache(); // silent background cache seed
+// ── ONE-TIME COURSE NAME MIGRATION ───────────────────
+// Renames long course names to short preferred names in courseCache.
+// Runs once, flagged by localStorage key so it never repeats.
+(function migrateCourseNames() {
+  if (localStorage.getItem('courseNamesMigrated_v1')) return;
+  const nameMap = {
+    'Bighorn Golf & Country Club': 'Bighorn',
+    'Chinook Cove Golf Club':      'Chinook Cove',
+    'Kamloops Golf Club':           'Kamloops GC',
+    'Meadow Creek Golf Club':       'Meadow Creek',
+    'Mt. Paul GC':                  'Mt. Paul',
+    'Pineridge Golf Course':        'Pineridge',
+    'Rivershore Golf Links':        'Rivershore',
+    'Sun Peaks Golf Resort':        'Sun Peaks',
+    'Talking Rock Golf Club':       'Talking Rock',
+    'The Dunes At Kamloops':        'The Dunes',
+  };
+  try {
+    const cache = JSON.parse(localStorage.getItem('courseCache') || '{}');
+    let changed = false;
+    Object.values(cache).forEach(function(c) {
+      const short = nameMap[c.club_name];
+      if (short) { c.club_name = short; c.course_name = short; changed = true; }
+    });
+    if (changed) localStorage.setItem('courseCache', JSON.stringify(cache));
+    localStorage.setItem('courseNamesMigrated_v1', '1');
+  } catch(e) { /* silent fail */ }
+})();
+
+
 applyStatVisibility();
 
 // Handle cross-page panel navigation (e.g. ?panel=add-scores from settings.html)
