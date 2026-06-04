@@ -751,6 +751,74 @@
 </div>
 <audio id="hio-sound" src="cheering.mp3" preload="auto"></audio>
 <script>
+// ── INDEXEDDB — pending rounds durable queue ──────────
+// Uses a separate DB so iOS doesn't evict it with localStorage.
+const DB_NAME    = 'golfDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'pendingRounds';
+
+function openGolfDB() {
+  return new Promise(function(resolve, reject) {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = function(e) {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'roundId' });
+      }
+    };
+    req.onsuccess = function(e) { resolve(e.target.result); };
+    req.onerror   = function(e) { reject(e.target.error); };
+  });
+}
+
+function idbGetQueue() {
+  return openGolfDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const tx    = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req   = store.getAll();
+      req.onsuccess = function() { resolve(req.result || []); };
+      req.onerror   = function() { resolve([]); }; // degrade gracefully
+    });
+  }).catch(function() { return []; });
+}
+
+function idbAddRound(payload) {
+  return openGolfDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const tx    = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.put(payload); // put is idempotent on roundId key
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror    = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+function idbRemoveRound(roundId) {
+  return openGolfDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const tx    = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.delete(roundId);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror    = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+function idbClearQueue() {
+  return openGolfDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const tx    = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.clear();
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror    = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
 // ── PROFILE (read once at startup) ───────────────────
 const PROFILE = (function(){
   try { return JSON.parse(localStorage.getItem('profile') || '{}'); } catch(e) { return {}; }
@@ -1213,18 +1281,14 @@ async function submitRound(){
     const mhTitleErr = document.getElementById('success-masthead-title');
     if(mhTitleErr) mhTitleErr.textContent='Save Round';
     if(infoBtn) infoBtn.classList.add('visible');
-    // Save to offline queue — payload keeps its roundId so retry is idempotent
-    const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
-    if(!queue.find(q => q.roundId === payload.roundId)) {
-      queue.push({...payload, savedAt: new Date().toISOString()});
-      localStorage.setItem('pendingRounds', JSON.stringify(queue));
-    }
+    // Save to offline queue — idbAddRound is idempotent on roundId key
+    await idbAddRound({...payload, savedAt: new Date().toISOString()});
   }
   if(spinner) spinner.classList.add('hidden');
 }
 // ── OFFLINE QUEUE ─────────────────────────────────────
-function checkPendingQueue() {
-  const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
+async function checkPendingQueue() {
+  const queue  = await idbGetQueue();
   const banner = document.getElementById('pending-banner');
   const quiet  = document.getElementById('pending-quiet');
   const msg    = document.getElementById('pending-banner-msg');
@@ -1241,7 +1305,7 @@ function checkPendingQueue() {
 async function repostPending() {
   const btn = document.getElementById('pending-post-btn');
   const msg = document.getElementById('pending-banner-msg');
-  let queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
+  const queue = await idbGetQueue();
   if (!queue.length) return;
   if (btn) btn.disabled = true;
   let posted = 0;
@@ -1251,21 +1315,19 @@ async function repostPending() {
       const res  = await fetch(SHEETS_URL, {method:'POST', body: JSON.stringify({...queue[i], secret: WEBHOOK_SECRET})});
       const data = await res.json();
       if(!data.ok) throw new Error(data.error || 'Server rejected post');
+      await idbRemoveRound(queue[i].roundId);
       posted++;
     } catch(e) {
-      // Stop on first failure, leave remaining in queue
-      queue = queue.slice(i);
-      localStorage.setItem('pendingRounds', JSON.stringify(queue));
+      // Stop on first failure — already-posted rounds removed above; rest remain in IDB
       if (msg) msg.textContent = 'Posted ' + posted + '. No internet for the rest — try again later.';
       if (btn) btn.disabled = false;
-      setTimeout(() => checkPendingQueue(), 2500);
+      setTimeout(function() { checkPendingQueue(); }, 2500);
       return;
     }
   }
-  localStorage.setItem('pendingRounds', JSON.stringify([]));
   if (btn) btn.disabled = false;
   if (msg) msg.textContent = posted === 1 ? 'Posted!' : 'All ' + posted + ' rounds posted!';
-  setTimeout(() => checkPendingQueue(), 1500);
+  setTimeout(function() { checkPendingQueue(); }, 1500);
 }
 // Auto-retry pending rounds when connection is restored
 window.addEventListener('online', function() { repostPending(); });
@@ -1852,11 +1914,8 @@ async function submitHistoricalRound() {
     if (di) di.value = '';
     checkPendingQueue();
   } catch(e) {
-    const queue = JSON.parse(localStorage.getItem('pendingRounds') || '[]');
-    if (!queue.find(function(q) { return q.roundId === payload.roundId; })) {
-      queue.push({...payload, savedAt: new Date().toISOString()});
-      localStorage.setItem('pendingRounds', JSON.stringify(queue));
-    }
+    // Save to offline queue — idbAddRound is idempotent on roundId key
+    await idbAddRound({...payload, savedAt: new Date().toISOString()});
     if (statusEl) {
       statusEl.textContent = 'No connection — round saved locally and will post when online.';
       statusEl.className = 'as-status as-status-fail';
@@ -1875,6 +1934,32 @@ state.date=today; state.players=[(PROFILE.name || "Paul")];
 loadActiveCourse();
 initTeePickerListener(); // wire delegated tee chip listener once
 seedCourseCache(); // silent background cache seed
+
+// ── ONE-TIME PENDING ROUNDS MIGRATION: localStorage → IndexedDB ──
+// Runs once. Moves any rounds stranded in old localStorage key into IDB, then removes the key.
+(function migratePendingRoundsToIDB() {
+  const raw = localStorage.getItem('pendingRounds');
+  if (!raw) return;
+  try {
+    const rounds = JSON.parse(raw);
+    if (!Array.isArray(rounds) || rounds.length === 0) {
+      localStorage.removeItem('pendingRounds');
+      return;
+    }
+    Promise.all(rounds.map(function(r) { return idbAddRound(r); }))
+      .then(function() {
+        localStorage.removeItem('pendingRounds');
+        checkPendingQueue(); // refresh banner with newly-migrated rounds
+      })
+      .catch(function(e) {
+        console.warn('pendingRounds IDB migration failed:', e);
+        // Leave localStorage intact as fallback if IDB failed
+      });
+  } catch(e) {
+    localStorage.removeItem('pendingRounds'); // corrupt data — discard
+  }
+})();
+
 // ── ONE-TIME COURSE NAME MIGRATION ───────────────────
 // Renames long course names to short preferred names in courseCache.
 // Runs once, flagged by localStorage key so it never repeats.
