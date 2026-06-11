@@ -26,11 +26,10 @@ const SETTINGS    = 'Settings';
 const DIAGNOSTICS = 'Diagnostics';
 const ROUND_META  = 'Round_Meta';
 
-const REPORT_EMAIL   = 'kamloopspaul@gmail.com';
+const REPORT_EMAIL   = PropertiesService.getScriptProperties().getProperty('REPORT_EMAIL');
 
-// Round-count windows (rounds). A report fires when totalRounds % n === 0 for any window.
-// Smallest first — combined email sections appear in this order.
-const ROUND_WINDOWS  = [5, 10, 20];
+// Round-count window. A report fires automatically every 20 completed rounds.
+const ROUND_WINDOWS  = [20];
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 //
@@ -245,7 +244,7 @@ function doGet(e) {
 
   if (action === 'report') {
     try {
-      sendReport_(SpreadsheetApp.getActive(), REPORT_LAST_N_ROUNDS);
+      sendReport();
       return json_({ ok: true, message: 'Report sent.' });
     } catch (err) {
       return json_({ ok: false, error: String(err) });
@@ -1003,7 +1002,7 @@ function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
           <th>COST</th>
         </tr>
         <tr>
-          <td colspan="8" style="font-size:10px;color:#666;font-style:italic;text-align:left;padding:4px 4px 6px;border-bottom:1px solid #e0e8d8">Cost = estimated strokes gained from missing greens, failed up &amp; downs, putting above benchmark, and penalties. Lower is better.</td>
+          <td colspan="8" style="font-size:10px;color:#666;font-style:italic;text-align:left;padding:4px 4px 6px;border-bottom:1px solid #e0e8d8">Cost = estimated strokes gained from missing greens, failed up &amp; downs, putts above benchmark, and penalties. Lower is better.</td>
         </tr>
       </thead>
       <tbody>${roundRows}</tbody>
@@ -1075,35 +1074,13 @@ function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
 
 // ── Calendar-based trigger setup ───────────────────────────────────────────
 //
-//  BiWeekly — fires every two weeks (Apps Script approximates with 14-day intervals).
 //  Monthly  — fires on the 1st of each month at 8am.
 //  Season Summary — fires on the 15th of each month at 8am; handler checks for November.
 //
 //  Run each setup function ONCE from the Script Editor.
-//  The handler function sendScheduledReport() sends a ROUND_WINDOWS[last] report.
 //  checkSeasonSummary() sends the full season report only in November.
 //
 // ───────────────────────────────────────────────────────────────────────────
-
-/**
- * Set up a biweekly (every 14 days) email trigger.
- * Run once from Script Editor: Run → setupBiweeklyTrigger()
- */
-function setupBiweeklyTrigger() {
-  removeTriggerByHandler_('sendScheduledReport_biweekly');
-  ScriptApp.newTrigger('sendScheduledReport_biweekly')
-    .timeBased()
-    .everyWeeks(2)
-    .onWeekDay(ScriptApp.WeekDay.SUNDAY)
-    .atHour(8)
-    .create();
-  Logger.log('Biweekly Sunday 8am trigger set.');
-}
-
-function removeBiweeklyTrigger() {
-  removeTriggerByHandler_('sendScheduledReport_biweekly');
-  Logger.log('Biweekly trigger removed.');
-}
 
 /**
  * Set up a monthly trigger (1st of month, 8am).
@@ -1145,17 +1122,7 @@ function removeSeasonSummaryTrigger() {
 }
 
 /**
- * BiWeekly scheduled send — last 10 rounds (ROUND_WINDOWS[1]).
- * Called automatically by the biweekly trigger.
- */
-function sendScheduledReport_biweekly() {
-  const ss  = SpreadsheetApp.getActive();
-  const hi  = parseFloat(getSettings_(ss.getSheetByName(SETTINGS))['Handicap_Index'] || 20);
-  sendCombinedReport_(ss, [10], hi);
-}
-
-/**
- * Monthly scheduled send — last 20 rounds (ROUND_WINDOWS[2]).
+ * Monthly scheduled send — last 20 rounds.
  * Called automatically by the monthly trigger.
  */
 function sendScheduledReport_monthly() {

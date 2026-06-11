@@ -1,6 +1,13 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.11 — 2026-06-11
+  - Performance Reports simplified: removed all frequency toggles (Every 5/10/20 rounds, BiWeekly, Monthly, Year-End)
+  - Reports now silent/automatic: every 20 rounds + November 15 year-end (configured in Apps Script)
+  - SEND REPORT NOW button always visible — no toggle gate
+  - Removed: onMasterReportToggle, FREQ_ROUND_GROUP, FREQ_CALENDAR_GROUP, selectFreqGroup/Round/Calendar
+  - Removed orphaned localStorage keys: receiveReports, freqEvery5/10/20, freqBiWeekly, freqMonthly, freqYearEnd
+
   v1.10 — 2026-06-01 Spring Green skin
   - TRACK CONDITIONS section (was Player Preferences): PCC description cleaned, no PCC name shown to user
   - GPI block visible (unhidden 2026-05-28); block also preserved in assets/snippets/gpi-settings-block.html
@@ -176,7 +183,7 @@
           </tbody>
         </table>
 
-        <div class="bench-callout">If any one of your numbers falls significantly below the benchmark for your handicap range, that's where your practice attention should go. If multiple numbers are off, prioritize the one that represents the most strokes gained — generally, GIR and penalty strokes tend to have the largest impact at the amateur level.</div>
+        <div class="bench-callout">If any one of your numbers rises significantly above the benchmark for your handicap range, that's where your practice attention should go. If multiple numbers are off, prioritize the one that represents the most strokes gained — generally, GIR and penalty strokes tend to have the largest impact at the amateur level.</div>
 
         <div class="bench-close-row">
           <div class="bench-footnote"><em>Src:</em> <a href="https://thegolfinglad.com/how-to-track-golf-stats/" target="_blank">thegolfinglad.com</a></div>
@@ -284,54 +291,15 @@
     <!-- Performance Reports description -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        Receive custom email reports on your progress and which focus areas to work on.
+        Reports are sent automatically every 20 rounds and as a year-end summary on November 15. Use the button below to generate a report at any time.
       </div>
     </div>
 
-    <!-- Receive Reports master toggle — no rule below -->
-    <div class="stat-row" style="border-bottom: none;">
-      <span class="stat-row-label">Receive Reports</span>
-      <label class="switch"><input type="checkbox" id="tog-receiveReports" onchange="onMasterReportToggle(this)"><span class="slider-bg"></span></label>
+    <!-- Send Report Now — always visible -->
+    <div class="setting-row" style="flex-direction: column; align-items: center; gap: 6px; border-bottom: none;">
+      <button class="btn-3d" id="send-report-btn" onclick="sendReport()">SEND REPORT NOW</button>
+      <div class="report-status" id="report-status"></div>
     </div>
-
-    <!-- Report sub-panel: frequency toggles + send button — hidden until Receive Reports is ON -->
-    <div id="report-sub-panel" style="display: none;">
-
-      <!-- Round-count group — radio behaviour: selecting one clears the others -->
-      <div class="stat-group-label">By Round Count <span style="font-weight:400;color:#999">(choose one)</span></div>
-      <div class="stat-row">
-        <span class="stat-row-label">Every 10 Rounds</span>
-        <label class="switch"><input type="checkbox" id="tog-freqEvery10" onchange="selectFreqRound('freqEvery10',this)"><span class="slider-bg"></span></label>
-      </div>
-      <div class="stat-row">
-        <span class="stat-row-label">Every 20 Rounds</span>
-        <label class="switch"><input type="checkbox" id="tog-freqEvery20" onchange="selectFreqRound('freqEvery20',this)"><span class="slider-bg"></span></label>
-      </div>
-
-      <!-- Calendar group — radio behaviour: selecting one clears the other -->
-      <div class="stat-group-label" style="margin-top:10px">By Calendar <span style="font-weight:400;color:#999">(choose one)</span></div>
-      <div class="stat-row">
-        <span class="stat-row-label">BiWeekly</span>
-        <label class="switch"><input type="checkbox" id="tog-freqBiWeekly" onchange="selectFreqCalendar('freqBiWeekly',this)"><span class="slider-bg"></span></label>
-      </div>
-      <div class="stat-row">
-        <span class="stat-row-label">Monthly</span>
-        <label class="switch"><input type="checkbox" id="tog-freqMonthly" onchange="selectFreqCalendar('freqMonthly',this)"><span class="slider-bg"></span></label>
-      </div>
-
-      <!-- Year End Summary — standalone, not part of either group -->
-      <div class="stat-group-label" style="margin-top:10px">Annual</div>
-      <div class="stat-row">
-        <span class="stat-row-label">Year End Summary <span style="font-size:11px;color:#999">(Nov 15)</span></span>
-        <label class="switch"><input type="checkbox" id="tog-freqYearEnd" onchange="saveStatPref('freqYearEnd',this)"><span class="slider-bg"></span></label>
-      </div>
-
-      <!-- Send Report Now -->
-      <div class="setting-row" style="flex-direction: column; align-items: center; gap: 6px;">
-        <button class="btn-3d" id="send-report-btn" onclick="sendReport()">SEND REPORT NOW</button>
-        <div class="report-status" id="report-status"></div>
-      </div>
-    </div><!-- /report-sub-panel -->
 
   </div><!-- /stage-scrolls -->
   <!-- NAV BAR -->
@@ -364,16 +332,14 @@
     if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric' });
 
     // Stat toggles — all default Off (undefined = false)
-    ['recordStats','statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS','statGPI','statPCC',
-     'receiveReports','freqEvery5','freqEvery10','freqEvery20','freqBiWeekly','freqMonthly','freqYearEnd']
+    ['recordStats','statFIR','statGIR','statPEN','statUD','statXUD','statPUTTS','statGPI','statPCC']
       .forEach(key => {
         const el = document.getElementById('tog-' + key);
         if (el) el.checked = !!p[key];
       });
 
-    // Restore sub-panels if masters were already on
-    if (p.recordStats)    document.getElementById('stat-sub-panel').style.display   = 'block';
-    if (p.receiveReports) document.getElementById('report-sub-panel').style.display = 'block';
+    // Restore sub-panel if master stat toggle was already on
+    if (p.recordStats) document.getElementById('stat-sub-panel').style.display = 'block';
 
     // Email
     const emailEl = document.getElementById('inp-email');
@@ -405,39 +371,10 @@
     }
   }
 
-  // ── Master report toggle ───────────────────────────────────────────────────
-  function onMasterReportToggle(el) {
-    saveProfile({ receiveReports: el.checked });
-    document.getElementById('report-sub-panel').style.display = el.checked ? 'block' : 'none';
-  }
-
   // ── Individual stat toggle ─────────────────────────────────────────────────
   function saveStatPref(key, el) {
     saveProfile({ [key]: el.checked });
   }
-
-  // ── Frequency radio groups ─────────────────────────────────────────────────
-  // Within each group, turning one ON clears all others in that group.
-  // Turning one OFF just saves its own state — no group action needed.
-  // Player can have one round-count and one calendar option active simultaneously.
-
-  const FREQ_ROUND_GROUP    = ['freqEvery5', 'freqEvery10', 'freqEvery20'];
-  const FREQ_CALENDAR_GROUP = ['freqBiWeekly', 'freqMonthly'];
-
-  function selectFreqGroup(group, selectedKey, el) {
-    if (el.checked) {
-      group.forEach(key => {
-        if (key === selectedKey) return;
-        const tog = document.getElementById('tog-' + key);
-        if (tog) tog.checked = false;
-        saveProfile({ [key]: false });
-      });
-    }
-    saveProfile({ [selectedKey]: el.checked });
-  }
-
-  function selectFreqRound(key, el)    { selectFreqGroup(FREQ_ROUND_GROUP,    key, el); }
-  function selectFreqCalendar(key, el) { selectFreqGroup(FREQ_CALENDAR_GROUP, key, el); }
 
   // ── Save email ─────────────────────────────────────────────────────────────
   function saveEmail(val) {
@@ -464,14 +401,14 @@
       const data = await res.json();
       if (data.ok) {
         sta.textContent = 'Report sent ✓';
-        btn.textContent = 'Send Report Now';
+        btn.textContent = 'SEND REPORT NOW';
       } else {
         sta.textContent = 'Error: ' + (data.error || 'unknown');
-        btn.textContent = 'Send Report Now';
+        btn.textContent = 'SEND REPORT NOW';
       }
     } catch(err) {
       sta.textContent = 'Could not reach server. Check internet.';
-      btn.textContent = 'Send Report Now';
+      btn.textContent = 'SEND REPORT NOW';
     }
     btn.disabled = false;
   }
