@@ -826,6 +826,11 @@ const PROFILE = (function(){
   try { return JSON.parse(localStorage.getItem('profile') || '{}'); } catch(e) { return {}; }
 })();
 
+// ── First-run gate: send new/incomplete profiles to onboarding ──
+if (!PROFILE.setupComplete) {
+  window.location.replace('onboarding.html');
+}
+
 // ── COURSE (variable for future multi-course support) ──
 const COURSE = {
   name: "Mt. Paul",
@@ -843,7 +848,7 @@ const COURSE = {
   ]
 };
 const SHEETS_URL  = PROFILE.sheetsUrl;
-const WEBHOOK_SECRET = "Oawa9g5ywPdik6bMk07wUlam7bf7qhEy";
+const WEBHOOK_SECRET = PROFILE.webhookSecret || '';
 let state = {
   players:[], date:"", currentHole:0, activePlayer:0,
   scores:[], holeList:[], totalHoles:18, weatherTemp:"", weatherWind:"",

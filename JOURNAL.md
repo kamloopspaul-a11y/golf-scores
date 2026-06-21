@@ -2329,3 +2329,39 @@ Paul then asked directly: *"As you know, security and privacy is an issue. The a
 **Fix proposed (not built — Paul deferred to a new session):** (a) real generic onboarding form — blank input, localStorage-only, nothing per-user hardcoded/committed; (b) move `WEBHOOK_SECRET` to a per-user localStorage value set during onboarding, matched against that user's own Script Properties; (c) add the same secret check to `doGet`'s `action=data` and `action=report` branches. Paul will redeploy `apps-script.gs` himself via the Apps Script editor once built (same as always — Claude cannot deploy Apps Script directly).
 
 **Decision:** Paul said *"make a note of it in todo list, we'll start a new session for this."* No code touched this session. Logged as a blocking entry in `TODO_LIST.md` under One-off ("Golf — Secure multi-user onboarding before Dave setup") and flagged on the Golf Active Project Resume cue. Architecture choice ("shared app, his own Sheet") stands — these findings reinforce it rather than reopening it. Next session should start with this fix before any Dave account-creation steps.
+
+---
+
+## 2026-06-20 — Session 24 — Multi-user onboarding + secret fix (built)
+
+**Version at start:** v10.92 / SW v165 (pushed earlier same day — loadActiveCourse re-call, set-sheets-url back link, shared.css cleanup)
+**Version at end:** v10.93 / SW v166 — built locally, not yet pushed
+
+### Summary
+Built the fix deferred from the same-day security audit (see entry above). Paul: "build #3 — use sub agents to assist and use the engineering plug-in to double check our work before we push any files." Used two parallel subagents (one to build `onboarding.html`, one to apply the 4 surgical edits below), then ran `engineering:code-review` on the full diff before reporting back. No push performed — Paul pushes manually per standing rule.
+
+### Changes
+- **New file `onboarding.html`** — generic, blank, localStorage-only first-run form. Collects name, reportEmail, hi, homeTees, homeCourse, sheetsUrl; auto-generates a 32-char hex `webhookSecret` client-side via `crypto.getRandomValues` (displayed read-only with a Copy button and instructions to paste into the user's own Apps Script Script Properties). Defaults the remaining profile fields (recordStats + 6 sub-toggles, statGPI, statPCC, receiveReports, reportFreq) to Paul's existing values — editable later in Settings. Validates all fields inline (no `alert()`), only writes `localStorage.profile` and navigates to `index.html` on a successful explicit Save click. No auto-redirect on load, by design — can't loop.
+- **`index.html`** — `WEBHOOK_SECRET` now reads `PROFILE.webhookSecret || ''` instead of a hardcoded literal. Added a first-run gate right after the `PROFILE` definition: `if (!PROFILE.setupComplete) { window.location.replace('onboarding.html'); }` — full well-formed block per the standing never-comment-out-a-redirect rule.
+- **`set-sheets-url.html`** — added `webhookSecret: "Oawa9g5ywPdik6bMk07wUlam7bf7qhEy"` (Paul's existing live secret) to the restored profile object, so his personal restore shortcut backfills the new field without touching his already-deployed Apps Script.
+- **`settings.html`** — `sendReport()`'s GET request now appends `&secret=` + Paul's `webhookSecret` from profile, so it passes the new server-side check (discovered this call site during the build — it wasn't in the original plan; `action=data` has no current client caller, so only `action=report` needed a client-side update).
+- **`apps-script.gs`** — `doGet` now runs the same secret check `doPost` already had, in one place covering both `action=data` and `action=report`: reads `e.parameter.secret` (GET query param, not POST body) against the `WEBHOOK_SECRET` Script Property. Deliberately mirrors `doPost`'s fail-open-if-property-unset behaviour — parity, not a new gap.
+- **Version bump:** `shared.js` APP_VERSION v10.92 → v10.93, `sw.js` CACHE_NAME v165 → v166 (real shipped change to index.html).
+
+### Code review (engineering:code-review skill)
+Verdict: Approve, contingent on deploy order. No XSS/injection risk in the new form (all `.value` reads, no `innerHTML`). Redirect gate structurally can't loop — `onboarding.html` has zero auto-redirect logic. One critical *operational* (not code) finding: Paul's own already-stored localStorage profile has `setupComplete: true` but no `webhookSecret` yet — after this ships, his `WEBHOOK_SECRET` will read as `''` until he re-runs `set-sheets-url.html` once, which could silently reject his next score POST (live or from the offline IndexedDB queue) if attempted first. Minor suggestions logged: secret-as-GET-query-param is slightly more visible than a POST body (acceptable for this data); don't `git add .` for this commit since `.DS_Store` and `Tips and Charts.txt` are sitting modified/untracked in the folder and shouldn't be swept in.
+
+### Operational note — found mid-session, not code-related
+Running `git status`/`git diff` via the sandbox bash tool left a stale `.git/index.lock` (0 bytes) that the sandbox couldn't unlink (`rm -f` → `Operation not permitted` — same EPERM pattern as other ACL'd files in this folder, just on a new file this time). `git status`/`git diff` still worked fine despite it, but `git add`/`git commit` will fail with "Unable to create '.git/index.lock': File exists" until it's removed. Flagged to Paul to delete it from his own Terminal before committing — his native Terminal almost certainly doesn't hit the same restriction.
+
+### Deploy sequence given to Paul (do in this order)
+1. In Terminal: `rm -f .git/index.lock` (safety check before any git command).
+2. Commit + push the 5 files (`index.html`, `onboarding.html`, `set-sheets-url.html`, `settings.html`, `apps-script.gs`, `shared.js`, `sw.js`) — explicit `git add <file>` per file, not `git add .`.
+3. Paste the new `apps-script.gs` into the Apps Script editor and redeploy (Claude can't do this step).
+4. **Before scoring anything new:** open `set-sheets-url.html` once (on whichever device Paul plays from) to backfill his `webhookSecret` into localStorage. Skipping this step risks a rejected score POST.
+5. Dave's account creation can now proceed once Paul confirms his own round-posting still works post-deploy — `onboarding.html` is what Dave will use to set up his own profile/secret without anything of his being committed to the repo.
+
+### Carried forward
+- Considered tightening `doPost`'s fail-open behaviour (reject outright if `WEBHOOK_SECRET` property is missing, not just on mismatch) — left as-is to match what was explicitly asked ("the same check"); worth revisiting together with `doGet` later if this app ever handles more sensitive data than golf scores.
+- Dave's actual account/profile setup itself — not started. Unblocked as of this session, pending Paul confirming step 4 above works.
+

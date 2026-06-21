@@ -1,0 +1,279 @@
+<!--
+  My Golf Scores — Onboarding
+  onboarding.html
+  v1.0 — 2026-06-20
+  - New file: blank, generic first-run setup form. Populates localStorage.profile.
+  - No personal data hardcoded — every field starts blank except auto-generated webhookSecret.
+  - Does NOT auto-redirect on load. Only navigates to index.html after a successful Save.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#377f09">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golf Scores">
+<link rel="manifest" href="manifest.json">
+<title>Welcome</title>
+<script src="shared.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* ── ONBOARDING-SPECIFIC ────────────────────────────── */
+
+  .ob-intro {
+    font-size: 14px; color: var(--text-secondary); line-height: 1.5;
+    margin: 0 0 20px;
+  }
+
+  .field-hint {
+    font-size: 12px; color: var(--text-muted); line-height: 1.4;
+    margin-top: 6px;
+  }
+
+  .field-error {
+    font-size: 12px; color: #dc2626; line-height: 1.4;
+    margin-top: 6px; min-height: 14px;
+  }
+
+  .secret-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .secret-row .field-input {
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    background: var(--row-alt); color: var(--text-secondary);
+  }
+  .btn-copy {
+    flex: 0 0 auto; padding: 10px 16px; font-size: 13px;
+  }
+
+  .ob-status {
+    font-size: 13px; color: #dc2626; line-height: 1.5;
+    text-align: center; margin-top: 4px; min-height: 18px;
+  }
+</style>
+</head>
+<body data-page-id="onboarding">
+<div class="screen active">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <div class="header-upper">
+      <div class="hu-breadcrumb">Welcome</div>
+      <div class="hu-temp"></div>
+      <div class="hu-date" id="ob-date"></div>
+      <div class="hu-wind"></div>
+    </div>
+  </div>
+
+  <!-- STAGE SCROLLS -->
+  <div class="stage-scrolls">
+
+    <div class="page-title">Set Up Your Profile</div>
+
+    <div class="ob-intro">
+      Let's get your profile set up. This information stays on your device — fill it in once and you can change any of it later in Settings.
+    </div>
+
+    <!-- Name -->
+    <div class="form-section">
+      <label class="field-label" for="ob-name">Name</label>
+      <input type="text" id="ob-name" class="field-input" maxlength="40"
+             autocorrect="off" autocomplete="name" spellcheck="false">
+      <div class="field-error" id="err-name"></div>
+    </div>
+
+    <!-- Report Email -->
+    <div class="form-section">
+      <label class="field-label" for="ob-email">Report Email</label>
+      <input type="email" id="ob-email" class="field-input" maxlength="80"
+             autocorrect="off" autocomplete="email" spellcheck="false">
+      <div class="field-error" id="err-email"></div>
+    </div>
+
+    <!-- Handicap Index -->
+    <div class="form-section">
+      <label class="field-label" for="ob-hi">Handicap Index</label>
+      <input type="number" id="ob-hi" class="field-input"
+             min="0" max="54" step="0.1" inputmode="decimal">
+      <div class="field-error" id="err-hi"></div>
+    </div>
+
+    <!-- Home Tees -->
+    <div class="form-section">
+      <label class="field-label" for="ob-tees">Home Tees</label>
+      <select id="ob-tees" class="field-input">
+        <option value="" disabled selected>Choose a tee set…</option>
+        <option value="mensBlue">Men's Blue</option>
+        <option value="mensRed">Men's Red</option>
+        <option value="ladiesBlue">Ladies' Blue</option>
+        <option value="ladiesRed">Ladies' Red</option>
+      </select>
+      <div class="field-error" id="err-tees"></div>
+    </div>
+
+    <!-- Home Course -->
+    <div class="form-section">
+      <label class="field-label" for="ob-course">Home Course</label>
+      <input type="text" id="ob-course" class="field-input" maxlength="60"
+             autocorrect="off" autocomplete="off" spellcheck="false">
+      <div class="field-error" id="err-course"></div>
+    </div>
+
+    <!-- Apps Script URL -->
+    <div class="form-section">
+      <label class="field-label" for="ob-sheets-url">Apps Script URL</label>
+      <input type="text" id="ob-sheets-url" class="field-input" maxlength="250"
+             autocorrect="off" autocomplete="off" spellcheck="false"
+             placeholder="https://script.google.com/macros/s/…/exec">
+      <div class="field-hint">Your own Google Apps Script /exec URL — from your own deployment, not Paul's.</div>
+      <div class="field-error" id="err-sheets-url"></div>
+    </div>
+
+    <!-- Webhook Secret (auto-generated, read-only) -->
+    <div class="form-section">
+      <label class="field-label" for="ob-secret">Webhook Secret</label>
+      <div class="secret-row">
+        <input type="text" id="ob-secret" class="field-input" readonly>
+        <button type="button" class="btn-3d btn-copy" id="ob-copy-btn" onclick="copySecret()">Copy</button>
+      </div>
+      <div class="field-hint">Copy this and paste it into your Apps Script → Project Settings → Script Properties as <code>WEBHOOK_SECRET</code> before saving any scores.</div>
+    </div>
+
+    <div class="ob-status" id="ob-status"></div>
+
+  </div><!-- /stage-scrolls -->
+
+  <!-- NAV BAR -->
+  <div class="nav-bar">
+    <button class="btn-3d" id="ob-save-btn" onclick="saveOnboarding()">SAVE &amp; CONTINUE</button>
+  </div>
+
+</div><!-- /screen -->
+
+<script>
+  // ── Webhook secret generation ────────────────────────────────────────────────
+  function generateSecret() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // ── Copy secret button ───────────────────────────────────────────────────────
+  function copySecret() {
+    const el = document.getElementById('ob-secret');
+    const btn = document.getElementById('ob-copy-btn');
+    if (!el) return;
+    navigator.clipboard.writeText(el.value).then(function () {
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = orig; }, 1500);
+      }
+    }).catch(function () {
+      // Fallback: select the text so the user can copy manually
+      el.select();
+    });
+  }
+
+  // ── Clear all inline field errors ────────────────────────────────────────────
+  function clearErrors() {
+    ['err-name', 'err-email', 'err-hi', 'err-tees', 'err-course', 'err-sheets-url']
+      .forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+      });
+    const status = document.getElementById('ob-status');
+    if (status) status.textContent = '';
+  }
+
+  // ── Save & Continue ──────────────────────────────────────────────────────────
+  function saveOnboarding() {
+    clearErrors();
+
+    const name      = document.getElementById('ob-name').value.trim();
+    const email     = document.getElementById('ob-email').value.trim();
+    const hiRaw     = document.getElementById('ob-hi').value.trim();
+    const homeTees  = document.getElementById('ob-tees').value;
+    const homeCourse = document.getElementById('ob-course').value.trim();
+    const sheetsUrl = document.getElementById('ob-sheets-url').value.trim();
+    const webhookSecret = document.getElementById('ob-secret').value.trim();
+
+    let hasError = false;
+
+    if (!name) {
+      document.getElementById('err-name').textContent = 'Please enter your name.';
+      hasError = true;
+    }
+
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      document.getElementById('err-email').textContent = 'Please enter a valid email address.';
+      hasError = true;
+    }
+
+    const hi = parseFloat(hiRaw);
+    if (!Number.isFinite(hi) || hi < 0 || hi > 54) {
+      document.getElementById('err-hi').textContent = 'Please enter a handicap index between 0 and 54.';
+      hasError = true;
+    }
+
+    const allowedTees = ['mensBlue', 'mensRed', 'ladiesBlue', 'ladiesRed'];
+    if (!allowedTees.includes(homeTees)) {
+      document.getElementById('err-tees').textContent = 'Please choose your home tees.';
+      hasError = true;
+    }
+
+    if (!homeCourse) {
+      document.getElementById('err-course').textContent = 'Please enter your home course.';
+      hasError = true;
+    }
+
+    if (!sheetsUrl || !sheetsUrl.startsWith('https://script.google.com/macros/')) {
+      document.getElementById('err-sheets-url').textContent = 'Please enter a valid Apps Script /exec URL (starts with https://script.google.com/macros/).';
+      hasError = true;
+    }
+
+    if (hasError) {
+      const status = document.getElementById('ob-status');
+      if (status) status.textContent = 'Please fix the highlighted fields above.';
+      return;
+    }
+
+    const profile = {
+      name:           name,
+      reportEmail:    email,
+      hi:             hi,
+      homeTees:       homeTees,
+      homeCourse:     homeCourse,
+      sheetsUrl:      sheetsUrl,
+      webhookSecret:  webhookSecret,
+      setupComplete:  true,
+      recordStats:    true,
+      statFIR:        true,
+      statGIR:        true,
+      statPEN:        true,
+      statUD:         true,
+      statXUD:        true,
+      statPUTTS:      true,
+      statGPI:        true,
+      statPCC:        true,
+      receiveReports: true,
+      reportFreq:     5
+    };
+
+    localStorage.setItem('profile', JSON.stringify(profile));
+    window.location.href = 'index.html';
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  (function init() {
+    const dateEl = document.getElementById('ob-date');
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+
+    const secretEl = document.getElementById('ob-secret');
+    if (secretEl) secretEl.value = generateSecret();
+  })();
+</script>
+</body>
+</html>

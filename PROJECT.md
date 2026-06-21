@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v10.91 / SW v164 — June 6, 2026
+**Version:** v10.93 / SW v166 — June 20, 2026 (built, not yet pushed)
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
@@ -181,7 +181,7 @@
 - [ ] **Create app icons** — `icon-192.png`, `icon-512.png`.
 - [ ] **Test SW offline behaviour**.
 - [ ] **Privacy policy page** — needed before broader OAuth distribution.
-- [ ] **Beta test with Dave**. ⚠️ Blocked until the multi-user secret-handling fix below is built — see Security Rules section and `JOURNAL.md` 2026-06-20.
+- [ ] **Beta test with Dave**. Secret-handling fix built 2026-06-20 (Session 24) — see Security Rules section and `JOURNAL.md`. Unblocked pending: Paul pushes + redeploys `apps-script.gs`, confirms his own posting still works, then Dave runs `onboarding.html`.
 
 ## Design Threads (open — not yet committed to Plan)
 
@@ -253,6 +253,8 @@ This reframes the Phase 2 work in `~/Documents/Studio/Dashboard/PROJECT.md`. The
 **Current plan:** Small rollout to golf friends first. Paul assists setup personally. Pre-deployed Sheets URL + plain-English instructions is the pragmatic path. Gather feedback before broader release.
 
 **Note:** One friend uses Numbers (Apple) for posting stats — possible alt to explore.
+
+**Update 2026-06-20 (Session 24):** `onboarding.html` now exists — a generic, blank, localStorage-only form that collects name/email/HI/tees/course/sheetsUrl and auto-generates a per-user webhook secret. This is the concrete first step toward the plan above; still pre-deployed-Sheets-URL-plus-instructions under the hood (Paul still walks each new user through creating their own Apps Script deployment), but the credential hand-off into the app itself is now safe and reusable rather than a hand-edited personal shortcut.
 
 ## Phase 2 — Analytics Dashboard
 
@@ -367,12 +369,17 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** June 11, 2026 (Session 23)
-**Version:** v10.91 / SW v164 — settings.html v1.11
+**Last worked:** June 20, 2026 (Session 24)
+**Version:** v10.93 / SW v166 — built locally, not yet pushed
 
 **Completed this session:**
+- Multi-user onboarding + secret fix built (see Security Rules section + JOURNAL.md Session 24): new onboarding.html, PROFILE.webhookSecret replaces hardcoded WEBHOOK_SECRET, doGet auth check added, set-sheets-url.html + settings.html updated to match.
+- engineering:code-review run on the full diff — approved, contingent on deploy order (see JOURNAL.md Session 24).
+- Not pushed yet — Paul has exact terminal commands queued, including a one-time `.git/index.lock` cleanup (sandbox-side EPERM artifact, harmless once removed).
+
+**Previously completed (Session 23, June 11):**
 - Spring Green architecture fully deployed (shared.css skin block, zone structure locked)
-- onboarding.html deleted — replaced by seedProfile() loading profile.json on boot
+- onboarding.html deleted — replaced by seedProfile() loading profile.json on boot (re-introduced in Session 24 as a generic form, not a profile.json loader)
 - profile.json subsequently removed from repo (privacy) — local copy at ~/Documents/Studio/Projects/Golf/profile.json
 - Broken first-run check (if with no body) was causing entire JS block to fail — fixed
 - Safari top chrome white stripe: confirmed iOS 26 WebKit bug — theme-color dropped in iOS 26, chrome tint now derived from body background-color. No CSS fix available. Targeted for iOS 26.2. Tolerate in browser mode; standalone (Add to Home Screen) works correctly.
@@ -388,7 +395,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 - Phone localStorage: Eaglepoint stale tee data sync fix
 - Hole data persistence: yardage disappears on Back → Next (root cause not found)
 
-**Next session:** Confirm app fully working after v10.85 syntax fix, then resume build queue.
+**Next session:** Confirm Paul's own posting still works post-deploy (re-run `set-sheets-url.html` first), then start Dave's onboarding session. After that, resume build queue below.
 
 **Build queue (in order):**
 1. ~~**Apps Script** — write `pccSelected` to Rounds tab~~ ✅ Done (Session 3)
@@ -425,10 +432,12 @@ These apply to every form and every Apps Script write in this project.
 - Numeric values must be parsed (`parseInt` / `parseFloat`) with a safe fallback before use.
 - API keys and the Apps Script `/exec` URL live in Script Properties only — never in source.
 
-**Known gaps — found 2026-06-20, not yet fixed (see `JOURNAL.md` for full audit)**
-- `index.html` hardcodes `WEBHOOK_SECRET` as a single plaintext value shared by every user — violates the rule above. Checked in `doPost`, but `doGet` (`action=data`, `action=report`) has no auth check at all.
-- No generic onboarding form exists to safely set a second user's `sheetsUrl`; `set-sheets-url.html` is Paul's own hardcoded personal shortcut, not reusable as-is for Dave without committing his secret URL to the public repo.
-- Fix required before Dave's account is created: per-user onboarding form (localStorage-only) + per-user webhook secret + `doGet` auth check, then redeploy `apps-script.gs`.
+**Fixed 2026-06-20 (Session 24)** — see `JOURNAL.md` for full build + code-review notes.
+- `WEBHOOK_SECRET` now reads from `PROFILE.webhookSecret` (per-user, set during onboarding) instead of a single hardcoded literal.
+- `doGet` now runs the same secret check as `doPost`, covering `action=data` and `action=report`.
+- `onboarding.html` (generic, blank, localStorage-only) replaces `set-sheets-url.html` as the safe way to set up a second user — nothing per-user is hardcoded/committed.
+- **Residual gap (intentional parity, not new):** both `doGet` and `doPost` fail open if the `WEBHOOK_SECRET` Script Property is unset entirely. Revisit together if this app ever handles more sensitive data than golf scores.
+- **Not yet live:** requires Paul to push these files and manually redeploy `apps-script.gs` in the Apps Script editor.
 
 **localStorage**
 - No credentials, tokens, or sensitive personal data stored in plain text.

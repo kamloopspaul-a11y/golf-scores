@@ -397,7 +397,7 @@
     btn.textContent = 'Sending…';
     sta.textContent = '';
     try {
-      const res = await fetch(url + '?action=report', { method: 'GET', redirect: 'follow' });
+      const res = await fetch(url + '?action=report&secret=' + encodeURIComponent(p.webhookSecret || ''), { method: 'GET', redirect: 'follow' });
       const data = await res.json();
       if (data.ok) {
         sta.textContent = 'Report sent ✓';

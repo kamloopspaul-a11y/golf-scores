@@ -202,6 +202,12 @@ function migrateRoundsToMeta_(ss) {
 function doGet(e) {
   const action = e && e.parameter && e.parameter.action;
 
+  // ── Secret token check (mirrors doPost) ────────────────────────────────
+  const secret = PropertiesService.getScriptProperties().getProperty('WEBHOOK_SECRET');
+  if ((action === 'data' || action === 'report') && secret && e.parameter.secret !== secret) {
+    return json_({ ok: false, error: 'Unauthorised.' });
+  }
+
   if (action === 'data') {
     try {
       const ss      = SpreadsheetApp.getActive();
