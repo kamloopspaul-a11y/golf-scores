@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v10.76 / SW v149 — June 1, 2026
+**Version:** v10.91 / SW v164 — June 6, 2026
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
@@ -135,6 +135,7 @@
 - **Build order (locked)** — Add Course (Courses panel) → Add Scores → Settings. Add Course must exist before Add Scores since Add Scores depends on a course selection.
 - **Add Scores screen** — repurposes existing hole screens for historical round entry. Entry setup step: date picker + course selector (defaults to Mt. Paul) + tees. Stats footer hidden (scores-only for paper card rounds). Posts to Sheets via Apps Script same as live rounds.
 - **Away course workflow** — enter course in Add Course from paper scorecard → select it in Add Scores → replay hole-by-hole with correct date → posts to Sheets.
+- **courses.json — 2 men's tees per course (locked 2026-06-06).** Every seeded course now carries exactly the canonical schema `{par, yardage, index}` with complete Stroke Index data, trimmed to 2 men's tee choices (Rivershore is the sole exception at 3 — White/Silver/Red, all complete). Bighorn and Kamloops GC were trimmed to their 2 shortest tees by total yardage. All female tees and any tee lacking SI were removed outright — incomplete tees are never shown in the app. `validate-courses.py` (committed to the repo) is the schema guard — run it before any future courses.json commit; it hard-fails on banned key aliases (the `stroke_index` vs `index` bug from 2026-06-04 must never recur).
 
 ## Open / Pending Items
 
@@ -180,7 +181,7 @@
 - [ ] **Create app icons** — `icon-192.png`, `icon-512.png`.
 - [ ] **Test SW offline behaviour**.
 - [ ] **Privacy policy page** — needed before broader OAuth distribution.
-- [ ] **Beta test with Dave**.
+- [ ] **Beta test with Dave**. ⚠️ Blocked until the multi-user secret-handling fix below is built — see Security Rules section and `JOURNAL.md` 2026-06-20.
 
 ## Design Threads (open — not yet committed to Plan)
 
@@ -338,31 +339,36 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 | TotalStrokesGained | BSCost + SGCost + PuttingCost + Penalties | Overall performance indicator |
 
 ### Email Reports
-`sendReport()` sends a rich HTML email covering the last N rounds (default 5). Triggered automatically after every 5th round posted AND optionally on a weekly schedule.
+`sendReport()` sends a rich HTML email covering the last 20 rounds. Three trigger paths:
 
-**Two trigger options:**
-1. **Auto after 5 rounds** — fires inside `doPost` when `totalRounds % 5 === 0`. No setup needed.
-2. **Weekly Sunday 8am** — run `setupWeeklyTrigger()` once from Apps Script Editor. Removes/replaces itself safely if re-run.
+1. **Auto every 20 rounds** — fires inside `doPost` when `totalRounds % 20 === 0`. No setup needed.
+2. **November 15 year-end summary** — `checkSeasonSummary()` fires monthly on the 15th; sends full-season report only in November. Run `setupSeasonSummaryTrigger()` once to register.
+3. **On-demand** — SEND REPORT NOW button in settings.html calls `doGet?action=report`. Also callable from Script Editor: Run → `sendReport()`.
 
-**Functions added to `apps-script.gs`:**
+`REPORT_EMAIL` is stored in Script Properties only — never hardcoded. Set via Extensions → Apps Script → Project Settings → Script Properties.
+
+**Key functions in `apps-script.gs`:**
 - `buildDiagnostics_(ss)` — aggregates Rounds → Diagnostics, applies colour coding
 - `rebuildDiagnostics()` — manual rebuild from Script Editor menu
-- `sendReport()` — manual send from Script Editor menu
-- `sendReport_(ss, n)` — internal, called after every nth round
-- `setupWeeklyTrigger()` — registers Sunday 8am time trigger
-- `removeWeeklyTrigger()` — removes the weekly trigger
+- `sendReport()` — manual send / called by doGet?action=report
+- `sendCombinedReport_(ss, windows, hi)` — internal email builder
+- `checkRoundTriggers_(ss, totalRounds, hi)` — fires after each completed round
+- `checkSeasonSummary()` — November 15 season summary handler
+- `setupWeeklyTrigger()` / `removeWeeklyTrigger()` — optional Sunday 8am trigger
+- `setupSeasonSummaryTrigger()` / `removeSeasonSummaryTrigger()` — November 15 trigger setup
 
 ### Setup Steps (one time after pasting new code)
 1. Paste updated `apps-script.gs` into Extensions → Apps Script
-2. Run → `setup()` (creates Diagnostics tab, styles it)
-3. Run → `rebuildDiagnostics()` to populate from existing Rounds data
-4. Optional: Run → `setupWeeklyTrigger()` for weekly Sunday reports
-5. Deploy → Manage deployments → edit → New version (keep same URL)
+2. Set `REPORT_EMAIL` in Script Properties (Project Settings → Script Properties)
+3. Run → `setup()` (creates Diagnostics tab, styles it)
+4. Run → `rebuildDiagnostics()` to populate from existing Rounds data
+5. Optional: Run → `setupSeasonSummaryTrigger()` for November 15 year-end report
+6. Deploy → Manage deployments → edit → New version (keep same URL)
 
 ## Session Resume Notes
 
-**Last worked:** June 2, 2026 (Session 16)
-**Version:** v10.85 / SW v158
+**Last worked:** June 11, 2026 (Session 23)
+**Version:** v10.91 / SW v164 — settings.html v1.11
 
 **Completed this session:**
 - Spring Green architecture fully deployed (shared.css skin block, zone structure locked)
@@ -418,6 +424,11 @@ These apply to every form and every Apps Script write in this project.
   - Add to any new string fields before they reach a `setValues` / `appendRow` call.
 - Numeric values must be parsed (`parseInt` / `parseFloat`) with a safe fallback before use.
 - API keys and the Apps Script `/exec` URL live in Script Properties only — never in source.
+
+**Known gaps — found 2026-06-20, not yet fixed (see `JOURNAL.md` for full audit)**
+- `index.html` hardcodes `WEBHOOK_SECRET` as a single plaintext value shared by every user — violates the rule above. Checked in `doPost`, but `doGet` (`action=data`, `action=report`) has no auth check at all.
+- No generic onboarding form exists to safely set a second user's `sheetsUrl`; `set-sheets-url.html` is Paul's own hardcoded personal shortcut, not reusable as-is for Dave without committing his secret URL to the public repo.
+- Fix required before Dave's account is created: per-user onboarding form (localStorage-only) + per-user webhook secret + `doGet` auth check, then redeploy `apps-script.gs`.
 
 **localStorage**
 - No credentials, tokens, or sensitive personal data stored in plain text.

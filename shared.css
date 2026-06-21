@@ -320,8 +320,6 @@ body {
 /* Masthead explicitly green so top safe area stays correct */
 .masthead { background: var(--skin-primary); }
 
-/* Header-upper bottom padding — 10px extra breathing room below thin masthead */
-.header-upper { margin-bottom: 10px; }
 
 /* Screen covers full 100dvh — skin-bg prevents green body bleed at bottom safe area */
 .screen { background: var(--skin-bg); }

@@ -34,7 +34,7 @@ try {
   };
   localStorage.setItem('profile', JSON.stringify(profile));
   document.getElementById('msg').textContent = '✅ Profile restored!';
-  document.getElementById('detail').innerHTML = 'Your profile and Sheets URL have been saved.<br><br><a href="/">Go back to the app →</a>';
+  document.getElementById('detail').innerHTML = 'Your profile and Sheets URL have been saved.<br><br><a href="index.html">Go back to the app →</a>';
 } catch(e) {
   document.getElementById('msg').textContent = '❌ Error';
   document.getElementById('detail').textContent = e.message;

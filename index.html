@@ -1,3 +1,5 @@
+<!-- My Golf Scores -->
+<!-- See PROJECT.md for full changelog and version history -->
 <!--
   My Golf Scores
   https://kamloopspaul-a11y.github.io/golf-scores
@@ -1729,6 +1731,7 @@ async function seedCourseCache() {
       if (key === '_meta') continue;
       if (!getCachedCourse(course.id)) saveCourseToCache(course);
     }
+    if (!activeCourseData) loadActiveCourse(); // re-run if both activeCourse + cache were wiped simultaneously
   } catch(e) { /* silent fail — offline is fine */ }
 }
 

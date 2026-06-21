@@ -4,6 +4,112 @@
 
 ---
 
+## 2026-06-11 — Session 23 — Settings simplification + apps-script cleanup + REPORT_EMAIL cloak
+
+**Version:** settings.html v1.11 — apps-script.gs redeployed (no app version bump)
+
+### Completed
+
+**settings.html v1.11 — Performance Reports simplified**
+- Removed all frequency toggles: Every 5, Every 10, Every 20 rounds, BiWeekly, Monthly, Year-End.
+- Removed master "Receive Reports" toggle.
+- Replaced with plain description + always-visible SEND REPORT NOW button.
+- Silent auto-trigger every 20 rounds and November 15 year-end handled entirely in apps-script.gs.
+- Removed JS functions: onMasterReportToggle, FREQ_ROUND_GROUP, FREQ_CALENDAR_GROUP, selectFreqGroup/Round/Calendar.
+- Removed orphaned localStorage keys from init array.
+- Engineering plugin code-review caught btn.textContent capitalisation inconsistency — fixed.
+
+**apps-script.gs — cleanup**
+- REPORT_EMAIL moved to Script Properties (was hardcoded line 29, exposed on public GitHub).
+- ROUND_WINDOWS changed from [5, 10, 20] to [20] — auto-trigger fires every 20 completed rounds only.
+- Removed: setupBiweeklyTrigger(), removeBiweeklyTrigger(), sendScheduledReport_biweekly().
+- doGet?action=report confirmed already calling sendReport() correctly.
+- Redeployed as new version. Tested: {"ok":true,"message":"Report sent."} ✅
+
+**TODO_LIST.md**
+- Closed: "Golf — Cloak REPORT_EMAIL in apps-script.gs" (was High priority).
+
+### Open items
+- Push to GitHub (settings.html v1.11 + apps-script.gs cleanup).
+- Global Enforcement Audit (settings.html + courses.html) — high priority before new features.
+- Sample Performance Report (static demo for new accounts).
+
+---
+
+
+
+## 2026-06-11 — Security Note
+
+**Cloak REPORT_EMAIL in apps-script.gs:** `kamloopspaul@gmail.com` is hardcoded on line 29 and exposed in the public GitHub repo. Move it to Script Properties: `PropertiesService.getScriptProperties().getProperty('REPORT_EMAIL')`. Same pattern as the webhook secret. Do before next push.
+
+---
+
+## 2026-06-10 — Session 22 — Bug fixes: loadActiveCourse, set-sheets-url back link, shared.css duplicate rule
+
+**Version:** v10.91 / SW v164 (bug fixes only — no version bump)
+
+### Security check — Trading project (cross-project)
+- Conducted a full security audit of `My Trading Journal.html` before switching to Golf.
+- Found and removed an ad-blocker extension CSS block injected at line 695 by uBlock Origin (or similar) when the file was last saved with the browser open. No other issues found.
+- Confirmed Trading project is archived — personal local-only journal, no further development planned.
+
+### Bugs fixed this session
+
+**Bug 1 — set-sheets-url.html back link (href="/")**
+- `href="/"` resolves to server root — invalid for a file-based PWA. Changed to `href="index.html"`.
+- File: `set-sheets-url.html` line 37.
+
+**Bug 2 — shared.css duplicate header-upper margin-bottom rule**
+- `.header-upper { margin-bottom: 10px; }` existed twice in `shared.css` (lines 97 and 324).
+- Removed the duplicate standalone rule; canonical rule inside the full `.header-upper` block at line 95 is now the single source.
+
+**Bug 3 — loadActiveCourse() fallback fails if course cache also wiped**
+- Root cause: `loadActiveCourse()` (line 1934) runs before `seedCourseCache()` (line 1936, async). If both `activeCourse` localStorage key AND `localStorage.courseCache` are wiped simultaneously (as happened June 2 iOS incident), the fallback searches an empty cache and finds nothing.
+- Fix: added `if (!activeCourseData) loadActiveCourse();` inside `seedCourseCache()` after the cache is populated — re-runs only if needed.
+- File: `index.html` — end of `seedCourseCache()` try block.
+
+### Session close state
+- Analytics deferred — Paul went golfing. Resume next session.
+- Global Enforcement Audit (settings.html + courses.html) still queued — high priority before new features.
+- All three logged bugs are now resolved.
+
+---
+
+## 2026-06-06 — Session 21 — courses.json: SI data collection complete + 2-tee cleanup
+
+**Version:** v10.91 / SW v164 (no app code changes — courses.json data only)
+
+### Critical bug fixed
+- Sun Peaks and Talking Rock SI data was stored under `"stroke_index"` instead of `"index"` (the key the app actually reads/writes) — 72 holes of previously-collected SI data was silently invisible to the app. Renamed in place.
+- Built `validate-courses.py` — schema guard that hard-fails on banned key aliases (`stroke_index`, `strokeIndex`, `si`, `yards`) and missing `par`/`yardage`, while treating incomplete `index` as informational only. Committed to the repo — run before any future courses.json commit.
+
+### SI/HCP data entered this session (from scorecards Paul provided)
+- Chinook Cove (White, Red), Meadow Creek (White/Blue, Red/Gold — resolved the dual-colour tee mapping blocker), Rivershore (White, Silver, Red), Pineridge (Blue, Red — 9-hole-played-twice, distinct front/back HCP), Kamloops GC (Black, Gold, White, Red — also fixed a front/back-nine order swap vs. the official scorecard), Bighorn (all 5 tees — Black/Blue/White/Green/Red), The Dunes (White, Green — also fixed Green/Red par on hole 2: 4→5 to match scorecard).
+- Recurring finding: HCP/SI allocation is per-hole-routing, not per-tee — confirmed identical HCP sequences across different tees at Meadow Creek, Rivershore, Bighorn, The Dunes, and Kamloops GC.
+
+### 2-tee cleanup executed (per TODO_LIST.md "courses.json Scorecard Collection" spec)
+- Removed every tee lacking complete SI data, and all female tees, across all 11 courses.
+- Result: every course now has exactly 2 men's tees, with two negotiated exceptions —
+  Rivershore keeps 3 (White/Silver/Red, all complete), Bighorn and Kamloops GC were trimmed by total yardage to their 2 shortest tees (Bighorn → Green/Red; Kamloops GC → White/Red).
+- `courses.json` now holds 504 hole entries (28 tees × 18 holes), validator passes clean.
+
+### Committed and pushed
+- courses.json (full SI dataset + 2-tee cleanup), validate-courses.py (new), removed stale courses.json.bak from repo and GitHub.
+- Cleaned up 12 numbered local backup files and 10 scorecard reference screenshots (no longer needed post-push).
+
+### Reset required for live data to take effect
+- `seedCourseCache()` only re-fetches courses.json if the local cache has fewer than 5 courses — it does not auto-resync on update. Paul used the existing `?reset` URL param (wipes courseCache + activeCourse, preserves profile/settings) to force a clean re-seed. Confirmed working — trimmed course/tee list now showing live.
+
+### Open items carried forward (unchanged from TODO_LIST — verified still open this session)
+- Toggle contrast on white/off-white background in Settings (OFF-state grey track + white thumb reads faint against `--skin-bg` #f5f4f0 — needs border/shadow/tinted-track treatment)
+- Dashboard metric list + chart-type mapping (deferred — no round data yet)
+- Apps Script GPI + HI trend wiring (blocks trend arrow activation)
+- Sample Performance Report for new accounts (static demo, linked from Settings)
+- Spring Green: Dashboard + Courses/Add Scores screens not yet designed/implemented
+- Confirmed: header-upper margin-bottom fix (v10.62/SW v135, "masthead offset") was in fact pushed — currently sits at 10px in shared.css (re-tuned since the original 0 fix, not a regression — worth a visual gut-check next time Settings is open)
+
+---
+
 ## 2026-06-01 — Session 17 continued — Skin refinements + Global Rules
 
 ### Skin fixes shipped this session (v10.57–v10.61)
@@ -2092,3 +2198,134 @@ Painful session. Most time lost chasing a Safari browser chrome colour bug that 
 
 ### Files changed
 `index.html`, `shared.js`, `sw.js`, `settings.html`, `courses.html`, `onboarding.html` (deleted), `profile.json` (added then deleted), `PROJECT.md`
+
+---
+
+## 2026-06-02 — Session 18 — Bug investigation + stability fixes
+
+**Version at start:** v10.85 / SW v158
+**Version at end:** v10.87 / SW v160 (pending GitHub Pages propagation)
+
+### What happened
+
+Paul reported that after playing 9 holes at Mt. Paul this morning, the round failed to post (no internet at the time), and after reconnecting the round was lost. Additionally, the Home Course screen stopped showing Mt. Paul and the pending round banner was not appearing.
+
+### Root cause investigation
+
+Three bugs identified from yesterday's session (June 1):
+
+1. **Syntax error in v10.82** — when `onboarding.html` was removed, the redirect was commented out leaving `if (!p.setupComplete) // window.location.replace(...)` with no body — a JS syntax error that killed all JavaScript for approximately 2 hours (v10.82 to v10.84).
+
+2. **`seedProfile()` introduced in v10.83, broken by v10.85** — fetched `profile.json` from GitHub Pages and called `location.reload()` on success. `profile.json` was deleted in v10.85, so every subsequent call silently failed. The `sheetsUrl` in profile.json was also blank.
+
+3. **No `online` event listener** — pending rounds required manual tap to post. Auto-retry was never wired.
+
+### Data loss
+
+- Today's 9-hole round (June 2, Mt. Paul) was lost when iOS cleared PWA localStorage. `pendingRounds`, `activeCourse`, and `profile` all wiped simultaneously.
+- All historical Sheets data (18 rounds) confirmed intact.
+
+### Fixes shipped (v10.86–v10.87)
+
+- `seedProfile()` removed entirely
+- `loadActiveCourse()` — fallback added: if `activeCourse` is missing, resolve home course from profile's `homeCourse` field against course cache
+- `window.addEventListener('online', repostPending)` added — automatic retry when connection returns
+- `showScreen('setup')` — `updateCourseNameDisplay()` added to refresh course card when returning from Courses library
+- `set-sheets-url.html` updated to restore full profile (not just sheetsUrl)
+- `GOLF_SHEETS_URL` saved to `.claude-config`
+
+### Incident during fixes
+
+- Python regex in v10.86 was too greedy — deleted `seedCourseCache()`, `initAddScoresScreen()`, and ~242 lines of code
+- Detected immediately, reverted to v10.85 codebase, fixes reapplied surgically for v10.87
+- v10.87 confirmed correct in local files; awaiting GitHub Pages propagation at session close
+
+### Open issues
+
+- `loadActiveCourse()` fallback only works if course cache is already seeded — if both are wiped simultaneously, the fallback fails silently and "Select a Course" still shows. Fix: call `loadActiveCourse()` again after `seedCourseCache()` completes.
+- `pendingRounds` still lives in localStorage — iOS can wipe it. Longer-term fix: migrate to IndexedDB for durable storage.
+- `set-sheets-url.html` "Go back to app" link uses `href="/"` — wrong path, gives 404. Fix next session.
+
+### Stats note
+
+Paul confirmed he wants live stat tracking (putts, FIR, GIR, penalties, UD, X-UD) from this session forward. Today's round was the first intended live-stat round and was lost. This is the priority going forward.
+
+
+---
+
+## 2026-06-04 — Session 19 — IndexedDB migration
+
+**Version at start:** v10.89 / SW v162
+**Version at end:** v10.89 / SW v162 (index.html updated, shared.js + sw.js not bumped — version bump deferred to after Friday round confirms stability)
+
+### Summary
+Migrated `pendingRounds` offline queue from localStorage to IndexedDB to prevent iOS eviction of pending round data (root cause of June 2 data loss).
+
+### Changes — index.html only
+
+- Added `openGolfDB()` — opens `golfDB` IndexedDB database (version 1), creates `pendingRounds` object store on first run with `keyPath: 'roundId'`
+- Added four helpers: `idbGetQueue()`, `idbAddRound()`, `idbRemoveRound()`, `idbClearQueue()`
+- `checkPendingQueue()` → now `async`, reads queue via `await idbGetQueue()`
+- `repostPending()` → removes rounds individually via `await idbRemoveRound()` after each successful post (more granular than old clear-all-at-end approach)
+- Both post-failure catch blocks (`submitRound` and `submitHistoricalRound`) → `await idbAddRound()` replaces localStorage write
+- Added one-time migration IIFE: reads any stranded rounds from `localStorage.pendingRounds`, writes to IDB, removes the key. Leaves localStorage intact if IDB write fails.
+
+### Code review findings
+- No critical issues
+- `idbClearQueue()` defined but unused — harmless utility, kept for future use
+- Each IDB operation opens its own connection — fine for current queue sizes (0–2 rounds typically)
+
+### Testing plan
+- Friday morning round is the live test — Paul is logging real stats from here forward, no dummy rounds
+- If a connectivity drop occurs and the round auto-posts on reconnect without manual intervention, migration is confirmed working
+- Report any banner misfires or broken post routines
+
+### Open issues (carried forward)
+- `loadActiveCourse()` fallback fails if course cache also wiped — call `loadActiveCourse()` again after `seedCourseCache()` completes
+- `set-sheets-url.html` "Go back to app" link uses `href="/"` — 404, fix next session
+- Version bump (shared.js APP_VERSION → v10.90, sw.js cache name) deferred until Friday round confirms stability
+
+---
+
+## 2026-06-04 — Session 19 (continued) — courses.json audit
+
+### Tee data rules confirmed
+- Two tee boxes per course only (Men's CR/SR). Possible 3rd on shorter courses later — not yet.
+- No female CR/SR — remove duplicates from schema when cleaning.
+- Tee colour names stay as original data (Green, Silver, Gold/White etc. are kept as-is).
+- Meadow Creek's dual-colour names (Red/Gold, White/Blue) are correct — 9-hole course played twice from alternating tees. Scorecard needed to map which holes use which tee box.
+
+### Course status after audit
+- **Complete (2 tees, Men's CR/SR, SI present):** Mt. Paul, Eaglepoint
+- **Needs SI only:** Chinook Cove, Kamloops GC, Pineridge, Sun Peaks, Talking Rock
+- **Needs SI + naming/tee decision resolved:** Bighorn (Green tee), Meadow Creek (dual-colour), Rivershore (Silver tee), The Dunes (Green tee)
+
+### Blocker
+App course entry screen requires SI before it will advance. Scorecard collection is the critical path — no courses.json editing can be completed until scorecards are in hand.
+
+### Scorecards needed
+Bighorn, Chinook Cove, Kamloops GC, Meadow Creek, Pineridge, Rivershore, Sun Peaks, Talking Rock, The Dunes
+
+### courses.json — Sun Peaks + Talking Rock updated
+- Added SI (1–18) for both courses from Offcourse scorecards
+- Updated CR/SR to Offcourse values (more current than original cached data)
+- Fixed par discrepancies on Talking Rock RED (hole 3) and Sun Peaks RED (holes 3, 6, 18)
+- Removed all non-essential tees (BLACK, BLUE, GOLD, GOLD/WHITE, all female entries)
+- Both courses now have exactly 2 male tees (WHITE + RED) with complete hole data
+- Version bumped to v10.91 / SW v164
+
+
+## 2026-06-20 — Security audit — multi-user secret handling (Dave setup prep)
+
+Paul opened a new thread: wants to get Dave set up independently on the Golf app — his own Google account for Sheets, his own stats, eventually his own GitHub. Recommended and Paul selected "shared app, his own Sheet" over a full fork (rationale: Paul ships Golf near-daily, a fork means permanent manual re-sync; the `profile.sheetsUrl` localStorage pattern already exists for exactly this; fewer moving parts for a non-technical user on a possibly outdated Windows laptop).
+
+Paul then asked directly: *"As you know, security and privacy is an issue. The apps script for Dave should be a web secret, and his email should be cloaked. Is this factored in?"* Read the actual live code (not just PROJECT.md's planned architecture) to answer honestly. Found it's only partially factored in:
+
+1. **No generic onboarding mechanism exists.** The only file that writes `profile.sheetsUrl` to localStorage is `set-sheets-url.html` — confirmed by reading it — and it is Paul's own personal hardcoded restore shortcut (title "Restore Profile"), not a blank form: `SHEETS_URL`, `name`, `reportEmail`, `hi`, etc. are all literal values baked into committed source. Reusing this file's pattern for Dave would mean committing Dave's secret Apps Script URL straight into the public repo — the opposite of what Paul asked for. `settings.html` confirmed (via grep) to have no `<input>` for editing `sheetsUrl` at all — it's read-only inside `sendReport()`.
+2. **`WEBHOOK_SECRET` is hardcoded and shared.** `index.html` line ~844: `const WEBHOOK_SECRET = "Oawa9g5ywPdik6bMk07wUlam7bf7qhEy";` — one plaintext literal, identical for every user, sent on all three POST call sites and checked server-side in `doPost` via Script Properties. This single fact already violates this project's own standing rule in `DASHBOARD_SECURITY_NOTES.md` ("No secrets belong in client code... lives in an Apps Script web app... not in index.html").
+3. **`doGet` has zero authentication.** Neither `action=data` (returns full round history) nor `action=report` (triggers an email send) check any secret at all — confirmed via full read of `apps-script.gs`. This is a live exposure on Paul's own app today, independent of Dave: anyone holding the bare `/exec` URL can pull full round history or trigger a report send.
+4. **Email exposure: low risk under the chosen architecture.** No `Session.getActiveUser().getEmail()` or other email-leaking calls found in `apps-script.gs`. `REPORT_EMAIL` / `profile.reportEmail` stay in Script Properties or localStorage, never committed. The "shared app" path means Dave never needs a GitHub account, so the git-commit-author-email leak vector (the main real risk for email cloaking) doesn't apply here — that risk would only resurface if the fork path is ever revisited.
+
+**Fix proposed (not built — Paul deferred to a new session):** (a) real generic onboarding form — blank input, localStorage-only, nothing per-user hardcoded/committed; (b) move `WEBHOOK_SECRET` to a per-user localStorage value set during onboarding, matched against that user's own Script Properties; (c) add the same secret check to `doGet`'s `action=data` and `action=report` branches. Paul will redeploy `apps-script.gs` himself via the Apps Script editor once built (same as always — Claude cannot deploy Apps Script directly).
+
+**Decision:** Paul said *"make a note of it in todo list, we'll start a new session for this."* No code touched this session. Logged as a blocking entry in `TODO_LIST.md` under One-off ("Golf — Secure multi-user onboarding before Dave setup") and flagged on the Golf Active Project Resume cue. Architecture choice ("shared app, his own Sheet") stands — these findings reinforce it rather than reopening it. Next session should start with this fix before any Dave account-creation steps.
