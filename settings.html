@@ -1,6 +1,15 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.16 — 2026-06-22
+  - sendReport() catch block split: network failure (fetch() throw) vs bad
+    response (res.json() throw) now report distinct messages including the
+    real err.name/err.message and HTTP status, instead of one generic
+    "Could not reach server" hiding every possible failure mode.
+  - Apps Script URL field now shows the exact saved value + char length
+    on screen (sheets-url-saved-debug) so a bad paste/invisible character
+    is visible without copying the field back out for comparison.
+
   v1.15 — 2026-06-22
   - Replaced onblur="" save triggers with explicit Save buttons on Change
     Email and Apps Script URL. onblur was firing the save implicitly and
@@ -177,6 +186,7 @@
         <button class="btn-3d btn-sm" onclick="saveSheetsUrl(document.getElementById('inp-sheets-url').value)">Save</button>
       </div>
       <div class="report-status" id="sheets-url-status"></div>
+      <div class="report-status" id="sheets-url-saved-debug" style="color: var(--text-secondary); opacity: 0.7;"></div>
     </div>
 
     <div class="section-header">Tracking Your Stats</div>
@@ -394,6 +404,7 @@
     // Apps Script URL
     const sheetsUrlEl = document.getElementById('inp-sheets-url');
     if (sheetsUrlEl && p.sheetsUrl) sheetsUrlEl.value = p.sheetsUrl;
+    renderSheetsUrlDebug(p.sheetsUrl);
 
   })();
 
@@ -461,6 +472,18 @@
     saveProfile({ sheetsUrl: v });
     syncReportEmail_(p.reportEmail, v, p.webhookSecret);
     if (sta) sta.textContent = 'Saved ✓';
+    renderSheetsUrlDebug(v);
+  }
+
+  // Shows exactly what's stored for sheetsUrl, length included, wrapped in
+  // «» so leading/trailing whitespace or an invisible character pasted in
+  // from elsewhere is visible on screen -- no copy/paste round-trip needed
+  // to verify it byte-for-byte.
+  function renderSheetsUrlDebug(v) {
+    const el = document.getElementById('sheets-url-saved-debug');
+    if (!el) return;
+    if (!v) { el.textContent = 'Saved value: (empty)'; return; }
+    el.textContent = 'Saved value (' + v.length + ' chars): «' + v + '»';
   }
 
   // ── Send Report ────────────────────────────────────────────────────────────
@@ -476,20 +499,33 @@
     btn.disabled = true;
     btn.textContent = 'Sending…';
     sta.textContent = '';
+
+    // Split the network call from the response-parse step so the status
+    // message says WHICH one failed and why -- "Could not reach server" was
+    // a single catch-all hiding fetch() network errors, CORS/redirect
+    // failures, and bad-JSON responses behind one identical message,
+    // making this bug impossible to diagnose remotely. Surface err.name +
+    // err.message (and HTTP status, if we got a response at all) instead.
+    let res;
     try {
-      const res = await fetch(url + '?action=report&secret=' + encodeURIComponent(p.webhookSecret || ''), { method: 'GET', redirect: 'follow' });
+      res = await fetch(url + '?action=report&secret=' + encodeURIComponent(p.webhookSecret || ''), { method: 'GET', redirect: 'follow' });
+    } catch (err) {
+      sta.textContent = 'Network error: ' + (err.name || 'Error') + ' — ' + (err.message || 'no message');
+      btn.textContent = 'SEND REPORT NOW';
+      btn.disabled = false;
+      return;
+    }
+    try {
       const data = await res.json();
       if (data.ok) {
         sta.textContent = 'Report sent ✓';
-        btn.textContent = 'SEND REPORT NOW';
       } else {
         sta.textContent = 'Error: ' + (data.error || 'unknown');
-        btn.textContent = 'SEND REPORT NOW';
       }
-    } catch(err) {
-      sta.textContent = 'Could not reach server. Check internet.';
-      btn.textContent = 'SEND REPORT NOW';
+    } catch (err) {
+      sta.textContent = 'Bad response (HTTP ' + res.status + '): ' + err.message;
     }
+    btn.textContent = 'SEND REPORT NOW';
     btn.disabled = false;
   }
 </script>
