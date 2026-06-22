@@ -1,6 +1,11 @@
 <!--
   My Golf Scores — Onboarding
   onboarding.html
+  v1.1 — 2026-06-22
+  - Fixed same REPORT_EMAIL write race as settings.html: the updateEmail
+    fetch() now sent with keepalive:true so the redirect to index.html no
+    longer cancels it before it reaches Apps Script.
+
   v1.0 — 2026-06-20
   - New file: blank, generic first-run setup form. Populates localStorage.profile.
   - No personal data hardcoded — every field starts blank except auto-generated webhookSecret.
@@ -267,9 +272,11 @@
     // Best-effort: push the email into Script Properties (REPORT_EMAIL) right
     // away, in case the secret is already pasted in. Fails silently otherwise
     // -- saving it again later in Settings will sync it once the secret is in
-    // place. Never blocks the redirect below.
+    // place. keepalive:true so the redirect below doesn't cancel this POST
+    // mid-flight (same race condition fixed in settings.html's syncReportEmail_).
     fetch(sheetsUrl, {
       method: 'POST',
+      keepalive: true,
       body: JSON.stringify({ action: 'updateEmail', email: email, secret: webhookSecret })
     }).catch(function () { /* best-effort -- ignore */ });
 

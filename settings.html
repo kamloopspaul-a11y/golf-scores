@@ -1,6 +1,11 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.12 — 2026-06-22
+  - Fixed REPORT_EMAIL write race: syncReportEmail_() fetch() now sent with
+    keepalive:true so the SAVE button's immediate navigation to index.html no
+    longer cancels the in-flight POST to Apps Script before it lands.
+
   v1.11 — 2026-06-11
   - Performance Reports simplified: removed all frequency toggles (Every 5/10/20 rounds, BiWeekly, Monthly, Year-End)
   - Reports now silent/automatic: every 20 rounds + November 15 year-end (configured in Apps Script)
@@ -398,8 +403,14 @@
       return;
     }
     console.log('[syncReportEmail_] Syncing email:', email, 'to', p.sheetsUrl);
+    // keepalive: true — the SAVE button below navigates to index.html immediately
+    // on click, which fires AFTER this blur handler. Without keepalive, the browser
+    // cancels this in-flight POST the instant the page starts unloading, so the
+    // request never reaches Apps Script even though the local profile save (above)
+    // already succeeded. keepalive lets the request complete past page unload.
     fetch(p.sheetsUrl, {
       method: 'POST',
+      keepalive: true,
       body: JSON.stringify({ action: 'updateEmail', email: email, secret: p.webhookSecret || '' })
     })
       .then(function(res) {
