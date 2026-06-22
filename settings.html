@@ -1,6 +1,19 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.18 — 2026-06-22
+  - Root cause of the report-send failure, found for real this time: the
+    saved Apps Script URL was truncated to 60 chars (missing the back half
+    of the deployment ID + /exec) -- not a Safari/WebKit transport issue at
+    all. Truncation happened because Paul has no reliable Mac-to-iPhone
+    clipboard and was hand-typing/partially-pasting an 80-char opaque ID
+    full of O/0 and l/1 look-alikes.
+  - Added applyDeepLinkConfig(): settings.html now reads ?setSheetsUrl=<url>
+    from the page URL on load and saves it straight to the profile, no
+    typing or copy/paste required. Pair with a QR code encoding that URL --
+    scan with iPhone camera, tap the link, done. Same mechanism can carry
+    other config values in future.
+
   v1.17 — 2026-06-22
   - ROOT CAUSE FOUND: sendReport()'s GET + query-string request crosses a
     redirect (script.google.com -> script.googleusercontent.com) that
@@ -390,8 +403,36 @@
     localStorage.setItem('profile', JSON.stringify(p));
   }
 
+  // ── One-tap config via QR / deep link ───────────────────────────────────
+  // Lets a long opaque value (Apps Script URL, etc.) land in the profile via
+  // a URL param instead of being typed or clipboard-shared across devices --
+  // iPhone doesn't reliably pick up Mac clipboard contents, and hand-typing
+  // an opaque ID is exactly how the truncated-URL bug happened (O/0, l/1
+  // look-alikes). Scan a QR code that encodes
+  // settings.html?setSheetsUrl=<url> and this saves it on page load, no
+  // typing or pasting required.
+  function applyDeepLinkConfig() {
+    const params = new URLSearchParams(window.location.search);
+    const incoming = params.get('setSheetsUrl');
+    if (!incoming) return false;
+    const v = incoming.trim();
+    let applied = false;
+    if (v.startsWith('https://script.google.com/macros/')) {
+      saveProfile({ sheetsUrl: v });
+      const p2 = getProfile();
+      syncReportEmail_(p2.reportEmail, v, p2.webhookSecret);
+      applied = true;
+    }
+    // Strip the param so refreshing/sharing the page doesn't re-trigger it
+    params.delete('setSheetsUrl');
+    const cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    window.history.replaceState({}, '', cleanUrl);
+    return applied;
+  }
+
   // ── Init ───────────────────────────────────────────────────────────────────
   (function init() {
+    const deepLinkApplied = applyDeepLinkConfig();
     const p = getProfile();
 
     // Date
@@ -416,6 +457,10 @@
     const sheetsUrlEl = document.getElementById('inp-sheets-url');
     if (sheetsUrlEl && p.sheetsUrl) sheetsUrlEl.value = p.sheetsUrl;
     renderSheetsUrlDebug(p.sheetsUrl);
+    if (deepLinkApplied) {
+      const sta = document.getElementById('sheets-url-status');
+      if (sta) sta.textContent = 'Saved via QR ✓';
+    }
 
   })();
 
