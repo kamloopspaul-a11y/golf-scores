@@ -2437,3 +2437,19 @@ Found the working tree already had two uncommitted JOURNAL.md sections from Sess
 - Push to GitHub (Paul, from terminal — `git status` will show JOURNAL.md, PROJECT.md, courses.html, shared.css, shared.js, sw.js all modified, since Session 24's doc updates were never committed either).
 - Paul to verify on iPhone: Add Course + Edit Course both show correct padding and the real tee count (2, or 3 for Rivershore) per course.
 - Once confirmed, resume Dave's onboarding via `onboarding.html` — still no other blockers.
+
+### Addendum (same session) — Send Report Now button greyed out on click (v10.95 / SW v168)
+
+Paul, after confirming the tee-chip/padding push: "One more edit. In Settings, the Send Report Now button, when clicked the activated state shows a greyed out button. This is inconsistent with the button behaviour on the rest of the site. Please fix."
+
+**Diagnosis:** `settings.html`'s `sendReport()` sets `btn.disabled = true` while the webhook call is in flight (line ~396) — correct, prevents double-send. The problem was purely visual: shared.css's `.btn-3d:disabled` rule overrode the button to a grey gradient (`#aaa`→`#888`) with a flat grey shadow, instead of falling back to the standard green `.btn-3d` look used everywhere else in the app.
+
+**Fix:** `shared.css` — `.btn-3d:disabled` stripped down to `{ cursor: default; transform: none; top: 0; }`, removing the grey `background`/`box-shadow` override entirely. Disabled state now falls through to the base `.btn-3d` green gradient/shadow, so "Sending…" looks identical to the normal enabled button, just non-clickable — consistent with the rest of the site.
+
+Confirmed via grep this is the *only* place in the codebase using `.btn-3d` + `.disabled = true` — index.html's other disabled-button usage (`pending-post-btn`) is a different CSS class (`pending-btn pending-btn-repost`), unaffected by this change.
+
+Bumped `APP_VERSION` v10.94 → v10.95 (`shared.js`), `CACHE_NAME` v167 → v168 (`sw.js`).
+
+### Not yet done (updated)
+- Push to GitHub (Paul, from terminal) — the tee-chip/padding fix (v10.94/SW v167) was already pushed earlier this session; this button fix (v10.95/SW v168) is the next push, still pending.
+- Paul to verify on iPhone: Send Report Now button no longer greys out when clicked/sending.

@@ -262,7 +262,7 @@ body {
 }
 .btn-3d:hover  { color: var(--yellow); }
 .btn-3d:active { transform: translateY(4px); top: 4px; box-shadow: 0 2px 0 #164803, 0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18); }
-.btn-3d:disabled { background: linear-gradient(180deg, #aaa 0%, #888 100%); box-shadow: 0 6px 0 #555; cursor: default; transform: none; top: 0; }
+.btn-3d:disabled { cursor: default; transform: none; top: 0; }
 
 
 /* Section headers — SCORE CARD / FEEDBACK / ACCOUNT / TOOLS */

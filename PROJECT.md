@@ -4,11 +4,11 @@
 
 ## Status
 
-**Version:** v10.94 / SW v167 — June 21, 2026 (fixed phantom tee-chip slots + edge-to-edge padding bug in courses.html Add/Edit Course, found via Paul's live iPhone testing; not yet pushed)
+**Version:** v10.95 / SW v168 — June 21, 2026 (fixed phantom tee-chip slots + edge-to-edge padding bug in courses.html Add/Edit Course, AND grey Send Report Now disabled-button state in settings.html; v10.94/SW v167 pushed live (iPhone confirmation pending), v10.95/SW v168 built and verified locally, not yet pushed)
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
-**Service Worker:** v167 (network-first for HTML, cache-first for assets)
+**Service Worker:** v168 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
 ## Core Spec
@@ -370,7 +370,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 ## Session Resume Notes
 
 **Last worked:** June 21, 2026 (Session 25)
-**Version:** v10.94 / SW v167 — fix built and verified locally, not yet pushed
+**Version:** v10.95 / SW v168 — tee-chip/padding fix (v10.94/SW v167) pushed live, Paul's iPhone confirmation pending; Send Report button fix (v10.95/SW v168) built and verified locally, not yet pushed
 
 **Completed this session (Session 25, June 21):**
 - **Bug found by Paul on live iPhone, post-Session 24:** courses.html Add/Edit Course screen showed 4 tee chips (White/Gold/Blue/Red) instead of the real 2 (or 3, for Rivershore) for every course, with content rendering edge-to-edge (missing horizontal padding). Paul's first theory — wrong courses.json pushed — was ruled out by direct git/file inspection: the committed courses.json, courses.html, and shared.css were already correct; `?reset` correctly cleared the cache but couldn't fix this, because it's a code bug, not a data/cache problem. No data was lost at any point — confirmed by tracing prefillHoleCards(); empty chips were always-rendered phantom slots that never had data, not deleted data.
@@ -378,7 +378,14 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 - **Root cause 2 — edge-to-edge padding:** confirmed via Paul ("Add Course has same issue as Edit Course") that this wasn't edit-mode-specific (`.edit-mode` class has zero CSS rules anywhere — checked). Real cause: `.form-section` in shared.css had `margin-bottom: 24px` only, no horizontal padding — unlike sibling components `.page-title`/`.setting-row`, which both carry the standard 20px gutter since the June 1 zero-stage-padding migration. Fixed by adding `padding: 0 20px` to `.form-section` in shared.css — this also fixes onboarding.html, which uses the same `.form-section`/`.field-input` components with the identical bug (relevant since Dave's onboarding is next). Also fixed courses.html-local `.hole-card` (Screen 2 hole entry cards, `margin: 0 20px 10px`) and added `#holes-tee-chips { padding: 0 20px; }` (Screen 2's standalone tee picker, not wrapped in a `.form-section`).
 - Verified: JS syntax-checked clean (`node --check`), no double-padding risk on Screen 1 (tee-chip-strip nested inside the now-padded `.form-section`) or onboarding.html (form-section nests directly under `.stage-scrolls`, same as before).
 - Bumped APP_VERSION → v10.94 (shared.js), CACHE_NAME → golf-scores-v167 (sw.js).
-- Not yet pushed — Paul to push from terminal, then test Add Course + Edit Course on iPhone for both padding and tee-chip count before resuming Dave's onboarding.
+- Pushed by Paul to GitHub (v10.94/SW v167 is live) — iPhone confirmation of the actual fix still pending ("pushed. Standby...").
+
+**Also completed this session (Session 25, June 21) — Send Report Now button fix:**
+- **Bug reported by Paul:** "In Settings, the Send Report Now button, when clicked the activated state shows a greyed out button. This is inconsistent with the button behaviour on the rest of the site."
+- **Root cause:** `settings.html`'s `sendReport()` correctly sets `btn.disabled = true` during the async webhook call (no change needed there), but shared.css's `.btn-3d:disabled` rule overrode it with a grey gradient (`#aaa`→`#888`) and flat grey shadow — inconsistent with every other button on the site.
+- **Fix:** Stripped `.btn-3d:disabled` in shared.css down to `{ cursor: default; transform: none; top: 0; }`. Disabled state now falls through to the base `.btn-3d` green gradient/shadow — visually identical to the enabled button, just non-clickable. Confirmed via grep this is the only `.btn-3d` + `.disabled = true` usage in the codebase (index.html's other disabled button, `pending-post-btn`, uses an unrelated CSS class).
+- Bumped APP_VERSION → v10.95 (shared.js), CACHE_NAME → golf-scores-v168 (sw.js).
+- Not yet pushed — Paul to push from terminal, then confirm on iPhone that Send Report Now no longer greys out while sending.
 
 **Completed Session 24 (June 20) — for reference, full detail in JOURNAL.md:**
 - Multi-user onboarding + secret fix built (see Security Rules section + JOURNAL.md Session 24): new onboarding.html, PROFILE.webhookSecret replaces hardcoded WEBHOOK_SECRET, doGet auth check added, set-sheets-url.html + settings.html updated to match.

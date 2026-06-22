@@ -1,0 +1,29 @@
+Golf Stats
+
+Analytics
+
+If Mt. Paul selected, turn Tips on. 
+Tips show up below the progress bar, but above the Stat Toggles. 
+Tip for each hole corresponds to Yardage Distance & Current Windspeed. On Par 4s optimize club selection off the tee to play within 00-150 yds into the green. On Hole 6 - Keep it in play, stay left and lay up if you have to. 
+
+Carry Distances
+Club.            Carry      Distance         1/2 Swing        Distance
+60W                              73 yds             63 yds
+54W            85 yds        95 yds            75 yds             82 yds
+56W                              90 yds            70 yds              75 yds
+AW            100 yds     105 yds            83 yds              90 yds
+PW            110 yds     115 yds             88 yds             98 yds
+9i               120 yds     130 yds            95 yds            108 yds
+8i               129 yds     140 yds          106 yds             118 yds
+7i               140 yds     155 yds
+6i               145 yds     165 yds
+5i               155 yds     170 yds
+5W            165 yds      188 yds
+3W            175 yds      215 yds
+1W            225 yds      235 yds           
+
+Wind and Club Selection
+Add 1 club for every 15-20 km/h of headwind
+Wind < 15 km/h = normal yardages
+Wind 15 - 30 km/h =-15 km/h +1 club
+Wind 30+ km/h = +2 clubs
