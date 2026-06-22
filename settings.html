@@ -1,6 +1,13 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.14 — 2026-06-22
+  - Added editable "Apps Script URL" field (mirrors Change Email pattern).
+    Phone-only users had no way to fix a stale sheetsUrl after a deployment
+    change except re-running full onboarding, which resets stat prefs and
+    regenerates the webhook secret. This does a partial saveProfile() update
+    instead -- preserves everything else, re-syncs REPORT_EMAIL on save.
+
   v1.13 — 2026-06-22
   - syncReportEmail_() moved to shared.js (single source of truth, also used
     by onboarding.html) -- removed the local copy here. saveEmail() now
@@ -141,6 +148,15 @@
       <input type="email" id="inp-email" class="setting-input"
              placeholder="your@email.com"
              onblur="saveEmail(this.value)">
+    </div>
+
+    <!-- Apps Script URL -->
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
+      <div class="setting-label">Apps Script URL</div>
+      <input type="text" id="inp-sheets-url" class="setting-input"
+             placeholder="https://script.google.com/macros/s/…/exec"
+             onblur="saveSheetsUrl(this.value)">
+      <div class="report-status" id="sheets-url-status"></div>
     </div>
 
     <div class="section-header">Tracking Your Stats</div>
@@ -355,6 +371,10 @@
     const emailEl = document.getElementById('inp-email');
     if (emailEl && p.reportEmail) emailEl.value = p.reportEmail;
 
+    // Apps Script URL
+    const sheetsUrlEl = document.getElementById('inp-sheets-url');
+    if (sheetsUrlEl && p.sheetsUrl) sheetsUrlEl.value = p.sheetsUrl;
+
   })();
 
   // ── Benchmark expand/collapse ──────────────────────────────────────────────
@@ -398,6 +418,24 @@
     const p = getProfile();
     saveProfile({ reportEmail: v });
     syncReportEmail_(v, p.sheetsUrl, p.webhookSecret);
+  }
+
+  // ── Apps Script URL ───────────────────────────────────────────────────────
+  // Partial update only -- preserves reportEmail, webhookSecret, and every
+  // other profile field. Use this instead of re-running onboarding.html to
+  // fix a stale URL (onboarding regenerates the webhook secret and resets
+  // stat preferences, which we don't want here).
+  function saveSheetsUrl(val) {
+    const v = val.trim();
+    const sta = document.getElementById('sheets-url-status');
+    if (!v || !v.startsWith('https://script.google.com/macros/')) {
+      if (sta) sta.textContent = 'Must be a valid Apps Script /exec URL.';
+      return;
+    }
+    const p = getProfile();
+    saveProfile({ sheetsUrl: v });
+    syncReportEmail_(p.reportEmail, v, p.webhookSecret);
+    if (sta) sta.textContent = 'Saved ✓';
   }
 
   // ── Send Report ────────────────────────────────────────────────────────────

@@ -4,11 +4,12 @@
 
 ## Status
 
-**Version:** v10.97 / SW v170 — live, pushed (commit ac7ec31). apps-script.gs redeployed by Paul to Version 17 same evening. **Known-good fix built and verified locally June 22, 2026, not yet pushed or redeployed:** REPORT_EMAIL staleness bug in apps-script.gs (see Known Issues + JOURNAL.md Session 26) — emails were silently still capable of going to a stale address after a Settings change even with Version 17 live, because the recipient was read from a module-level const set once at script load instead of fetched fresh per send. Front-end (index.html/settings.html/shared.js/sw.js) is unaffected — no front-end version bump needed for this fix.
+**Version:** v10.99 / SW v172 — built locally June 22, 2026, **not yet pushed.** Removed `set-sheets-url.html` (rogue "Restore Profile" page that silently overwrote the profile with a stale, hardcoded URL+secret — deleted by Paul from his Mac). Paul archived the 4 stray "Per-user WEBHOOK…" Active deployments in Apps Script, keeping only Version 18. Added a real "Apps Script URL" field to Settings (`settings.html` v1.14) so a stale `sheetsUrl` can be fixed from a phone with no dev tools, without resetting stat prefs or regenerating the webhook secret (onboarding.html does both, which is why it wasn't a safe fix path). Files touched: settings.html (v1.14), shared.js (APP_VERSION v10.99), sw.js (CACHE_NAME v172).
+**Known Issue (status: fix built, verification pending):** Apps Script project had multiple separate Active deployments; resolved by archiving all but Version 18 (single source of truth, per Paul's directive — no more "redeploy all 5"). Remaining step: Paul's phone almost certainly still has the old `sheetsUrl` cached in its profile from before the archiving — confirmed by a "Could not reach server" error on Send Report Now (archived deployments return an HTML error page instead of JSON, which the app's generic catch-all misreports as a connectivity issue). Fix is built (new Apps Script URL field in Settings, v1.14) but not yet pushed/tested end-to-end. See JOURNAL.md 2026-06-22 entry.
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
-**Service Worker:** v170 (network-first for HTML, cache-first for assets)
+**Service Worker:** v171 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
 ## Core Spec
@@ -369,8 +370,8 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** June 22, 2026 (Session 26)
-**Version:** v10.97 / SW v170 — live, pushed. apps-script.gs Version 17 live (Paul redeployed it the evening of June 21/22, after a session crash). **REPORT_EMAIL staleness fix built and verified locally this session, not yet pushed or redeployed — see below.**
+**Last worked:** June 22, 2026 (Session 26 + two same-day addenda)
+**Version:** v10.98 / SW v171 — built locally, **not yet pushed.** apps-script.gs Version 18 deployed by Paul, but the end-to-end test still failed (see second addendum below) — turned out to be a multi-deployment URL mismatch, not a code problem. This session's change: consolidated `syncReportEmail_()` into shared.js (single source of truth for settings.html + onboarding.html).
 
 **Completed this session (Session 26, June 22) — REPORT_EMAIL staleness fix:**
 - **Context:** previous session crashed; Haiku stepped in, committed v10.97 (added `console.log` debugging to `settings.html`'s `syncReportEmail_()` — no logic change) and pushed it, then crashed again before diagnosing anything or journaling. Paul separately redeployed apps-script.gs to **Version 17** the same evening (confirmed by Paul: "Version 17 at 23:50"). Paul started this session fresh, reporting email changes still "weren't writing to the script, or Sheets, or wherever the value is stored" even after that redeploy.
@@ -379,6 +380,16 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 - **Fix:** replaced the top-level const with `getReportEmail_()`, a function that reads the Script Property fresh on every call. Updated all 3 read sites: `sendReport()`'s `Logger.log`, `sendCombinedReport_()`'s `GmailApp.sendEmail()`, and the season-summary `GmailApp.sendEmail()`. No change to the `updateEmail` write path itself (already correct).
 - **Verification:** `node --check` clean. Ran `engineering:code-review` on the diff — **Approve**. Two minor pre-existing (not introduced by this fix) suggestions logged: `getReportEmail_()` can return `null` on a fresh install before any email is set, and `GmailApp.sendEmail(null, ...)` would throw — worth a one-line guard next time either send function is touched, not urgent.
 - **Not yet pushed.** Local-only change to `apps-script.gs`. **Needs a redeploy** (paste → Deploy → Manage deployments → New version → Version 18) on top of the git push, since this is a server-side-only fix — no front-end files changed, so no APP_VERSION/CACHE_NAME bump.
+
+**Addendum (same day) — push status corrected, second fix surfaced:**
+- Paul ran the git push commands for the staleness fix and found "nothing to commit... Everything up-to-date" — turned out `b56bf91` was already committed and pushed earlier (02:07 -0700), before the "not yet pushed" wording above was written. That wording was stale, not the code.
+- A second commit, `b611dc7` (02:36 -0700), was also already pushed and entirely undocumented until now: `settings.html` (→v1.12) and `onboarding.html` (→v1.1) both added `keepalive: true` to their `updateEmail` sync `fetch()` calls, fixing a write race where Settings' immediate post-save navigation to `index.html` could cancel the in-flight sync POST before Apps Script received it. Mechanism is the same one `navigator.sendBeacon` relies on. No SW/cache version bump needed — both are HTML, served network-first.
+- Net effect: front-end fix is live now (GitHub Pages = push is deploy). Backend `getReportEmail_()` fix is pushed but not live — Apps Script is still on Version 17. Redeploy to Version 18 is the one real remaining step. Full writeup in JOURNAL.md.
+
+**Second addendum (same day) — redeploy didn't fix it; multi-deployment trap; refactor:**
+- Paul redeployed apps-script.gs to Version 18. Ran the real test (change email in Settings, Send Report Now) — still landed on the old gmail.com address. Not a code bug: this Apps Script project has 5 separate Active deployments (per Session 24), each with its own `/exec` URL and independently pinned version. Redeploying one doesn't touch the others. Paul's live `sheetsUrl` most likely points at a deployment that's still on old code. **Open — not yet fixed.** Real fix is to redeploy every Active deployment (Session 24's approach) or confirm which one is actually live.
+- While diagnosing, Paul noticed the keepalive fix earlier today needed two edits (settings.html and onboarding.html each had their own copy of the email-sync logic) and asked for a single-source-of-truth version, same pattern shared.js already uses for footer nav. Built `syncReportEmail_(email, sheetsUrl, webhookSecret)` in shared.js; both pages now call it instead of carrying their own fetch(). `node --check` clean, `engineering:code-review`'d — Approve.
+- Versions: shared.js → v1.2 / APP_VERSION v10.98, settings.html → v1.13, onboarding.html → v1.2, sw.js CACHE_NAME → v171 (required since shared.js is cache-first). **Not yet pushed.**
 
 **Completed previous session (Session 25, June 21):**
 - **Bug found by Paul on live iPhone, post-Session 24:** courses.html Add/Edit Course screen showed 4 tee chips (White/Gold/Blue/Red) instead of the real 2 (or 3, for Rivershore) for every course, with content rendering edge-to-edge (missing horizontal padding). Paul's first theory — wrong courses.json pushed — was ruled out by direct git/file inspection: the committed courses.json, courses.html, and shared.css were already correct; `?reset` correctly cleared the cache but couldn't fix this, because it's a code bug, not a data/cache problem. No data was lost at any point — confirmed by tracing prefillHoleCards(); empty chips were always-rendered phantom slots that never had data, not deleted data.

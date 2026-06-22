@@ -2524,3 +2524,70 @@ Read `apps-script.gs` line-by-line around `REPORT_EMAIL`. Found it three times:
 
 ### Standing-rule note
 Per Paul's explicit "one problem at a time" early this session — held off on the `.fuse_hidden` cleanup and on re-litigating the multi-deployment risk from Session 24 even though both are adjacent. Logged here so neither gets lost, not actioned without Paul asking.
+
+### Addendum (same day) — Documentation correction: both fixes already pushed; second undocumented fix found
+
+Paul ran `git status`/`push` and reported "nothing to commit... Everything up-to-date" — surprising, since the entry above says "not yet pushed." Checked `git log`: the staleness fix above is commit `b56bf91` (2026-06-22 02:07 -0700), already on `origin/main` — it must have been committed and pushed earlier (this session or one not separately journaled) before the "Not yet done" list above was written, and that list was never corrected afterward. No further action needed on that push — it's done.
+
+**Second fix found on top, also already pushed, undocumented until now:** commit `b611dc7` (2026-06-22 02:36 -0700), "Fix REPORT_EMAIL write race in settings + onboarding — keepalive:true survives navigation." A different bug from the staleness fix above:
+
+- **Root cause:** Settings' Save button navigates to `index.html` immediately on click (per Session 23's "Save button in Settings now navigates to index.html directly"). `settings.html`'s `syncReportEmail_()` fires its `updateEmail` POST to Apps Script from a blur handler just before that navigation. Without `keepalive`, the browser cancels any in-flight `fetch()` the instant the page starts unloading — so the POST never reached Apps Script even though the local `localStorage` profile save (a separate, synchronous write) always succeeded. The same race existed in `onboarding.html`'s best-effort sync POST.
+- **Fix:** added `keepalive: true` to both fetch() calls (`settings.html`'s `syncReportEmail_()`, `onboarding.html`'s post-save sync), letting the request survive page unload — same mechanism `navigator.sendBeacon` relies on.
+- **Files touched:** `settings.html` (→ v1.12), `onboarding.html` (→ v1.1). No `shared.js`/`sw.js` version bump — both are HTML served network-first by the service worker, so no cache-busting was needed for users to get the fix.
+- **Live status:** already live. Both are static files served via GitHub Pages — push is deploy, no Apps Script step involved.
+
+**Net status after this correction:**
+- Front-end (keepalive write-race fix): ✅ live now.
+- Backend (`getReportEmail_()` staleness fix): pushed to GitHub, **but Apps Script has not been redeployed since Version 17** — the live `/exec` endpoint is still running the old code with the staleness bug. This is now the one real remaining step.
+- The "Not yet done" list below supersedes the one in the entry above.
+
+### Not yet done (updated, supersedes the list above)
+- Redeploy `apps-script.gs` in the Apps Script editor (paste → Deploy → Manage deployments → New version → will be Version 18).
+- Spot-check end-to-end: change email in Settings, tap Send Report Now, confirm the report lands at the *new* address.
+- Clean up the stray `.fuse_hidden0000000700000001` file (still not actioned — Paul's call).
+- Dave's onboarding — next after the above is confirmed.
+
+**Redeploy confirmed (same day):** Paul redeployed `apps-script.gs` via Manage deployments → New version → **Version 18** (confirmed by Paul: "Version 18 as the Description after selecting New Version"). Both `b56bf91` (staleness fix) and `b611dc7` (keepalive fix) are now live. End-to-end test still pending: change email in Settings, Send Report Now, confirm report lands at the new address.
+
+### Same-day follow-up — multi-deployment trap confirmed, then a refactor: single-source email sync
+
+**Redeploy bug solved:** the Version 18 redeploy alone didn't fix Send Report Now (still landed on the old gmail.com address). Root cause: this Apps Script project has multiple separate Active deployments (5, per Session 24 — "Untitled," "Golf Score PWA," "Golf Scores," "Golf Stats," "Mt_Paul_Scores"), each with its own `/exec` URL and independently pinned code version. Paul redeployed only one of them to Version 18; his phone's saved `sheetsUrl` apparently points at a different one still running old code. Flagged to Paul as the likely cause — fix is to redeploy every Active deployment, same approach used in Session 24. Not yet confirmed fixed as of this entry; Paul's call on whether/when to redeploy all of them.
+
+**Paul's observation, leading to a refactor:** noted that the keepalive fix earlier today had to be applied twice (settings.html and onboarding.html both had their own copy of the email-sync POST) — same kind of duplication risk as the multi-deployment problem, just on the front-end. Asked for a single-source-of-truth version, matching the pattern shared.js already uses for NAV_LINKS/footer nav.
+
+**Built:** `syncReportEmail_(email, sheetsUrl, webhookSecret)` moved into shared.js as the one definition. settings.html's `saveEmail()` and onboarding.html's `saveOnboarding()` both now call it directly instead of carrying their own fetch() copy.
+- shared.js → v1.2, APP_VERSION → v10.98 (footer version bump, since this is a real shared-utility change)
+- settings.html → v1.13 (local `syncReportEmail_` removed, `saveEmail()` now passes `sheetsUrl`/`webhookSecret` from `getProfile()` explicitly)
+- onboarding.html → v1.2 (inline fetch() block replaced with a one-line call)
+- sw.js CACHE_NAME → golf-scores-v171 (required — shared.js is in the cache-first ASSETS precache list; without this bump, existing installs would keep serving the old shared.js from cache)
+- `node --check` clean on shared.js, sw.js, and the extracted `<script>` blocks from both HTML files.
+- `engineering:code-review` run on the diff — **Approve**. One minor non-blocking note: the consolidated function logs less verbosely than settings.html's old debug version (one combined response log instead of three granular ones) — fine unless the multi-deployment mystery above needs more visibility later.
+
+**Not yet pushed.** Files changed: shared.js, settings.html, onboarding.html, sw.js. No apps-script.gs change this time — front-end only, no redeploy needed once pushed (GitHub Pages = deploy).
+
+**Still open:** confirm which Apps Script deployment Paul's `sheetsUrl` actually points to, and redeploy all Active deployments to Version 18 if needed — the real fix for today's original bug report is still pending that.
+
+### 2026-06-22 — Rogue restore page found and gutted; Settings gets a real Apps Script URL field
+
+**Found while auditing "are we using webhooks anywhere else":** `set-sheets-url.html` — an unlinked "Restore Profile" utility page, live on the published site, not in app navigation. On load it unconditionally overwrote `localStorage.profile` with a hardcoded object, including a stale `sheetsUrl` (a different, older deployment than Version 18) and a real `webhookSecret` value committed in plain text. Git history places it at commit `a2491e1` (20 Jun 2026, 22:22:19), correlating with one of the now-archived "Per-user WEBHOOK_SECRET" deployments from that same evening — i.e., a deployment that predates every later bug fix (staleness fix, keepalive fix, REPORT_EMAIL consolidation).
+
+Paul's call: "ditch them... a perfect argument to create ONE SINGLE GLOBAL SOURCE." Agreed — repointing the hardcoded URL to Version 18 would just re-stale on the next redeploy/secret rotation, and the file was already leaking a secret publicly. Gutted the file (now a static "this page is retired" stub, no JS, no localStorage write) and Paul deleted it outright from his Mac (`rm set-sheets-url.html`) along with a stray `.git/index.lock` left over from a sandbox permission quirk encountered while editing it.
+
+Paul archived the 4 stray "Per-user WEBHOOK…" Active deployments in Manage Deployments, keeping only Version 18.
+
+**Then hit the real test failure:** Paul tapped Send Report Now on his phone (v10.98) — got "Could not reach server. Check internet." Repeated on retry. This is `settings.html`'s generic catch-all (`sendReport()`'s `catch` block) — it fires for *any* thrown error in the fetch/JSON-parse chain, not just true network failures. An archived deployment's `/exec` URL returns an HTML error page instead of JSON, so `res.json()` throws and lands in this same catch — indistinguishable from "no internet" in the UI. Diagnosis: Paul's phone almost certainly still has the *old* `sheetsUrl` saved in its profile (from before the archiving), now pointing at a dead deployment.
+
+**Problem:** there was no way to fix this from a phone with no dev tools. `settings.html` had no field to edit `sheetsUrl` — only `onboarding.html` does, and re-running onboarding overwrites the *entire* profile (resets every stat toggle to default, resets `reportFreq`, and regenerates a brand-new `webhookSecret` on page load) — way too destructive just to fix one field.
+
+**Fix:** added a proper "Apps Script URL" field to Settings, directly under Change Email, same visual pattern (`setting-row` / `setting-label` / `setting-input`, save-on-blur). New `saveSheetsUrl()` does a partial `saveProfile({ sheetsUrl: v })` — preserves `reportEmail`, `webhookSecret`, and every stat preference — then calls the existing single-source `syncReportEmail_()` to re-push `REPORT_EMAIL` to whichever deployment is now current. Pre-filled on load so Paul can see exactly what's currently stored before overwriting it.
+
+- `settings.html` → v1.14
+- `shared.js` → `APP_VERSION` v10.98 → **v10.99**
+- `sw.js` → `CACHE_NAME` golf-scores-v171 → **v172** (HTML is network-first so not strictly required, but kept in step with project convention)
+- **Not yet pushed** as of this entry.
+
+### Not yet done
+- Push this change (`git add -A && git commit && git push`).
+- On phone: reload app, open Settings, paste the Version 18 URL (`https://script.google.com/macros/s/AKfycbwTQjaOVYlVx9bCfxqTyG7tCZSlfu8Z1XiPRcowKTj2nCVm2jV3NWsME5dnllcP5iz_eg/exec`) into the new field, tap away to save.
+- Retry Send Report Now; confirm a fresh execution shows in the Apps Script Executions log and the report lands at kamloopspaul@gmail.com.
+- Once confirmed working end-to-end, close out the multi-deployment Known Issue in PROJECT.md as resolved.
