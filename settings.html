@@ -1,6 +1,16 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.15 — 2026-06-22
+  - Replaced onblur="" save triggers with explicit Save buttons on Change
+    Email and Apps Script URL. onblur was firing the save implicitly and
+    unreliably on mobile (hard to tell if/when a paste actually committed,
+    required a blur gesture every retest). Explicit Save button removes the
+    ambiguity and is the most likely fix for "Could not reach server" if the
+    real cause was a partial/stale value getting saved on a premature blur.
+  - Added "Saved ✓" status feedback under Change Email, matching the
+    pattern already used by Apps Script URL.
+
   v1.14 — 2026-06-22
   - Added editable "Apps Script URL" field (mirrors Change Email pattern).
     Phone-only users had no way to fix a stale sheetsUrl after a deployment
@@ -57,6 +67,11 @@
     font-size: 12px; color: var(--text-secondary);
     margin-top: 6px; min-height: 16px;
   }
+
+  /* Field + explicit Save button (replaces onblur auto-save) */
+  .input-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .input-row .setting-input { margin-top: 0; flex: 1; min-width: 0; }
+  .btn-sm { padding: 8px 18px; font-size: 14px; border-radius: 10px; white-space: nowrap; }
 
   /* Stat toggle rows */
   .stat-row {
@@ -145,17 +160,22 @@
     <!-- Change Email -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
       <div class="setting-label">Change Email</div>
-      <input type="email" id="inp-email" class="setting-input"
-             placeholder="your@email.com"
-             onblur="saveEmail(this.value)">
+      <div class="input-row">
+        <input type="email" id="inp-email" class="setting-input"
+               placeholder="your@email.com">
+        <button class="btn-3d btn-sm" onclick="saveEmail(document.getElementById('inp-email').value)">Save</button>
+      </div>
+      <div class="report-status" id="email-status"></div>
     </div>
 
     <!-- Apps Script URL -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
       <div class="setting-label">Apps Script URL</div>
-      <input type="text" id="inp-sheets-url" class="setting-input"
-             placeholder="https://script.google.com/macros/s/…/exec"
-             onblur="saveSheetsUrl(this.value)">
+      <div class="input-row">
+        <input type="text" id="inp-sheets-url" class="setting-input"
+               placeholder="https://script.google.com/macros/s/…/exec">
+        <button class="btn-3d btn-sm" onclick="saveSheetsUrl(document.getElementById('inp-sheets-url').value)">Save</button>
+      </div>
       <div class="report-status" id="sheets-url-status"></div>
     </div>
 
@@ -414,10 +434,15 @@
   // happens to own the Sheet.
   function saveEmail(val) {
     const v = val.trim();
-    if (!v) return;
+    const sta = document.getElementById('email-status');
+    if (!v) {
+      if (sta) sta.textContent = 'Enter an email address.';
+      return;
+    }
     const p = getProfile();
     saveProfile({ reportEmail: v });
     syncReportEmail_(v, p.sheetsUrl, p.webhookSecret);
+    if (sta) sta.textContent = 'Saved ✓';
   }
 
   // ── Apps Script URL ───────────────────────────────────────────────────────
