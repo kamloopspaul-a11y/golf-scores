@@ -1,6 +1,11 @@
 <!--
   My Golf Scores — Onboarding
   onboarding.html
+  v1.2 — 2026-06-22
+  - The updateEmail sync call now goes through shared.js's syncReportEmail_()
+    (single source of truth, also used by settings.html) instead of a local
+    fetch() copy.
+
   v1.1 — 2026-06-22
   - Fixed same REPORT_EMAIL write race as settings.html: the updateEmail
     fetch() now sent with keepalive:true so the redirect to index.html no
@@ -272,13 +277,9 @@
     // Best-effort: push the email into Script Properties (REPORT_EMAIL) right
     // away, in case the secret is already pasted in. Fails silently otherwise
     // -- saving it again later in Settings will sync it once the secret is in
-    // place. keepalive:true so the redirect below doesn't cancel this POST
-    // mid-flight (same race condition fixed in settings.html's syncReportEmail_).
-    fetch(sheetsUrl, {
-      method: 'POST',
-      keepalive: true,
-      body: JSON.stringify({ action: 'updateEmail', email: email, secret: webhookSecret })
-    }).catch(function () { /* best-effort -- ignore */ });
+    // place. syncReportEmail_() lives in shared.js -- single source of truth,
+    // shared with settings.html.
+    syncReportEmail_(email, sheetsUrl, webhookSecret);
 
     window.location.href = 'index.html';
   }

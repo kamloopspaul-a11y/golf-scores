@@ -1,6 +1,11 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.13 — 2026-06-22
+  - syncReportEmail_() moved to shared.js (single source of truth, also used
+    by onboarding.html) -- removed the local copy here. saveEmail() now
+    passes sheetsUrl/webhookSecret in explicitly.
+
   v1.12 — 2026-06-22
   - Fixed REPORT_EMAIL write race: syncReportEmail_() fetch() now sent with
     keepalive:true so the SAVE button's immediate navigation to index.html no
@@ -382,47 +387,17 @@
   }
 
   // ── Save email ─────────────────────────────────────────────────────────────
+  // syncReportEmail_() now lives in shared.js (single source of truth) --
+  // also called from onboarding.html. Keeps Script Properties REPORT_EMAIL in
+  // sync with whatever the user enters here -- this field is the single
+  // source of truth for where reports go, not the Google account that
+  // happens to own the Sheet.
   function saveEmail(val) {
     const v = val.trim();
     if (!v) return;
-    saveProfile({ reportEmail: v });
-    syncReportEmail_(v);
-  }
-
-  // ── Push email to Apps Script (best-effort, never blocks the local save) ───
-  // Keeps Script Properties REPORT_EMAIL in sync with whatever the user enters
-  // here -- this field is the single source of truth for where reports go,
-  // not the Google account that happens to own the Sheet. Fails silently if
-  // the Apps Script URL/secret aren't configured yet (e.g. mid-onboarding,
-  // before the secret has been pasted into Script Properties); the local
-  // save above always succeeds regardless.
-  function syncReportEmail_(email) {
     const p = getProfile();
-    if (!p.sheetsUrl) {
-      console.log('[syncReportEmail_] No sheetsUrl found in profile');
-      return;
-    }
-    console.log('[syncReportEmail_] Syncing email:', email, 'to', p.sheetsUrl);
-    // keepalive: true — the SAVE button below navigates to index.html immediately
-    // on click, which fires AFTER this blur handler. Without keepalive, the browser
-    // cancels this in-flight POST the instant the page starts unloading, so the
-    // request never reaches Apps Script even though the local profile save (above)
-    // already succeeded. keepalive lets the request complete past page unload.
-    fetch(p.sheetsUrl, {
-      method: 'POST',
-      keepalive: true,
-      body: JSON.stringify({ action: 'updateEmail', email: email, secret: p.webhookSecret || '' })
-    })
-      .then(function(res) {
-        console.log('[syncReportEmail_] Response status:', res.status);
-        return res.json();
-      })
-      .then(function(data) {
-        console.log('[syncReportEmail_] Response data:', data);
-      })
-      .catch(function (err) {
-        console.log('[syncReportEmail_] Error:', err);
-      });
+    saveProfile({ reportEmail: v });
+    syncReportEmail_(v, p.sheetsUrl, p.webhookSecret);
   }
 
   // ── Send Report ────────────────────────────────────────────────────────────

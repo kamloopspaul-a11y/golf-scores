@@ -1,12 +1,19 @@
 /**
  * shared.js — Golf PWA shared utilities
+ * v1.2 — 2026-06-22
+ *   - Added syncReportEmail_(email, sheetsUrl, webhookSecret): single
+ *     source of truth for pushing the report-recipient email to Apps
+ *     Script. Was duplicated in settings.html and onboarding.html —
+ *     the keepalive:true write-race fix had to be applied twice because
+ *     of that. Both pages now call this one function instead.
  * v1.1 — 2026-05-12
  *
  * Included by every HTML page via <script src="shared.js"></script>.
  * Provides:
- *   NAV_LINKS           — canonical 8-link footer nav array
- *   showPanel(name)     — universal panel/navigation handler
- *   renderFooterNav(el) — writes the 4×2 nav grid into el
+ *   NAV_LINKS              — canonical 8-link footer nav array
+ *   showPanel(name)        — universal panel/navigation handler
+ *   renderFooterNav(el)    — writes the 4×2 nav grid into el
+ *   syncReportEmail_(...)  — pushes report email to Apps Script (Script Properties)
  *
  * Auto-init: on DOMContentLoaded, renders footer nav into every
  * element that carries the [data-nav] attribute.
@@ -62,7 +69,7 @@ function applyPageMeta(id) {
   if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
 }
 
-const APP_VERSION = 'v10.97';
+const APP_VERSION = 'v10.98';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
@@ -206,6 +213,38 @@ function renderPlayerName(name) {
   document.querySelectorAll('[data-player-name]').forEach(function(el) {
     el.textContent = n;
   });
+}
+
+// ── REPORT EMAIL SYNC ────────────────────────────────────────────────────────
+/**
+ * Single source of truth for pushing the report-recipient email to Apps
+ * Script (Script Properties: REPORT_EMAIL). Called from settings.html (on
+ * the email field's blur) and onboarding.html (Save & Continue) — the only
+ * two places this value is ever written. Best-effort: failures are
+ * swallowed silently and never block the caller's local save/redirect.
+ *
+ * keepalive:true lets the request survive a same-tick page navigation —
+ * Settings' Save button navigates to index.html right after this fires;
+ * onboarding redirects to index.html the same way.
+ *
+ * @param {string} email         - new report-recipient address
+ * @param {string} sheetsUrl     - Apps Script /exec URL (profile.sheetsUrl)
+ * @param {string} webhookSecret - profile.webhookSecret, checked server-side
+ *                                 against Script Properties WEBHOOK_SECRET
+ */
+function syncReportEmail_(email, sheetsUrl, webhookSecret) {
+  if (!sheetsUrl) {
+    console.log('[syncReportEmail_] No sheetsUrl provided');
+    return;
+  }
+  fetch(sheetsUrl, {
+    method: 'POST',
+    keepalive: true,
+    body: JSON.stringify({ action: 'updateEmail', email: email, secret: webhookSecret || '' })
+  })
+    .then(function(res) { return res.json(); })
+    .then(function(data) { console.log('[syncReportEmail_] Response:', data); })
+    .catch(function(err) { console.log('[syncReportEmail_] Error:', err); });
 }
 
 // ── AUTO-INIT ──────────────────────────────────────────────────────────────────
