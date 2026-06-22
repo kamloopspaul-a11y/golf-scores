@@ -393,11 +393,25 @@
   // save above always succeeds regardless.
   function syncReportEmail_(email) {
     const p = getProfile();
-    if (!p.sheetsUrl) return;
+    if (!p.sheetsUrl) {
+      console.log('[syncReportEmail_] No sheetsUrl found in profile');
+      return;
+    }
+    console.log('[syncReportEmail_] Syncing email:', email, 'to', p.sheetsUrl);
     fetch(p.sheetsUrl, {
       method: 'POST',
       body: JSON.stringify({ action: 'updateEmail', email: email, secret: p.webhookSecret || '' })
-    }).catch(function () { /* best-effort -- ignore */ });
+    })
+      .then(function(res) {
+        console.log('[syncReportEmail_] Response status:', res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        console.log('[syncReportEmail_] Response data:', data);
+      })
+      .catch(function (err) {
+        console.log('[syncReportEmail_] Error:', err);
+      });
   }
 
   // ── Send Report ────────────────────────────────────────────────────────────
