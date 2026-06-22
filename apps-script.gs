@@ -302,6 +302,24 @@ function doPost(e) {
       return json_({ ok: true, email: email });
     }
 
+    // ── Send report branch ────────────────────────────────────────────────
+    // Mirrors doGet's ?action=report branch. Added 2026-06-22: the GET +
+    // query-string + cross-origin-redirect request doGet uses is unreliable
+    // on Safari/WebKit -- confirmed the identical request succeeds in
+    // Chrome (200, valid JSON) but fails instantly with "TypeError: Load
+    // failed" on Paul's iPhone, with zero matching entries in the
+    // Executions log, meaning the request never leaves the device. POST is
+    // the transport already proven reliable on that exact device for score
+    // submission and updateEmail, so route the report trigger through it too.
+    if (p.action === 'report') {
+      try {
+        sendReport();
+        return json_({ ok: true, message: 'Report sent.' });
+      } catch (err) {
+        return json_({ ok: false, error: String(err) });
+      }
+    }
+
     // ── Score submission branch ──────────────────────────────────────────
 
     ensureSheet_(ss, ROUNDS,      roundsHeader_());

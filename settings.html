@@ -1,6 +1,17 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.17 — 2026-06-22
+  - ROOT CAUSE FOUND: sendReport()'s GET + query-string request crosses a
+    redirect (script.google.com -> script.googleusercontent.com) that
+    Safari/WebKit fails on instantly ("TypeError: Load failed"); confirmed
+    via direct Chrome reproduction of the identical request (succeeds,
+    200/JSON) plus zero matching entries in the Apps Script Executions log
+    on a failed attempt (request never left the phone). Switched to POST
+    with a JSON body -- same transport already proven reliable on Paul's
+    device for score submission and updateEmail. Requires the matching
+    apps-script.gs change (new doPost 'report' branch) to be deployed.
+
   v1.16 — 2026-06-22
   - sendReport() catch block split: network failure (fetch() throw) vs bad
     response (res.json() throw) now report distinct messages including the
@@ -506,9 +517,21 @@
     // failures, and bad-JSON responses behind one identical message,
     // making this bug impossible to diagnose remotely. Surface err.name +
     // err.message (and HTTP status, if we got a response at all) instead.
+    //
+    // POST instead of GET+query-string as of v1.17 (2026-06-22): the GET
+    // path goes through a cross-origin redirect (script.google.com ->
+    // script.googleusercontent.com) that Chrome handles fine but Safari/
+    // WebKit fails instantly on ("TypeError: Load failed", confirmed on
+    // Paul's iPhone -- zero matching Apps Script Executions log entries,
+    // meaning the request never left the device). POST with a JSON body is
+    // the same transport already proven reliable on that device for score
+    // submission and updateEmail, so report-sending now uses it too.
     let res;
     try {
-      res = await fetch(url + '?action=report&secret=' + encodeURIComponent(p.webhookSecret || ''), { method: 'GET', redirect: 'follow' });
+      res = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'report', secret: p.webhookSecret || '' })
+      });
     } catch (err) {
       sta.textContent = 'Network error: ' + (err.name || 'Error') + ' — ' + (err.message || 'no message');
       btn.textContent = 'SEND REPORT NOW';
