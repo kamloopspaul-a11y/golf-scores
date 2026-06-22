@@ -263,6 +263,16 @@
     };
 
     localStorage.setItem('profile', JSON.stringify(profile));
+
+    // Best-effort: push the email into Script Properties (REPORT_EMAIL) right
+    // away, in case the secret is already pasted in. Fails silently otherwise
+    // -- saving it again later in Settings will sync it once the secret is in
+    // place. Never blocks the redirect below.
+    fetch(sheetsUrl, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'updateEmail', email: email, secret: webhookSecret })
+    }).catch(function () { /* best-effort -- ignore */ });
+
     window.location.href = 'index.html';
   }
 

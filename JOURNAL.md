@@ -2453,3 +2453,29 @@ Bumped `APP_VERSION` v10.94 → v10.95 (`shared.js`), `CACHE_NAME` v167 → v168
 ### Not yet done (updated)
 - Push to GitHub (Paul, from terminal) — the tee-chip/padding fix (v10.94/SW v167) was already pushed earlier this session; this button fix (v10.95/SW v168) is the next push, still pending.
 - Paul to verify on iPhone: Send Report Now button no longer greys out when clicked/sending.
+
+### Addendum (same session) — REPORT_EMAIL sync fix: closing the "illusion" gap (v10.96 / SW v169)
+
+While planning Dave's onboarding, Paul asked a question that exposed a real bug: editing your email in Settings *looks* like it should change where reports get sent, but it doesn't. Traced it — `settings.html`'s `saveEmail()` only ever wrote to `localStorage.profile.reportEmail`. The actual recipient used by `GmailApp.sendEmail()` in `apps-script.gs` comes from a separate Script Property, `REPORT_EMAIL`, which nothing in the app had ever written to automatically — it only gets set if someone hand-types it into the Apps Script editor. Two completely independent values that look like one.
+
+**Design question raised by Paul:** should the app auto-fill the report email from whichever Google account owns the Sheet (technically possible via `Session.getEffectiveUser().getEmail()` on an "Execute as: Me" deployment), or should the manually-entered email field be the one true source?
+
+**Decision: manually-entered email wins.** Paul's own reasoning settled it: some users run the Sheet under a disposable/spam-bucket Gmail they never check (his point about why someone *would* have a Google account); others avoid the Gmail interface entirely and only open it under threat of account deletion (his own stated experience). The Google account is plumbing to host the Sheet/script — it has no business being the mailing address by default. So: keep the field, make it actually work, never auto-substitute the Google account email.
+
+**Cloaking check (Paul's long-standing concern, see Session 23's "Cloak REPORT_EMAIL in apps-script.gs"):** confirmed the new design doesn't reopen that risk. The email never gets written into `apps-script.gs` or any other committed file — it only ever travels at runtime: browser → HTTPS POST → that user's own Script Properties. Same place `WEBHOOK_SECRET` already lives. No git-commit-author-email vector either, since Dave never needs his own GitHub account under the shared-app architecture (confirmed earlier this project, JOURNAL.md ~line 2322).
+
+**Fix:**
+- `apps-script.gs` — new `doPost` branch, `action === 'updateEmail'`: validates secret (same check as every other action) and a plausible email shape, then `PropertiesService.getScriptProperties().setProperty('REPORT_EMAIL', email)`. Returns `json_({ok:true, email})` or an error. Inserted between the existing Gemini-query branch and the score-submission fallthrough so it can't accidentally fall through into score logic.
+- `settings.html` — `saveEmail()` now also calls a new `syncReportEmail_(email)` helper: a best-effort `fetch(sheetsUrl, {method:'POST', body: JSON.stringify({action:'updateEmail', email, secret: webhookSecret})})` with a `.catch()` that silently swallows failures. The existing `localStorage` write is untouched and always succeeds regardless of network/secret state.
+- `onboarding.html` — `saveOnboarding()` fires the same best-effort POST right after writing the local profile, before redirecting to `index.html`. Will usually fail silently on a brand-new signup (the secret isn't pasted into Script Properties yet at that point) — that's fine, it's opportunistic; the next time the user touches their email in Settings (after the secret's in place) it'll sync for real. Never blocks or delays the redirect.
+- Bumped `APP_VERSION` v10.95 → v10.96 (`shared.js`), `CACHE_NAME` v168 → v169 (`sw.js`).
+- Verified: `node --check` clean on `apps-script.gs` (copied to `.js` for the check) and both files' inline `<script>` blocks.
+
+### Operational note
+This is a backend (`apps-script.gs`) change, not just front-end. Paul's own live deployment needs the usual redeploy: paste new code into the Apps Script editor → Deploy → Manage deployments → edit → New version (URL stays the same). Dave's future deployment will simply start with the new code already in it — no extra step for him.
+
+### Not yet done
+- Push to GitHub (Paul, from terminal).
+- Paul to redeploy `apps-script.gs` in the live Apps Script editor (paste → New version) so his own `/exec` endpoint picks up the `updateEmail` action.
+- Paul to spot-check: change email in Settings, confirm (via Apps Script's Executions log, or just by triggering Send Report) that the new address is what receives the report.
+- Dave's onboarding — still the next real task once the above is confirmed.

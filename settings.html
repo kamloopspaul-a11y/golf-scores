@@ -381,6 +381,23 @@
     const v = val.trim();
     if (!v) return;
     saveProfile({ reportEmail: v });
+    syncReportEmail_(v);
+  }
+
+  // ── Push email to Apps Script (best-effort, never blocks the local save) ───
+  // Keeps Script Properties REPORT_EMAIL in sync with whatever the user enters
+  // here -- this field is the single source of truth for where reports go,
+  // not the Google account that happens to own the Sheet. Fails silently if
+  // the Apps Script URL/secret aren't configured yet (e.g. mid-onboarding,
+  // before the secret has been pasted into Script Properties); the local
+  // save above always succeeds regardless.
+  function syncReportEmail_(email) {
+    const p = getProfile();
+    if (!p.sheetsUrl) return;
+    fetch(p.sheetsUrl, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'updateEmail', email: email, secret: p.webhookSecret || '' })
+    }).catch(function () { /* best-effort -- ignore */ });
   }
 
   // ── Send Report ────────────────────────────────────────────────────────────

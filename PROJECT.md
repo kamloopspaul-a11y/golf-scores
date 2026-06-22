@@ -4,11 +4,11 @@
 
 ## Status
 
-**Version:** v10.95 / SW v168 — June 21, 2026 (fixed phantom tee-chip slots + edge-to-edge padding bug in courses.html Add/Edit Course, AND grey Send Report Now disabled-button state in settings.html; v10.94/SW v167 pushed live (iPhone confirmation pending), v10.95/SW v168 built and verified locally, not yet pushed)
+**Version:** v10.96 / SW v169 — June 21, 2026 (tee-chip/padding fix + Send Report button fix both pushed live, Paul's iPhone confirmation pending; v10.96/SW v169 adds the REPORT_EMAIL sync fix — closes the gap where editing email in Settings never actually changed where reports get sent — built and verified locally, not yet pushed, and requires an apps-script.gs redeploy)
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
-**Service Worker:** v168 (network-first for HTML, cache-first for assets)
+**Service Worker:** v169 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
 ## Core Spec
@@ -370,7 +370,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 ## Session Resume Notes
 
 **Last worked:** June 21, 2026 (Session 25)
-**Version:** v10.95 / SW v168 — tee-chip/padding fix (v10.94/SW v167) pushed live, Paul's iPhone confirmation pending; Send Report button fix (v10.95/SW v168) built and verified locally, not yet pushed
+**Version:** v10.96 / SW v169 — tee-chip/padding fix (v10.94/SW v167) and Send Report button fix (v10.95/SW v168) both pushed live, Paul's iPhone confirmation pending; REPORT_EMAIL sync fix (v10.96/SW v169) built and verified locally, not yet pushed (requires apps-script.gs redeploy too)
 
 **Completed this session (Session 25, June 21):**
 - **Bug found by Paul on live iPhone, post-Session 24:** courses.html Add/Edit Course screen showed 4 tee chips (White/Gold/Blue/Red) instead of the real 2 (or 3, for Rivershore) for every course, with content rendering edge-to-edge (missing horizontal padding). Paul's first theory — wrong courses.json pushed — was ruled out by direct git/file inspection: the committed courses.json, courses.html, and shared.css were already correct; `?reset` correctly cleared the cache but couldn't fix this, because it's a code bug, not a data/cache problem. No data was lost at any point — confirmed by tracing prefillHoleCards(); empty chips were always-rendered phantom slots that never had data, not deleted data.
@@ -386,6 +386,14 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 - **Fix:** Stripped `.btn-3d:disabled` in shared.css down to `{ cursor: default; transform: none; top: 0; }`. Disabled state now falls through to the base `.btn-3d` green gradient/shadow — visually identical to the enabled button, just non-clickable. Confirmed via grep this is the only `.btn-3d` + `.disabled = true` usage in the codebase (index.html's other disabled button, `pending-post-btn`, uses an unrelated CSS class).
 - Bumped APP_VERSION → v10.95 (shared.js), CACHE_NAME → golf-scores-v168 (sw.js).
 - Not yet pushed — Paul to push from terminal, then confirm on iPhone that Send Report Now no longer greys out while sending.
+
+**Also completed this session (Session 25, June 21) — REPORT_EMAIL sync fix:**
+- **Bug surfaced while discussing Dave's onboarding:** editing email in Settings looked like it should change where reports get sent, but `saveEmail()` only ever wrote to `localStorage` — the actual recipient (`GmailApp.sendEmail()` in `apps-script.gs`) reads a separate, never-auto-written Script Property, `REPORT_EMAIL`. Two disconnected values masquerading as one.
+- **Design decision (Paul):** the manually-entered email field is the single source of truth — not the Google account that owns the Sheet, even though that's technically auto-fillable (`Session.getEffectiveUser().getEmail()`). Reasoning: some users run the Sheet under a disposable/spam Gmail; others avoid the Gmail interface entirely. The Google account is plumbing, not a mailing address.
+- **Cloaking check:** confirmed this doesn't reopen the Session 23 "exposed email" risk — the email is never written into `apps-script.gs` or any committed file, only into that user's own Script Properties at runtime (same place `WEBHOOK_SECRET` already lives).
+- **Fix:** new `doPost` action `updateEmail` in `apps-script.gs` (validates secret + email shape, writes `REPORT_EMAIL` via `PropertiesService.setProperty`). `settings.html`'s `saveEmail()` and `onboarding.html`'s `saveOnboarding()` both now fire a best-effort, fire-and-forget POST to sync it — failures are swallowed silently and never block the existing localStorage save/redirect.
+- Bumped APP_VERSION → v10.96 (shared.js), CACHE_NAME → golf-scores-v169 (sw.js). `node --check` clean on all three edited files.
+- Not yet pushed. **This one also needs an apps-script.gs redeploy** (paste → Deploy → Manage deployments → New version) on top of the usual git push, since the new webhook action lives server-side.
 
 **Completed Session 24 (June 20) — for reference, full detail in JOURNAL.md:**
 - Multi-user onboarding + secret fix built (see Security Rules section + JOURNAL.md Session 24): new onboarding.html, PROFILE.webhookSecret replaces hardcoded WEBHOOK_SECRET, doGet auth check added, set-sheets-url.html + settings.html updated to match.

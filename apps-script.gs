@@ -279,6 +279,21 @@ function doPost(e) {
       return handleGeminiQuery_(ss, p.question);
     }
 
+    // ── Update report email branch ────────────────────────────────────────
+    // Keeps REPORT_EMAIL (Script Properties) in sync with whatever the user
+    // saves in onboarding.html / settings.html. Never written to Sheets, never
+    // committed to source — stays in Script Properties only (same place as
+    // WEBHOOK_SECRET). Single source of truth is the user-entered email, not
+    // whichever Google account happens to own the deployment.
+    if (p.action === 'updateEmail') {
+      const email = String(p.email || '').trim();
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        return json_({ ok: false, error: 'Invalid email address.' });
+      }
+      PropertiesService.getScriptProperties().setProperty('REPORT_EMAIL', email);
+      return json_({ ok: true, email: email });
+    }
+
     // ── Score submission branch ──────────────────────────────────────────
 
     ensureSheet_(ss, ROUNDS,      roundsHeader_());
