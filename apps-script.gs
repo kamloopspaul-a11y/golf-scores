@@ -26,7 +26,15 @@ const SETTINGS    = 'Settings';
 const DIAGNOSTICS = 'Diagnostics';
 const ROUND_META  = 'Round_Meta';
 
-const REPORT_EMAIL   = PropertiesService.getScriptProperties().getProperty('REPORT_EMAIL');
+// NOTE: deliberately NOT a top-level const. Apps Script web-app executions can
+// reuse a warm V8 context across back-to-back HTTP calls, so a const assigned
+// once at global-scope load can serve a stale value if REPORT_EMAIL was
+// updated (via the doPost 'updateEmail' branch) in a nearby execution. Always
+// read fresh at the point of use instead — same reasoning as why
+// WEBHOOK_SECRET is fetched inside doGet/doPost rather than hoisted globally.
+function getReportEmail_() {
+  return PropertiesService.getScriptProperties().getProperty('REPORT_EMAIL');
+}
 
 // Round-count window. A report fires automatically every 20 completed rounds.
 const ROUND_WINDOWS  = [20];
@@ -683,7 +691,7 @@ function sendReport() {
   const ss = SpreadsheetApp.getActive();
   const hi = parseFloat(getSettings_(ss.getSheetByName(SETTINGS))['Handicap_Index'] || 20);
   sendCombinedReport_(ss, [20], hi);
-  Logger.log('Report sent to ' + REPORT_EMAIL);
+  Logger.log('Report sent to ' + getReportEmail_());
 }
 
 // ── Insights builder ───────────────────────────────────────────────────────
@@ -902,7 +910,7 @@ function sendCombinedReport_(ss, windows, hi) {
 </body>
 </html>`;
 
-  GmailApp.sendEmail(REPORT_EMAIL, subject, 'Your golf report (HTML email)', { htmlBody: html });
+  GmailApp.sendEmail(getReportEmail_(), subject, 'Your golf report (HTML email)', { htmlBody: html });
 }
 
 // ── Report section HTML builder ────────────────────────────────────────────
@@ -1233,7 +1241,7 @@ function checkSeasonSummary() {
 </html>`;
 
   GmailApp.sendEmail(
-    REPORT_EMAIL,
+    getReportEmail_(),
     `Golf ${year} Season Summary`,
     'Your season summary (HTML email)',
     { htmlBody: html }

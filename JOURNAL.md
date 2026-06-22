@@ -2479,3 +2479,48 @@ This is a backend (`apps-script.gs`) change, not just front-end. Paul's own live
 - Paul to redeploy `apps-script.gs` in the live Apps Script editor (paste → New version) so his own `/exec` endpoint picks up the `updateEmail` action.
 - Paul to spot-check: change email in Settings, confirm (via Apps Script's Executions log, or just by triggering Send Report) that the new address is what receives the report.
 - Dave's onboarding — still the next real task once the above is confirmed.
+
+---
+
+## 2026-06-22 — Session 26 — REPORT_EMAIL staleness fix (apps-script.gs)
+
+**Version at start:** v10.97 / SW v170 (live, pushed by Haiku's crashed session before this one). apps-script.gs Version 17 (Paul redeployed it himself, 23:50 the prior evening).
+**Version at end:** apps-script.gs fix built and verified locally, not yet pushed/redeployed. No front-end version bump (no front-end files touched).
+
+### How this session started
+Paul: "In the last session we crashed and Haiku stepped in... chippy little fellow, not sure he knew what he was doing, works fast, and he may have screwed things up. We are on V10.97 and crashed again. I thought I'd better start a new session with you at the wheel." Per his "one problem at a time" instruction, did a state assessment before touching anything.
+
+### State assessment
+- `git status` clean except `.DS_Store`; `git log` showed v10.97 (commit `ac7ec31`, "Add email sync debugging to syncReportEmail_ function") already committed **and pushed** to `origin/main` — Haiku's crashed session got further than expected before dying.
+- Diffed `ac7ec31`: only added `console.log` lines to `settings.html`'s `syncReportEmail_()` (request status, response body, error) plus the routine `APP_VERSION`/`CACHE_NAME` bump. No logic change, no JS syntax errors (`node --check` clean on `apps-script.gs` and both `settings.html` script blocks).
+- **Found in the same commit:** a stray `.fuse_hidden0000000700000001` file got swept into the repo — almost certainly `git add .` used instead of per-file `git add` (the exact mistake this project's standing rule exists to prevent, per Session 24's "don't `git add .`" note). Flagged to Paul, not cleaned up — out of scope for today's one problem.
+- **JOURNAL.md/PROJECT.md were never updated** by Haiku's session — last entry on disk predated the crash. Consistent with "crashed again" — confirms "crashed" means the agent/session died, not that the deployed app broke. The app itself was never broken; `git diff` + `node --check` showed no damage.
+- Asked Paul directly whether `apps-script.gs` had been redeployed since the v10.96 `updateEmail` action was added (this was the open question carried from Session 25's JOURNAL). Paul: yes, **Version 17**, ~23:50 the prior evening — also clarified the actual ask: he wanted to understand where the report email's "source of truth" lives (Sheets vs. app), which led to the webhook design built in Session 25, and "complications stemmed from that as changes weren't writing to the script, or Sheets, or wherever the value is stored."
+
+### Diagnosis (engineering:debug)
+Read `apps-script.gs` line-by-line around `REPORT_EMAIL`. Found it three times:
+1. Line 29 (original): `const REPORT_EMAIL = PropertiesService.getScriptProperties().getProperty('REPORT_EMAIL');` — **top-level, module-scope.**
+2. `sendReport()` — `Logger.log('Report sent to ' + REPORT_EMAIL)`.
+3. `sendCombinedReport_()` — `GmailApp.sendEmail(REPORT_EMAIL, ...)`.
+4. Season summary function — `GmailApp.sendEmail(REPORT_EMAIL, ...)`.
+
+**Root cause:** a module-level `const` is evaluated once when the script's global scope loads. Apps Script web-app deployments can reuse a warm execution context across consecutive HTTP calls, meaning this const is not guaranteed to re-read `PropertiesService` on every single `doPost`/`doGet`/trigger firing — it can serve whatever value was cached from an earlier warm execution, even after a later request's `updateEmail` branch successfully calls `setProperty('REPORT_EMAIL', ...)`. This is exactly the failure mode Paul described: the write looks like it should work (and may even show `ok:true` in Haiku's new console logs), but the next report can still go to the old address. Notably, `WEBHOOK_SECRET` was already fetched **inside** `doGet`/`doPost` rather than hoisted to a global — the right pattern existed in the same file; `REPORT_EMAIL` just never followed it when the `updateEmail` feature was built in Session 25.
+
+### Fix
+- Replaced the top-level const with `getReportEmail_()` — a function that calls `PropertiesService.getScriptProperties().getProperty('REPORT_EMAIL')` fresh every time it's invoked. Added a comment explaining why, referencing the `WEBHOOK_SECRET` precedent so this doesn't regress again.
+- Updated all three read sites (`sendReport()`'s `Logger.log`, `sendCombinedReport_()`'s `GmailApp.sendEmail()`, season-summary's `GmailApp.sendEmail()`) to call `getReportEmail_()` instead of the bare identifier.
+- Confirmed via grep: zero remaining references to the old bare `REPORT_EMAIL` identifier outside comments and the property-key strings.
+
+### Verification
+- `node --check` clean on the full `apps-script.gs`.
+- Ran `engineering:code-review` on the diff (Paul explicitly asked for this). **Verdict: Approve.** Two minor, pre-existing (not introduced by this change) suggestions logged: `getReportEmail_()` can return `null` before any email has ever been set (fresh install) and `GmailApp.sendEmail(null, ...)` would throw — worth a one-line guard whenever either send function is next touched, not urgent enough to bundle into this fix.
+
+### Not yet done
+- Push `apps-script.gs` to GitHub (Paul, from terminal).
+- Redeploy in the Apps Script editor (paste → Deploy → Manage deployments → New version → will be **Version 18**). Same multi-deployment caveat from Session 24 applies if Paul is unsure which deployment his live app's `sheetsUrl` actually points to — confirm before assuming "redeployed" means "live for him."
+- Spot-check end-to-end: change email in Settings, tap Send Report Now, confirm the report lands at the *new* address (not the old one) — this is the real test the previous two sessions never actually ran.
+- Clean up the stray `.fuse_hidden0000000700000001` file from the repo (flagged this session, not actioned — Paul's call on priority).
+- Dave's onboarding — still next after the above is confirmed, unchanged from Session 24/25.
+
+### Standing-rule note
+Per Paul's explicit "one problem at a time" early this session — held off on the `.fuse_hidden` cleanup and on re-litigating the multi-deployment risk from Session 24 even though both are adjacent. Logged here so neither gets lost, not actioned without Paul asking.

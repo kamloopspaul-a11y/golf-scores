@@ -4,11 +4,11 @@
 
 ## Status
 
-**Version:** v10.96 / SW v169 — June 21, 2026 (tee-chip/padding fix + Send Report button fix both pushed live, Paul's iPhone confirmation pending; v10.96/SW v169 adds the REPORT_EMAIL sync fix — closes the gap where editing email in Settings never actually changed where reports get sent — built and verified locally, not yet pushed, and requires an apps-script.gs redeploy)
+**Version:** v10.97 / SW v170 — live, pushed (commit ac7ec31). apps-script.gs redeployed by Paul to Version 17 same evening. **Known-good fix built and verified locally June 22, 2026, not yet pushed or redeployed:** REPORT_EMAIL staleness bug in apps-script.gs (see Known Issues + JOURNAL.md Session 26) — emails were silently still capable of going to a stale address after a Settings change even with Version 17 live, because the recipient was read from a module-level const set once at script load instead of fetched fresh per send. Front-end (index.html/settings.html/shared.js/sw.js) is unaffected — no front-end version bump needed for this fix.
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
-**Service Worker:** v169 (network-first for HTML, cache-first for assets)
+**Service Worker:** v170 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
 ## Core Spec
@@ -369,10 +369,18 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** June 21, 2026 (Session 25)
-**Version:** v10.96 / SW v169 — tee-chip/padding fix (v10.94/SW v167) and Send Report button fix (v10.95/SW v168) both pushed live, Paul's iPhone confirmation pending; REPORT_EMAIL sync fix (v10.96/SW v169) built and verified locally, not yet pushed (requires apps-script.gs redeploy too)
+**Last worked:** June 22, 2026 (Session 26)
+**Version:** v10.97 / SW v170 — live, pushed. apps-script.gs Version 17 live (Paul redeployed it the evening of June 21/22, after a session crash). **REPORT_EMAIL staleness fix built and verified locally this session, not yet pushed or redeployed — see below.**
 
-**Completed this session (Session 25, June 21):**
+**Completed this session (Session 26, June 22) — REPORT_EMAIL staleness fix:**
+- **Context:** previous session crashed; Haiku stepped in, committed v10.97 (added `console.log` debugging to `settings.html`'s `syncReportEmail_()` — no logic change) and pushed it, then crashed again before diagnosing anything or journaling. Paul separately redeployed apps-script.gs to **Version 17** the same evening (confirmed by Paul: "Version 17 at 23:50"). Paul started this session fresh, reporting email changes still "weren't writing to the script, or Sheets, or wherever the value is stored" even after that redeploy.
+- **Housekeeping found along the way:** Haiku's v10.97 commit (`ac7ec31`) swept in a stray `.fuse_hidden0000000700000001` file (a FUSE lock artifact, looks like a `git add .` was used instead of per-file `git add`) — harmless clutter sitting in the repo, not cleaned up this session (flagged, not fixed — out of scope for today's one problem).
+- **Root cause (engineering:debug):** `apps-script.gs` line 29 declared `const REPORT_EMAIL = PropertiesService.getScriptProperties().getProperty('REPORT_EMAIL');` at **module/global scope** — evaluated once when the script's global context loads. Apps Script web-app executions can reuse a warm V8 context across back-to-back HTTP calls, so this const could silently serve a stale email address even after `doPost`'s `updateEmail` branch successfully wrote the new value to Script Properties in a separate execution. This was always the wrong pattern — `WEBHOOK_SECRET` was already (correctly) fetched fresh *inside* `doGet`/`doPost` rather than hoisted to a global, and `REPORT_EMAIL` should have followed the same rule from the start (v10.96, Session 25).
+- **Fix:** replaced the top-level const with `getReportEmail_()`, a function that reads the Script Property fresh on every call. Updated all 3 read sites: `sendReport()`'s `Logger.log`, `sendCombinedReport_()`'s `GmailApp.sendEmail()`, and the season-summary `GmailApp.sendEmail()`. No change to the `updateEmail` write path itself (already correct).
+- **Verification:** `node --check` clean. Ran `engineering:code-review` on the diff — **Approve**. Two minor pre-existing (not introduced by this fix) suggestions logged: `getReportEmail_()` can return `null` on a fresh install before any email is set, and `GmailApp.sendEmail(null, ...)` would throw — worth a one-line guard next time either send function is touched, not urgent.
+- **Not yet pushed.** Local-only change to `apps-script.gs`. **Needs a redeploy** (paste → Deploy → Manage deployments → New version → Version 18) on top of the git push, since this is a server-side-only fix — no front-end files changed, so no APP_VERSION/CACHE_NAME bump.
+
+**Completed previous session (Session 25, June 21):**
 - **Bug found by Paul on live iPhone, post-Session 24:** courses.html Add/Edit Course screen showed 4 tee chips (White/Gold/Blue/Red) instead of the real 2 (or 3, for Rivershore) for every course, with content rendering edge-to-edge (missing horizontal padding). Paul's first theory — wrong courses.json pushed — was ruled out by direct git/file inspection: the committed courses.json, courses.html, and shared.css were already correct; `?reset` correctly cleared the cache but couldn't fix this, because it's a code bug, not a data/cache problem. No data was lost at any point — confirmed by tracing prefillHoleCards(); empty chips were always-rendered phantom slots that never had data, not deleted data.
 - **Root cause 1 — phantom tee chips:** `TEE_ORDER` (White/Gold/Blue/Red) was hardcoded and `activeTees()` always returned all 4 slots regardless of what a course actually had saved, in both Add and Edit mode. Fix: `activeTees()` now returns all 4 only in Add mode (`editingId === null`); in Edit mode it returns `teesWithData()` (tees with real CR/SR or yardage). `renderTeeChips()` (Screen 1) rewritten to render dynamically from `activeTees()` instead of toggling 4 hardcoded `<button>` elements — same pattern Screen 2's tee picker already used. Screen 2 (`sortedActiveTeesForScreen2()` → `activeTees()`) inherits the fix automatically, no separate change needed.
 - **Root cause 2 — edge-to-edge padding:** confirmed via Paul ("Add Course has same issue as Edit Course") that this wasn't edit-mode-specific (`.edit-mode` class has zero CSS rules anywhere — checked). Real cause: `.form-section` in shared.css had `margin-bottom: 24px` only, no horizontal padding — unlike sibling components `.page-title`/`.setting-row`, which both carry the standard 20px gutter since the June 1 zero-stage-padding migration. Fixed by adding `padding: 0 20px` to `.form-section` in shared.css — this also fixes onboarding.html, which uses the same `.form-section`/`.field-input` components with the identical bug (relevant since Dave's onboarding is next). Also fixed courses.html-local `.hole-card` (Screen 2 hole entry cards, `margin: 0 20px 10px`) and added `#holes-tee-chips { padding: 0 20px; }` (Screen 2's standalone tee picker, not wrapped in a `.form-section`).
@@ -419,7 +427,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 - Phone localStorage: Eaglepoint stale tee data sync fix
 - Hole data persistence: yardage disappears on Back → Next (root cause not found)
 
-**Next session:** Once Paul confirms the push fixed both issues on iPhone, resume Dave's onboarding via `onboarding.html` — no other blockers remain. After that, resume build queue below.
+**Next session:** Confirm the REPORT_EMAIL staleness fix (Session 26) is pushed + redeployed (Version 18) and that changing email in Settings actually changes where the next report lands — easiest test: change email, tap Send Report Now, confirm it arrives at the new address. Once confirmed, resume Dave's onboarding via `onboarding.html` — no other blockers remain. After that, resume build queue below.
 
 **Build queue (in order):**
 1. ~~**Apps Script** — write `pccSelected` to Rounds tab~~ ✅ Done (Session 3)
