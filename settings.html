@@ -1,6 +1,18 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.19 — 2026-06-22
+  - Removed the editable "Apps Script URL" field (added in v1.14 as a
+    stopgap so phone-only users could fix a stale sheetsUrl). It was never
+    meant to be a permanent feature -- now that the report-send bug is
+    fixed for real (POST routing live as of Apps Script Version 21,
+    confirmed via a real email arriving) and the QR/deep-link mechanism
+    (v1.18) covers the "user needs to set/fix this value" case without
+    hand-typing, the manual field, its Save button, and the debug value
+    display are gone. Removed saveSheetsUrl() and renderSheetsUrlDebug();
+    applyDeepLinkConfig() and sendReport() are untouched -- both read/write
+    profile.sheetsUrl directly and never depended on the visible field.
+
   v1.18 — 2026-06-22
   - Root cause of the report-send failure, found for real this time: the
     saved Apps Script URL was truncated to 60 chars (missing the back half
@@ -199,18 +211,6 @@
         <button class="btn-3d btn-sm" onclick="saveEmail(document.getElementById('inp-email').value)">Save</button>
       </div>
       <div class="report-status" id="email-status"></div>
-    </div>
-
-    <!-- Apps Script URL -->
-    <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
-      <div class="setting-label">Apps Script URL</div>
-      <div class="input-row">
-        <input type="text" id="inp-sheets-url" class="setting-input"
-               placeholder="https://script.google.com/macros/s/…/exec">
-        <button class="btn-3d btn-sm" onclick="saveSheetsUrl(document.getElementById('inp-sheets-url').value)">Save</button>
-      </div>
-      <div class="report-status" id="sheets-url-status"></div>
-      <div class="report-status" id="sheets-url-saved-debug" style="color: var(--text-secondary); opacity: 0.7;"></div>
     </div>
 
     <div class="section-header">Tracking Your Stats</div>
@@ -432,7 +432,7 @@
 
   // ── Init ───────────────────────────────────────────────────────────────────
   (function init() {
-    const deepLinkApplied = applyDeepLinkConfig();
+    applyDeepLinkConfig();
     const p = getProfile();
 
     // Date
@@ -452,15 +452,6 @@
     // Email
     const emailEl = document.getElementById('inp-email');
     if (emailEl && p.reportEmail) emailEl.value = p.reportEmail;
-
-    // Apps Script URL
-    const sheetsUrlEl = document.getElementById('inp-sheets-url');
-    if (sheetsUrlEl && p.sheetsUrl) sheetsUrlEl.value = p.sheetsUrl;
-    renderSheetsUrlDebug(p.sheetsUrl);
-    if (deepLinkApplied) {
-      const sta = document.getElementById('sheets-url-status');
-      if (sta) sta.textContent = 'Saved via QR ✓';
-    }
 
   })();
 
@@ -510,36 +501,6 @@
     saveProfile({ reportEmail: v });
     syncReportEmail_(v, p.sheetsUrl, p.webhookSecret);
     if (sta) sta.textContent = 'Saved ✓';
-  }
-
-  // ── Apps Script URL ───────────────────────────────────────────────────────
-  // Partial update only -- preserves reportEmail, webhookSecret, and every
-  // other profile field. Use this instead of re-running onboarding.html to
-  // fix a stale URL (onboarding regenerates the webhook secret and resets
-  // stat preferences, which we don't want here).
-  function saveSheetsUrl(val) {
-    const v = val.trim();
-    const sta = document.getElementById('sheets-url-status');
-    if (!v || !v.startsWith('https://script.google.com/macros/')) {
-      if (sta) sta.textContent = 'Must be a valid Apps Script /exec URL.';
-      return;
-    }
-    const p = getProfile();
-    saveProfile({ sheetsUrl: v });
-    syncReportEmail_(p.reportEmail, v, p.webhookSecret);
-    if (sta) sta.textContent = 'Saved ✓';
-    renderSheetsUrlDebug(v);
-  }
-
-  // Shows exactly what's stored for sheetsUrl, length included, wrapped in
-  // «» so leading/trailing whitespace or an invisible character pasted in
-  // from elsewhere is visible on screen -- no copy/paste round-trip needed
-  // to verify it byte-for-byte.
-  function renderSheetsUrlDebug(v) {
-    const el = document.getElementById('sheets-url-saved-debug');
-    if (!el) return;
-    if (!v) { el.textContent = 'Saved value: (empty)'; return; }
-    el.textContent = 'Saved value (' + v.length + ' chars): «' + v + '»';
   }
 
   // ── Send Report ────────────────────────────────────────────────────────────
