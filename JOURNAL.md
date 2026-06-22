@@ -2365,3 +2365,75 @@ Running `git status`/`git diff` via the sandbox bash tool left a stale `.git/ind
 - Considered tightening `doPost`'s fail-open behaviour (reject outright if `WEBHOOK_SECRET` property is missing, not just on mismatch) — left as-is to match what was explicitly asked ("the same check"); worth revisiting together with `doGet` later if this app ever handles more sensitive data than golf scores.
 - Dave's actual account/profile setup itself — not started. Unblocked as of this session, pending Paul confirming step 4 above works.
 
+## 2026-06-20 — Session 24 (continued) — Live Apps Script deployment
+
+Paul: *"You have access to Chrome and Sheets, you are able to paste the new apps-script.gs."* Explicit authorization to perform the live deployment directly rather than handing Paul manual steps. Worked in my own Claude-in-Chrome tab (Paul separately said "I've opened the file in the script editor..." earlier — the extension cannot see tabs Paul opens manually in his own browser session, so I proceeded independently in a tab I controlled; flagged to Paul afterward to avoid duplicate/conflicting edits).
+
+### What was done
+- Copied the full local `apps-script.gs` (1,427 lines / 57,282 characters) to clipboard, pasted into the live `Code.gs` in the Apps Script project "My Golf App," saved (Cmd+S, confirmed "Saved to Drive"). Verified header and footer of the pasted file matched the local source exactly, and confirmed exactly 2 matches for `WEBHOOK_SECRET` (the `doGet` and `doPost` blocks) via in-editor search.
+- **Discovered the project has 5 separate Active deployments**, each with its own Deployment ID and `/exec` URL, all built from the same `Code.gs` — editing/saving code does not update any deployment's served version; each must be individually redeployed. Since no URL is hardcoded anywhere in the codebase (confirmed via grep — it's stored per-user in `localStorage.profile.sheetsUrl`), there was no way to tell from the code alone which deployment Paul's live PWA actually points to. Redeployed **all 5** to guarantee the fix applies regardless: "Untitled" → Version 12, "Golf Score PWA" → Version 13, "Golf Scores" → Version 14, "Golf Stats" → Version 15, "Mt_Paul_Scores" → Version 16. Each kept its existing URL; only the served code version changed.
+- One misclick along the way: the Version dropdown auto-scrolls to bring the deployment's currently-pinned version into view, which can push "New version" (always topmost) off-screen — caused two wrong-version selections (caught both before clicking Deploy, by screenshotting after opening the dropdown and before clicking).
+
+### Live state confirmed after deploy
+- Checked Script Properties on the live project directly: `WEBHOOK_SECRET` is already set, value matches the literal currently hardcoded in the **not-yet-pushed** live `index.html` exactly. This means the secret check is not a no-op for Paul — it is live and enforcing right now.
+
+### Operational consequence — flagged to Paul
+`doPost`'s secret check is unchanged (already existed, already enforced) — score posting from the live (old) `index.html` is unaffected.
+`doGet`'s secret check is brand new. The only live client call hitting it is `settings.html`'s "Send Report" button (`action=report`). The **currently live** `settings.html` on GitHub Pages (old version, not yet pushed) does not send a `secret` parameter on that GET call. Net effect: **Send Report is likely broken on Paul's live site right now**, until he pushes the updated `settings.html` (which adds `&secret=`). Scoring/posting rounds is unaffected. No action needed if he pushes soon; flagged so it isn't a surprise if he tries the report button before pushing.
+
+### Still outstanding (Paul, manual — unchanged from prior entry)
+1. Terminal: `rm -f .git/index.lock`, then `git add` the 7 changed/new files individually, commit, push.
+2. Re-run `set-sheets-url.html` once (after pushing) to backfill `webhookSecret` into his own localStorage profile.
+3. Confirm his own round-posting and Send Report still work post-push.
+4. Dave's onboarding via `onboarding.html` — unblocked once 1–3 are confirmed.
+
+### Carried forward
+- Apps Script live deployment step (previously listed as "Claude cannot do this — Paul must redeploy") is now done for this session, by direct authorization. Future sessions should not assume this is always off-limits — confirm with Paul per-task.
+
+## 2026-06-20 — Session 24 (closing) — Push confirmed, fully live end-to-end
+
+Paul pushed the front-end files, re-ran `set-sheets-url.html`, and confirmed: "Profile restored! V10.93." Send Report also confirmed working in the prior exchange. This closes out the build #3 security fix end-to-end — code, live Apps Script, and live front-end are now all in sync.
+
+### Confirmed live
+- Front-end (`index.html`, `onboarding.html`, `set-sheets-url.html`, `settings.html`, `shared.js`, `sw.js`) pushed to GitHub, serving from `https://kamloopspaul-a11y.github.io/golf-scores`.
+- `set-sheets-url.html` re-run by Paul — his own `webhookSecret` backfilled into localStorage, profile restored at v10.93 / SW v166.
+- Send Report confirmed working post-push (the risk flagged in the prior entry — missing `&secret=` on the live Send Report call — is resolved now that the updated `settings.html` is live).
+- Score posting unaffected throughout (was never broken).
+
+### Session ending — out of weekly limit
+Paul is out of weekly session capacity. Stopping here. **Next session: Dave's onboarding** via `onboarding.html` — no other prep needed, all blockers from this session are cleared.
+
+### Carried forward
+- Dave's onboarding/account setup — not started. Use `onboarding.html` directly; nothing per-user needs to be hand-edited or committed.
+- Build queue (courses.html fixes, Chrome redesign, Course card tap cue, Sample Performance Report, Settings bridge) resumes after Dave is onboarded — see PROJECT.md Build queue.
+
+
+## 2026-06-21 — Session 25 — courses.html: phantom tee-chip + edge-padding fix (v10.94 / SW v167)
+
+**Version at start:** v10.93 / SW v166 (live, pushed end of Session 24)
+**Version at end:** v10.94 / SW v167 — built and verified locally, not yet pushed
+
+### How this surfaced
+Paul was using the live app on his iPhone (not this session's testing) and reported courses.html's Edit Course screen rendering with missing padding (content edge-to-edge) and 4 tee chip boxes (White/Gold/Blue/Red) instead of the correct 2 for every course, with yardages appearing missing on the phantom chips. His first theory: *"Wrong .json file got pushed... outdated CSS formatting if I had to venture a guess. Is there another version we could revert to?"* He also tried `?reset` himself — it didn't help — and on missing yardages reacted with real alarm: *"fug! All that work — gone?!"*
+
+### Diagnosis
+- Direct git/file inspection ruled out "wrong file pushed": the committed `courses.json` (2 tees/course, 3 for Rivershore), `courses.html`, and `shared.css` were all already correct and hadn't meaningfully changed recently. `?reset` worked exactly as designed (clears `courseCache`/`activeCourse`) but could never have fixed this, because the bug is in the rendering code, not stale cached data.
+- **No data was lost.** Traced `prefillHoleCards()` — it only ever populates `holeState[h].yds[tName]` for tees actually present in the saved course. The "missing yardages" Paul saw were phantom tee slots that never had data, not deletion of real data.
+- **Root cause 1 (tee chips):** `TEE_ORDER = ['White','Gold','Blue','Red']` is a hardcoded constant; `activeTees()` always returned all 4 slots regardless of what a course actually had, in both Add and Edit mode. `editCourse()` correctly populated real CR/SR into matching slots but left non-matching slots empty/phantom rather than hiding them.
+- **Root cause 2 (edge-to-edge padding):** asked Paul whether this was edit-mode-specific; he corrected: *"Add Course has same issue as Edit Course regarding edge padding... I recall we had to shorten it for a similar edit some time back."* That ruled out an edit-mode-specific cause (confirmed independently — `.edit-mode` has zero CSS rules anywhere in the codebase) and pointed at the shared markup both screens use. Found it: `.form-section` in shared.css had `margin-bottom: 24px` only — no horizontal padding — unlike sibling components `.page-title` and `.setting-row`, which both correctly carry the standard 20px gutter since the June 1 zero-stage-padding migration (`.stage-scrolls` itself has zero padding by design; each component owns its own gutter). `.form-section` was missed in that migration.
+
+### Fix (Paul: "Apply Fix")
+- **courses.html** — `activeTees()` now returns all 4 standard slots only in Add mode (`editingId === null`); in Edit mode it returns `teesWithData()` (tees with real CR/SR or yardage). `renderTeeChips()` (Screen 1) rewritten to render dynamically from `activeTees()` — same `.map().join('')` pattern Screen 2's tee picker (`renderHoleTeePicker`) already used — instead of toggling 4 hardcoded `<button>` elements positionally against `TEE_ORDER`. Screen 2 (`sortedActiveTeesForScreen2()` → `activeTees()`) inherits the fix automatically; no separate change needed there.
+- **shared.css** — added `padding: 0 20px` to `.form-section`. This fixes Screen 1 of courses.html (Course Name, Phone, Street, City/Province, Holes toggle, Tees) and, as a side benefit, `onboarding.html`, which uses the same `.form-section`/`.field-input` components with the identical unfixed bug — confirmed safe (onboarding.html nests `.form-section` directly under `.stage-scrolls` with no extra wrapper, so no double-padding). Relevant since Dave's onboarding is the next queued task.
+- **courses.html local `<style>` block** — `.hole-card` (Screen 2 hole-entry cards) changed `margin-bottom: 10px` → `margin: 0 20px 10px` (was sitting in the same zero-padded stage with no horizontal margin at all). Added `#holes-tee-chips { padding: 0 20px; }` since that tee picker sits directly in `#holes-stage`, not wrapped in a `.form-section`, so it needed its own gutter.
+- Checked `.nav-dots` (used on both courses.html Screen 2 and index.html hole screens) — `justify-content: center`, doesn't stretch edge to edge, no fix needed.
+- Verified: extracted and `node --check`'d the courses.html script block — syntax clean. No double-padding risk anywhere (Screen 1's `.tee-chip-strip` is a direct child of the now-padded `.form-section` and carries no horizontal margin of its own).
+- Bumped `APP_VERSION` v10.93 → v10.94 (`shared.js`), `CACHE_NAME` v166 → v167 (`sw.js`).
+
+### Housekeeping note
+Found the working tree already had two uncommitted JOURNAL.md sections from Session 24 ("(continued)" — live Apps Script deployment narrative, and "(closing)" — push-confirmed narrative) plus a matching uncommitted PROJECT.md, sitting on top of the last commit (`a2491e1`, "v10.93/SW v166 ... Dave setup prep"). Nothing wrong with the content — it's accurate — it just was never committed. Paul's next push should include these alongside today's fix.
+
+### Not yet done
+- Push to GitHub (Paul, from terminal — `git status` will show JOURNAL.md, PROJECT.md, courses.html, shared.css, shared.js, sw.js all modified, since Session 24's doc updates were never committed either).
+- Paul to verify on iPhone: Add Course + Edit Course both show correct padding and the real tee count (2, or 3 for Rivershore) per course.
+- Once confirmed, resume Dave's onboarding via `onboarding.html` — still no other blockers.

@@ -405,7 +405,7 @@ body {
 /* ── ZONE 7 — FORM COMPONENTS ────────────────────────────────────────────── */
 
 /* Generic form section spacing */
-.form-section { margin-bottom: 24px; }
+.form-section { margin-bottom: 24px; padding: 0 20px; }
 
 /* Field label — uppercase micro caption */
 .field-label {

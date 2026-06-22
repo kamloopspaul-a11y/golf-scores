@@ -4,11 +4,11 @@
 
 ## Status
 
-**Version:** v10.93 / SW v166 — June 20, 2026 (built, not yet pushed)
+**Version:** v10.94 / SW v167 — June 21, 2026 (fixed phantom tee-chip slots + edge-to-edge padding bug in courses.html Add/Edit Course, found via Paul's live iPhone testing; not yet pushed)
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
 **Local folder:** `~/Documents/Studio/Projects/Golf`
-**Service Worker:** v58 (network-first for HTML, cache-first for assets)
+**Service Worker:** v167 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release
 
 ## Core Spec
@@ -181,7 +181,7 @@
 - [ ] **Create app icons** — `icon-192.png`, `icon-512.png`.
 - [ ] **Test SW offline behaviour**.
 - [ ] **Privacy policy page** — needed before broader OAuth distribution.
-- [ ] **Beta test with Dave**. Secret-handling fix built 2026-06-20 (Session 24) — see Security Rules section and `JOURNAL.md`. Unblocked pending: Paul pushes + redeploys `apps-script.gs`, confirms his own posting still works, then Dave runs `onboarding.html`.
+- [ ] **Beta test with Dave**. Secret-handling fix built 2026-06-20 (Session 24) — see Security Rules section and `JOURNAL.md`. `apps-script.gs` is now live (all 5 deployments redeployed same session, by direct authorization). Unblocked pending: Paul pushes the front-end files, confirms his own posting + Send Report still work, then Dave runs `onboarding.html`.
 
 ## Design Threads (open — not yet committed to Plan)
 
@@ -369,13 +369,22 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
-**Last worked:** June 20, 2026 (Session 24)
-**Version:** v10.93 / SW v166 — built locally, not yet pushed
+**Last worked:** June 21, 2026 (Session 25)
+**Version:** v10.94 / SW v167 — fix built and verified locally, not yet pushed
 
-**Completed this session:**
+**Completed this session (Session 25, June 21):**
+- **Bug found by Paul on live iPhone, post-Session 24:** courses.html Add/Edit Course screen showed 4 tee chips (White/Gold/Blue/Red) instead of the real 2 (or 3, for Rivershore) for every course, with content rendering edge-to-edge (missing horizontal padding). Paul's first theory — wrong courses.json pushed — was ruled out by direct git/file inspection: the committed courses.json, courses.html, and shared.css were already correct; `?reset` correctly cleared the cache but couldn't fix this, because it's a code bug, not a data/cache problem. No data was lost at any point — confirmed by tracing prefillHoleCards(); empty chips were always-rendered phantom slots that never had data, not deleted data.
+- **Root cause 1 — phantom tee chips:** `TEE_ORDER` (White/Gold/Blue/Red) was hardcoded and `activeTees()` always returned all 4 slots regardless of what a course actually had saved, in both Add and Edit mode. Fix: `activeTees()` now returns all 4 only in Add mode (`editingId === null`); in Edit mode it returns `teesWithData()` (tees with real CR/SR or yardage). `renderTeeChips()` (Screen 1) rewritten to render dynamically from `activeTees()` instead of toggling 4 hardcoded `<button>` elements — same pattern Screen 2's tee picker already used. Screen 2 (`sortedActiveTeesForScreen2()` → `activeTees()`) inherits the fix automatically, no separate change needed.
+- **Root cause 2 — edge-to-edge padding:** confirmed via Paul ("Add Course has same issue as Edit Course") that this wasn't edit-mode-specific (`.edit-mode` class has zero CSS rules anywhere — checked). Real cause: `.form-section` in shared.css had `margin-bottom: 24px` only, no horizontal padding — unlike sibling components `.page-title`/`.setting-row`, which both carry the standard 20px gutter since the June 1 zero-stage-padding migration. Fixed by adding `padding: 0 20px` to `.form-section` in shared.css — this also fixes onboarding.html, which uses the same `.form-section`/`.field-input` components with the identical bug (relevant since Dave's onboarding is next). Also fixed courses.html-local `.hole-card` (Screen 2 hole entry cards, `margin: 0 20px 10px`) and added `#holes-tee-chips { padding: 0 20px; }` (Screen 2's standalone tee picker, not wrapped in a `.form-section`).
+- Verified: JS syntax-checked clean (`node --check`), no double-padding risk on Screen 1 (tee-chip-strip nested inside the now-padded `.form-section`) or onboarding.html (form-section nests directly under `.stage-scrolls`, same as before).
+- Bumped APP_VERSION → v10.94 (shared.js), CACHE_NAME → golf-scores-v167 (sw.js).
+- Not yet pushed — Paul to push from terminal, then test Add Course + Edit Course on iPhone for both padding and tee-chip count before resuming Dave's onboarding.
+
+**Completed Session 24 (June 20) — for reference, full detail in JOURNAL.md:**
 - Multi-user onboarding + secret fix built (see Security Rules section + JOURNAL.md Session 24): new onboarding.html, PROFILE.webhookSecret replaces hardcoded WEBHOOK_SECRET, doGet auth check added, set-sheets-url.html + settings.html updated to match.
 - engineering:code-review run on the full diff — approved, contingent on deploy order (see JOURNAL.md Session 24).
-- Not pushed yet — Paul has exact terminal commands queued, including a one-time `.git/index.lock` cleanup (sandbox-side EPERM artifact, harmless once removed).
+- **Apps Script deployed live** — pasted into the live "My Golf App" editor and redeployed across all 5 active deployments (Versions 12-16), by Paul's direct authorization. See JOURNAL.md Session 24 (continued) for full detail.
+- **Front-end pushed and confirmed live** — Paul pushed, re-ran `set-sheets-url.html`, confirmed "Profile restored! V10.93," and confirmed Send Report works. The Send Report risk flagged mid-session is resolved. Score posting was unaffected throughout.
 
 **Previously completed (Session 23, June 11):**
 - Spring Green architecture fully deployed (shared.css skin block, zone structure locked)
@@ -395,7 +404,7 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 - Phone localStorage: Eaglepoint stale tee data sync fix
 - Hole data persistence: yardage disappears on Back → Next (root cause not found)
 
-**Next session:** Confirm Paul's own posting still works post-deploy (re-run `set-sheets-url.html` first), then start Dave's onboarding session. After that, resume build queue below.
+**Next session:** Once Paul confirms the push fixed both issues on iPhone, resume Dave's onboarding via `onboarding.html` — no other blockers remain. After that, resume build queue below.
 
 **Build queue (in order):**
 1. ~~**Apps Script** — write `pccSelected` to Rounds tab~~ ✅ Done (Session 3)
@@ -437,7 +446,7 @@ These apply to every form and every Apps Script write in this project.
 - `doGet` now runs the same secret check as `doPost`, covering `action=data` and `action=report`.
 - `onboarding.html` (generic, blank, localStorage-only) replaces `set-sheets-url.html` as the safe way to set up a second user — nothing per-user is hardcoded/committed.
 - **Residual gap (intentional parity, not new):** both `doGet` and `doPost` fail open if the `WEBHOOK_SECRET` Script Property is unset entirely. Revisit together if this app ever handles more sensitive data than golf scores.
-- **Not yet live:** requires Paul to push these files and manually redeploy `apps-script.gs` in the Apps Script editor.
+- **Live as of 2026-06-20 (Session 24):** `apps-script.gs` deployed across all 5 active deployments and front-end pushed to GitHub. Paul confirmed profile restored (v10.93) and Send Report working post-push. Fully live end-to-end, no outstanding risk.
 
 **localStorage**
 - No credentials, tokens, or sensitive personal data stored in plain text.

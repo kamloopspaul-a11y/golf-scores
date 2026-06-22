@@ -57,9 +57,12 @@
   /* Hole data entry cards */
   .hole-card {
     background: var(--green-pale); border-radius: 12px;
-    padding: 12px 12px 10px; margin-bottom: 10px;
+    padding: 12px 12px 10px; margin: 0 20px 10px;
     scroll-margin-top: 8px;
   }
+  /* #holes-tee-chips sits directly in stage-scrolls (no .form-section wrapper) —
+     needs its own horizontal gutter to match the rest of Screen 2. */
+  #holes-tee-chips { padding: 0 20px; }
   .hole-card-hdr {
     display: flex; align-items: baseline; justify-content: space-between;
     margin-bottom: 10px;
@@ -220,12 +223,7 @@
     <!-- Tees -->
     <div class="form-section">
       <label class="field-label">Tees</label>
-      <div class="tee-chip-strip" id="tee-chips">
-        <button class="tee-chip"        onclick="selectTee('White')">White</button>
-        <button class="tee-chip"        onclick="selectTee('Gold')">Gold</button>
-        <button class="tee-chip active" onclick="selectTee('Blue')">Blue</button>
-        <button class="tee-chip"        onclick="selectTee('Red')">Red</button>
-      </div>
+      <div class="tee-chip-strip" id="tee-chips"></div>
       <div id="tee-details"></div>
     </div>
 
@@ -327,9 +325,10 @@ function removeFromCache(id) {
   localStorage.setItem('courseCache', JSON.stringify(c));
 }
 
-// All 4 tees are always available on Screen 2 for yardage entry.
+// Add mode: all 4 standard tee slots (new course, no data yet).
+// Edit mode: only tees that actually have saved data — no phantom empty chips.
 function activeTees() {
-  return teesState;
+  return editingId === null ? teesState : teesWithData();
 }
 
 // Returns tees that actually have data (CR, SR, or any yardage) — used for save.
@@ -359,15 +358,14 @@ function selectTee(name) {
   renderTeeDetails();
 }
 
-// Re-renders Screen 1 chip appearance — only selectedTeeScreen1 is highlighted.
+// Re-renders Screen 1 chip strip from activeTees() — phantom slots never appear.
 function renderTeeChips() {
-  const chips = document.querySelectorAll('#tee-chips .tee-chip');
-  TEE_ORDER.forEach((name, i) => {
-    const chip = chips[i];
-    if (!chip) return;
-    chip.classList.toggle('active', name === selectedTeeScreen1);
-    chip.textContent = name;
-  });
+  const el = document.getElementById('tee-chips');
+  if (!el) return;
+  el.innerHTML = activeTees().map(t =>
+    `<button class="tee-chip${t.name === selectedTeeScreen1 ? ' active' : ''}"
+             onclick="selectTee('${esc(t.name)}')">${esc(t.name)}</button>`
+  ).join('');
 }
 
 function syncTeeInputsToState() {
