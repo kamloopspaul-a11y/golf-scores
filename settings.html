@@ -1,6 +1,22 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.20 — 2026-06-22
+  - Removed the nav-bar SAVE button (lived in its own .nav-bar strip above
+    the footer, distinct from .footer itself). It only ever ran
+    window.location.href='index.html' -- no save logic -- and the footer
+    nav already has a Home link, so it was pure redundancy. Removing the
+    whole .nav-bar strip (flex:0 0 auto) hands that vertical space to
+    .stage-scrolls (flex:1 1 auto), the only growing element -- more Stage
+    Area, .footer's own height is unaffected.
+  - Change Email button relabelled "Save" -> "UPDATE" for ALL-CAPS
+    consistency with SEND REPORT NOW (this is an editing page, not
+    onboarding). Status text on success: "Updated ✓".
+  - Email field now pre-fills as a dimmed placeholder (not a typed .value)
+    from profile.reportEmail, so it reads as "reports currently go here"
+    rather than looking like an active edit -- a quiet visual cue of which
+    account is configured, fitting this page's set-it-and-forget-it role.
+
   v1.19 — 2026-06-22
   - Removed the editable "Apps Script URL" field (added in v1.14 as a
     stopgap so phone-only users could fix a stale sheetsUrl). It was never
@@ -208,7 +224,7 @@
       <div class="input-row">
         <input type="email" id="inp-email" class="setting-input"
                placeholder="your@email.com">
-        <button class="btn-3d btn-sm" onclick="saveEmail(document.getElementById('inp-email').value)">Save</button>
+        <button class="btn-3d btn-sm" onclick="saveEmail(document.getElementById('inp-email').value)">UPDATE</button>
       </div>
       <div class="report-status" id="email-status"></div>
     </div>
@@ -382,10 +398,6 @@
     </div>
 
   </div><!-- /stage-scrolls -->
-  <!-- NAV BAR -->
-  <div class="nav-bar">
-    <button class="btn-3d" onclick="window.location.href='index.html'">SAVE</button>
-  </div>
 
   <!-- FOOTER -->
   <div class="footer" data-nav></div>
@@ -449,9 +461,13 @@
     // Restore sub-panel if master stat toggle was already on
     if (p.recordStats) document.getElementById('stat-sub-panel').style.display = 'block';
 
-    // Email
+    // Email — shown as a dimmed placeholder (not a typed value) so the field
+    // reads as "reports currently go here" rather than "you typed this."
+    // Same single profile.reportEmail field whether it came from onboarding
+    // or a prior UPDATE here -- this is just a visual cue, not a separate
+    // default vs. custom distinction.
     const emailEl = document.getElementById('inp-email');
-    if (emailEl && p.reportEmail) emailEl.value = p.reportEmail;
+    if (emailEl && p.reportEmail) emailEl.placeholder = p.reportEmail;
 
   })();
 
@@ -484,7 +500,7 @@
     saveProfile({ [key]: el.checked });
   }
 
-  // ── Save email ─────────────────────────────────────────────────────────────
+  // ── Update email ───────────────────────────────────────────────────────────
   // syncReportEmail_() now lives in shared.js (single source of truth) --
   // also called from onboarding.html. Keeps Script Properties REPORT_EMAIL in
   // sync with whatever the user enters here -- this field is the single
@@ -500,7 +516,7 @@
     const p = getProfile();
     saveProfile({ reportEmail: v });
     syncReportEmail_(v, p.sheetsUrl, p.webhookSecret);
-    if (sta) sta.textContent = 'Saved ✓';
+    if (sta) sta.textContent = 'Updated ✓';
   }
 
   // ── Send Report ────────────────────────────────────────────────────────────
