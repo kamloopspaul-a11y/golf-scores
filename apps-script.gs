@@ -860,12 +860,10 @@ function sendCombinedReport_(ss, windows, hi) {
   });
 
   // Subject line
-  const windowLabels = windows.map(n => n + '-Round');
-  const subject = windows.length === 1
-    ? `Golf Performance Index — Last ${windows[0]} Rounds`
-    : `Golf Performance Index — ${windowLabels.join(' & ')} Report`;
+  const subject = 'Golf Report';
 
   // Assemble full email
+  const reportDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const html = `
 <!DOCTYPE html>
 <html>
@@ -915,8 +913,7 @@ function sendCombinedReport_(ss, windows, hi) {
 <body>
 <div class="wrap">
   <div class="hdr">
-    <h1>Golf Performance Index Report</h1>
-    <p>${windows.length > 1 ? windows.join('-Round · ') + '-Round combined report' : 'Last ' + windows[0] + ' rounds'}</p>
+    <h1>Recent Performance (${reportDate})</h1>
   </div>
   <div class="body">
     ${sections.join('\n<hr class="section-divider">\n')}
@@ -1104,7 +1101,7 @@ function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
           <td style="text-align:left">Direct stroke cost — each penalty adds one stroke</td>
         </tr>
         <tr>
-          <td style="font-weight:700">GPI Rating</td>
+          <td style="font-weight:700">SG Rating</td>
           <td style="text-align:center;color:${scoreColour(avgTSL,8,15)};font-weight:700">${f1(avgTSL)}</td>
           <td style="text-align:left">Estimated strokes gained per round. Lower is better.</td>
         </tr>
