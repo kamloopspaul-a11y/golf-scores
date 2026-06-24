@@ -1,6 +1,20 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.22 — 2026-06-24
+  - Retired "GPI" / "Index" branding in the Tracking Your Performance
+    section. Sublabel now reads "Your Golf Performance is the total of
+    Strokes Gained (per handicap range) across 3 key areas: Ball Striking
+    (BS), Short Game (SG) and Putting (PUTTS)" -- dropped the old
+    "Golf Performance Index (GPI)" / "4 key areas... Penalties (PEN)"
+    wording. Removed the footnote explaining PEN's absence from the
+    benchmark table (table no longer lists PEN, so nothing to explain) --
+    close-row now shows only the single Src citation, matching the
+    pattern used elsewhere in this file. Renamed the toggle label "Track
+    Your GPI" to "Track Your Golf Performance" (id="tog-statGPI" and
+    saveStatPref('statGPI',...) left unchanged to preserve existing
+    localStorage data).
+
   v1.21 — 2026-06-24
   - Fixed GPI benchmark table (Tracking Your Performance section): columns
     were shifted one category off from golfity.com's actual source table.
@@ -347,7 +361,7 @@
     <!-- GPI — unhidden 2026-05-28; block preserved in assets/snippets/gpi-settings-block.html -->
     <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 0; border-bottom: none;">
       <div class="setting-sublabel" style="font-size: 14px; line-height: 1.5;">
-        Your Golf Performance Index (GPI) is the total of Strokes Gained (per handicap range) across 4 key areas: Ball Striking (BS), Short Game (SG), Putting, and Penalties (PEN).
+        Your Golf Performance is the total of Strokes Gained (per handicap range) across 3 key areas: Ball Striking (BS), Short Game (SG) and Putting (PUTTS).
       </div>
       <span id="gpi-more-btn" class="bench-expand-link" onclick="document.getElementById('gpi-more').classList.add('open');this.style.display='none';document.getElementById('gpi-less-btn').style.display='inline-block';">More ›</span>
 
@@ -373,14 +387,13 @@
           </tbody>
         </table>
         <div class="bench-close-row">
-          <div class="bench-footnote">BS = Approach, SG = Around-the-Green, PUTTS = Putting (golfity's actual category names). PEN isn't shown here — Strokes Gained has no separate penalty category; GPI tracks it directly as a 1:1 stroke count instead of an estimate.</div>
-          <div class="bench-footnote" style="margin-top:4px"><em>Src:</em> <a href="https://golfity.com/blog/strokes-gained-benchmarks-for-every-handicap/" target="_blank">golfity.com</a> (Mark Broadie research)</div>
+          <div class="bench-footnote"><em>Src:</em> <a href="https://golfity.com/blog/strokes-gained-benchmarks-for-every-handicap/" target="_blank">golfity.com</a> (Mark Broadie research)</div>
           <span id="gpi-less-btn" class="bench-expand-link" style="display:none;margin-top:0;" onclick="document.getElementById('gpi-more').classList.remove('open');document.getElementById('gpi-more-btn').style.display='inline-block';this.style.display='none';">‹ Close</span>
         </div>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-row-label">Track Your GPI</span>
+      <span class="stat-row-label">Track Your Golf Performance</span>
       <label class="switch"><input type="checkbox" id="tog-statGPI" onchange="saveStatPref('statGPI',this)"><span class="slider-bg"></span></label>
     </div>
 
