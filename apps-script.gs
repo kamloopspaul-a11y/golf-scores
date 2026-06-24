@@ -1101,7 +1101,7 @@ function buildReportSectionHtml_(rounds, hi, homeCourse, windowSize) {
           <td style="text-align:left">Direct stroke cost — each penalty adds one stroke</td>
         </tr>
         <tr>
-          <td style="font-weight:700">SG Rating</td>
+          <td style="font-weight:700">Strokes Gained</td>
           <td style="text-align:center;color:${scoreColour(avgTSL,8,15)};font-weight:700">${f1(avgTSL)}</td>
           <td style="text-align:left">Estimated strokes gained per round. Lower is better.</td>
         </tr>
