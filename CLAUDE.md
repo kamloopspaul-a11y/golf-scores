@@ -72,9 +72,9 @@ Global `state` object holds everything for the current round: `players[]`, `scor
 
 **Settings tab**: `Key | Value` — `Home Course` and `Handicap_Index`.
 
-### GPI (Golf Performance Index)
+### Strokes Gained Cost Model
 
-Defined in `GPI_RULES.md`. Four cost components: `BSCost` (ball striking), `SGCost` (short game, HI-scaled multiplier), `PuttCost` (putts vs HI-bracket benchmark), `PenCost` (penalties 1:1). Computed server-side in `apps-script.gs → buildDiagnostics_()`. Email reports auto-send every N rounds (configurable; default 5).
+`apps-script.gs → buildDiagnostics_()` is the sole source of truth for this — not `GPI_RULES.md` or `GPI-MetricsGuide.md` (discontinued as references, 2026-06-24; left in place but no longer authoritative). Four cost components: `BSCost` (ball striking), `SGCost` (short game, HI-scaled multiplier), `PuttCost` (putts vs HI-bracket benchmark), `PenCost` (penalties 1:1). Email reports auto-send every N rounds (configurable; default 5).
 
 ### Shared Components (`shared.js` + `shared.css`)
 

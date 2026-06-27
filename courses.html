@@ -21,14 +21,14 @@
   - Built: name/holes/tee chips+CR+SR (screen 1) → hole-by-hole par/yds/SI (screen 2)
   - Saves to localStorage.courseCache (negative IDs for manually added courses)
 -->
+<meta charset="UTF-8">
 <meta name="theme-color" content="#377f09">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Golf Scores">
 <link rel="manifest" href="manifest.json">
-<title>Add Course</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Courses</title>
 <script src="shared.js"></script>
 <link rel="stylesheet" href="shared.css">
 <style>
@@ -129,7 +129,7 @@
   .lib-add-wrap { display: flex; justify-content: center; padding: 16px 24px 8px; }
 </style>
 </head>
-<body>
+<body data-page-id="courses">
 
 <!-- ══════════════════ SCREEN 0: LIBRARY ══════════════════ -->
 <div class="screen active" id="screen-library">
@@ -149,8 +149,6 @@
     <div class="lib-add-wrap"><button class="btn-3d" onclick="startAddCourse()">ADD COURSE</button></div>
   </div>
 
-  <div class="nav-bar">
-  </div>
   <div class="footer" data-nav></div>
 
 </div>

@@ -56,7 +56,7 @@
   --fs-body:       15px;   /* standard body, nav options              */
   --fs-body-md:    14px;   /* description text, sublabels             */
   --fs-caption:    13px;   /* breadcrumb, weather, section headers    */
-  --fs-micro:      12px;   /* dates, setting sublabels                */
+  --fs-micro:      14px;   /* dates, setting sublabels                */
   --fs-micro-sm:   11px;   /* stat group labels, tiny badges          */
   --fs-tiny:       10px;   /* field labels, footnotes                 */
 }
