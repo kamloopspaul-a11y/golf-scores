@@ -2696,3 +2696,11 @@ Session focused on file/folder cleanup across Studio, not Golf development. Golf
 - Paul raised broader frustration: Claude folders scattered across filesystem, tokens/permissions not persisting session-to-session. Explained the token issue is a Claude session architecture constraint, not a file organisation problem. The claude-config file + startup protocol is the correct mechanism; the duplicate file was the main fixable issue.
 
 **No Golf code changes. No version bump. No push.**
+
+### 2026-06-30 — Mid-round data loss bug (reported post-session)
+
+**Issue:** App loses all round data mid-round on iPhone (Safari). Happened twice — most recently on hole 17. Root cause: iOS suspends/kills the Safari tab when the phone sleeps between holes (~10 min intervals). The global `state` object is memory-only; on tab reload, it's gone.
+
+**Fix agreed:** Persist entire `state` object to `localStorage` after every hole save (`activeRound` key). On page load, check for saved in-progress round and offer to resume. Two small changes — no architectural impact.
+
+**Priority:** Top priority next session. App is not marketable if it can't reliably complete an 18-hole round.
