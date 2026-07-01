@@ -370,6 +370,8 @@ All values computed server-side from the vertical `Rounds` tab (18 rows per roun
 
 ## Session Resume Notes
 
+**Paul Edit:** June 26, 2026 General Audit: --fs-micro was bumped to 14px and the inline sublabel overrides were removed. Intentional. 
+
 **Last worked:** June 22, 2026 (Session 26 + two same-day addenda)
 **Version:** v10.98 / SW v171 — built locally, **not yet pushed.** apps-script.gs Version 18 deployed by Paul, but the end-to-end test still failed (see second addendum below) — turned out to be a multi-deployment URL mismatch, not a code problem. This session's change: consolidated `syncReportEmail_()` into shared.js (single source of truth for settings.html + onboarding.html).
 

@@ -2659,3 +2659,40 @@ Session closed here at Paul's request. PROJECT.md Status section rewritten to dr
 **Not yet committed:** CLAUDE.md's Strokes Gained Cost Model section rewrite — Paul said "commit later," holding as a working-tree change.
 
 Session closed here at Paul's request.
+
+### 2026-06-26 — Sandbox GitHub push access (fine-grained PAT)
+
+Paul asked to set up GitHub authentication inside the sandbox so pushes don't always require his own Terminal. Walked through generating a fine-grained PAT (Resource owner: personal account `kamloopspaul-a11y`, repos: `golf-scores` + `meds-tracker`, permission: Contents Read/write, expires 2026-12-31) — verified the repo selection and permission scope visually via Safari screenshots before Paul clicked Generate.
+
+Token stored in `Studio/.claude-config` (`GITHUB_PAT_PERSONAL`). This repo's `origin` remote URL (in `.git/config`) now embeds the token, so `git push` works from inside the sandbox without Paul's Terminal. Verified: `git push origin main` authenticated successfully (repo was already in sync from Paul's own earlier push — `3333d3e` — so nothing new to send, but the auth round-trip confirmed the token works). Terminal and GitHub Desktop remain available as fallback.
+
+Untracked files still flagged, not yet resolved: `_scratch_test_delete_me.txt`, `assets/app_style_performance.png`, `assets/snippets/gemini-code-1782271941664.py`, `files/` — Paul hasn't said whether any should be added to the repo.
+
+---
+
+### 2026-06-27 — Console/fuzzy-query architecture discussion (advisory only, no code changes)
+
+Paul asked whether Console could power on-the-fly natural-language data queries in the Golf PWA — e.g. "Show me a chart of my golf performance for Wednesday rounds of golf." Walked through the architecture trade-off:
+
+- **AI-driven fuzzy queries (Console/API-based):** Claude interprets any open-ended question against round data, no pre-built query list needed — small per-query API cost, same pattern as SmartCart's `scanReceipt`. Open-ended scope, but not free.
+- **Baked-in deterministic query menu:** a fixed set of pre-written queries (e.g. "average score by day of week," "putts trend last 10 rounds") — completely free, no Console/API key needed, but limited to whatever's pre-built. Avoids Console entirely if Paul prefers.
+- **Charting is a separate concern either way:** confirmed via grep that `index.html` currently has no charting library wired in at all (no Chart.js/Recharts/D3/Plotly references). Adding Chart.js handles rendering only — it doesn't interpret the query itself, so it's needed under either architecture above, not a substitute for one.
+
+Paul's takeaway: if he sticks to baked-in queries only, he avoids the Console/API cost altogether but is limited to whatever's in that menu — so he's going to start compiling a library of the specific queries he'd actually want, to scope that menu before any build decision. Nothing built or committed this session — no `askStats` endpoint, no Chart.js addition. Both remain open design options for a future session once Paul has that query list.
+
+
+### 2026-06-30 — Studio housekeeping session (no Golf code changes)
+
+Session focused on file/folder cleanup across Studio, not Golf development. Golf session context loaded at start; no code changes made to any Golf files.
+
+**Work done:**
+- Discussed Cowork/Design session integration — confirmed sessions don't share live state; shared folder (ScoreCard, Studio) is the handoff mechanism.
+- Mounted and reviewed ScoreCard project — confirmed current state (placeholder live, real app not built, style exploration in `wip/`).
+- Deleted `~/Documents/Studio/.claude-config` — duplicate credentials file left over from the 2026-06-27 relocation to `~/.studio-claude/`. Now removed; `~/.studio-claude/claude-config` is the single source of credentials.
+- Renamed `~/Documents/Studio/CLAUDE COWORK/` → `Cowork/` — less ambiguous name.
+- Updated all 4 references to `CLAUDE COWORK` → `Cowork` in CLAUDE.md, TODO_LIST.md, FSRI/PROJECT.md, FSRI/JOURNAL.md.
+- Investigated `~/Documents/ Claude` (space-prefixed) — confirmed it was a Cowork-created folder containing Artifacts and Scheduled task files. Deleted its contents (now empty). Folder itself couldn't be deleted while mounted; Paul to remove via Finder.
+- Inspected `~/Documents/Claude` (no space) via Finder — confirmed it contains only `Scheduled/weekly-fsri-report-v2/SKILL.md`. Protected by Cowork, cannot be mounted. Lean and functional; nothing to clean up.
+- Paul raised broader frustration: Claude folders scattered across filesystem, tokens/permissions not persisting session-to-session. Explained the token issue is a Claude session architecture constraint, not a file organisation problem. The claude-config file + startup protocol is the correct mechanism; the duplicate file was the main fixable issue.
+
+**No Golf code changes. No version bump. No push.**
