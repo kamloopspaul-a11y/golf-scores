@@ -650,9 +650,23 @@ function downloadFile(filename, content, mime) {
   URL.revokeObjectURL(url);
 }
 
+async function shareOrDownloadFile(filename, content, mime) {
+  const file = new File([content], filename, { type: mime });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: filename });
+      setStatus('Shared ' + filename);
+      return;
+    } catch (err) {
+      if (err.name === 'AbortError') { return; }
+    }
+  }
+  downloadFile(filename, content, mime);
+}
+
 document.getElementById('exportJson').addEventListener('click', () => {
   if (points.length === 0) { setStatus('Nothing to export yet.'); return; }
-  downloadFile('mtpaul-coordinates.json', JSON.stringify(points, null, 2), 'application/json');
+  shareOrDownloadFile('mtpaul-coordinates.json', JSON.stringify(points, null, 2), 'application/json');
 });
 
 document.getElementById('exportCsv').addEventListener('click', () => {
@@ -663,7 +677,7 @@ document.getElementById('exportCsv').addEventListener('click', () => {
     const shared = (p.sharedHoles || []).join(';');
     return [p.hole, shared, p.feature, p.teeColor || '', p.lat, p.lng, p.accuracy, note, p.timestamp].join(',');
   }).join('\n');
-  downloadFile('mtpaul-coordinates.csv', header + rows, 'text/csv');
+  shareOrDownloadFile('mtpaul-coordinates.csv', header + rows, 'text/csv');
 });
 
 document.getElementById('clearAll').addEventListener('click', () => {
