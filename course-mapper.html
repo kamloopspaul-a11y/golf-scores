@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Course Mapper — Mt. Paul</title>
+<style>
+  :root {
+    --green: #377f09;
+    --green-dark: #2a6106;
+    --bg: #f4f6f2;
+    --card: #ffffff;
+    --border: #d9ded4;
+    --text: #1e2a17;
+    --muted: #6b7566;
+    --danger: #b3301f;
+    --header-h: 56px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 40px;
+  }
+  header {
+    height: var(--header-h);
+    background: var(--green);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  header .count { font-size: 13px; opacity: 0.9; }
+
+  main { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0 0 10px 0;
+    font-weight: 600;
+  }
+
+  /* Session feature select */
+  select#featureSelect {
+    width: 100%;
+    height: 48px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 0 12px;
+    background: #fff;
+    color: var(--text);
+  }
+  .session-banner {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .tee-color-row {
+    display: none;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .tee-color-row.visible { display: grid; }
+  .tee-btn {
+    height: 40px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .tee-btn[data-tee="red"].active {
+    background: #b3301f;
+    color: white;
+    border-color: #b3301f;
+  }
+  .tee-btn[data-tee="blue"].active {
+    background: #2a5db0;
+    color: white;
+    border-color: #2a5db0;
+  }
+
+  .hole-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 6px;
+  }
+  .hole-btn {
+    height: 40px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .hole-btn.active {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+
+  .shared-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .shared-toggle input { width: 18px; height: 18px; }
+
+  .shared-holes {
+    display: none;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .shared-holes.visible { display: grid; }
+  .shared-hole-btn {
+    height: 36px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .shared-hole-btn.active {
+    background: #6b6b1f;
+    color: white;
+    border-color: #6b6b1f;
+  }
+  .shared-hole-btn:disabled {
+    opacity: 0.3;
+  }
+  .shared-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .capture-btn {
+    width: 100%;
+    height: 56px;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .capture-btn:active { background: var(--green-dark); }
+  .capture-btn:disabled { background: var(--muted); }
+
+  .status {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 8px;
+    min-height: 18px;
+  }
+
+  .point {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #fff;
+  }
+  .point-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .point-tag {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 12px;
+    color: white;
+    line-height: 1.5;
+  }
+  .point-meta {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .point-coords {
+    font-size: 12px;
+    font-family: ui-monospace, monospace;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .point-note {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 14px;
+    min-height: 36px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .point-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .mic-btn, .del-btn {
+    flex: 1;
+    height: 36px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .mic-btn.recording {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+  }
+  .del-btn { color: var(--danger); }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 20px;
+  }
+
+  .filter-row {
+    margin-bottom: 10px;
+  }
+  select#filterSelect {
+    width: 100%;
+    height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    padding: 0 10px;
+    background: #fff;
+  }
+
+  .export-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .export-btn {
+    height: 44px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .clear-btn {
+    width: 100%;
+    height: 40px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--danger);
+    background: #fff;
+    color: var(--danger);
+    font-weight: 600;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Course Mapper</h1>
+  <span class="count" id="pointCount">0 points</span>
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>Mapping This Session</h2>
+    <select id="featureSelect">
+      <option value="teebox">Tee Box</option>
+      <option value="fairway" selected>Fairway</option>
+      <option value="rough">Rough</option>
+      <option value="green">Green</option>
+      <option value="treeline">Tree Line</option>
+      <option value="water">Water Hazard</option>
+      <option value="bunker">Bunker</option>
+      <option value="waste">Waste Area</option>
+      <option value="cartpath">Cart Path</option>
+    </select>
+    <div class="tee-color-row" id="teeColorRow">
+      <button class="tee-btn" data-tee="red">Red Tee</button>
+      <button class="tee-btn active" data-tee="blue">Blue Tee</button>
+    </div>
+    <div class="session-banner">Stays selected as you move hole to hole — change it when you start walking a different feature.</div>
+  </div>
+
+  <div class="card">
+    <h2>Hole</h2>
+    <div class="hole-grid" id="holeGrid"></div>
+
+    <label class="shared-toggle">
+      <input type="checkbox" id="sharedToggle">
+      This feature also borders another hole
+    </label>
+    <div class="shared-holes" id="sharedHoles"></div>
+    <div class="shared-hint" id="sharedHint" style="display:none;">Tree lines and waste areas between fairways only need to be walked once — tag every hole it affects.</div>
+
+    <button class="capture-btn" id="captureBtn">📍 Capture Point</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>Captured Points (<span id="listCount">0</span>)</h2>
+    <div class="filter-row">
+      <select id="filterSelect">
+        <option value="all">Show all features</option>
+        <option value="teebox">Tee Box only</option>
+        <option value="fairway">Fairway only</option>
+        <option value="rough">Rough only</option>
+        <option value="green">Green only</option>
+        <option value="treeline">Tree Line only</option>
+        <option value="water">Water Hazard only</option>
+        <option value="bunker">Bunker only</option>
+        <option value="waste">Waste Area only</option>
+        <option value="cartpath">Cart Path only</option>
+      </select>
+    </div>
+    <div id="pointsList"><div class="empty">No points captured yet.</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Export</h2>
+    <div class="export-row">
+      <button class="export-btn" id="exportJson">Export JSON</button>
+      <button class="export-btn" id="exportCsv">Export CSV</button>
+    </div>
+    <button class="clear-btn" id="clearAll">Clear All Data</button>
+  </div>
+
+</main>
+
+<script>
+const STORAGE_KEY = 'mtpaul_course_points';
+const LAST_FEATURE_KEY = 'mtpaul_last_feature';
+
+const FEATURE_META = {
+  teebox:   { label: 'Tee Box',      color: '#2a5db0' },
+  fairway:  { label: 'Fairway',      color: '#4a8c2a' },
+  rough:    { label: 'Rough',        color: '#8a6d3b' },
+  green:    { label: 'Green',        color: '#1f7a4d' },
+  treeline: { label: 'Tree Line',    color: '#2f5233' },
+  water:    { label: 'Water Hazard', color: '#1b6ca8' },
+  bunker:   { label: 'Bunker',       color: '#c9a227' },
+  waste:    { label: 'Waste Area',   color: '#7a5230' },
+  cartpath: { label: 'Cart Path',    color: '#6b6b6b' }
+};
+
+let selectedHole = 1;
+let selectedFeature = localStorage.getItem(LAST_FEATURE_KEY) || 'fairway';
+let selectedTeeColor = 'blue';
+let sharedHoles = [];
+let points = [];
+let recognition = null;
+let recordingPointId = null;
+
+// ---- Storage ----
+function loadPoints() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    points = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    points = [];
+  }
+}
+function savePoints() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(points));
+  } catch (e) {
+    setStatus('Warning: could not save to local storage.');
+  }
+}
+
+// ---- Feature select (session-locked) ----
+const featureSelect = document.getElementById('featureSelect');
+featureSelect.value = selectedFeature;
+const teeColorRow = document.getElementById('teeColorRow');
+teeColorRow.classList.toggle('visible', selectedFeature === 'teebox');
+
+featureSelect.addEventListener('change', () => {
+  selectedFeature = featureSelect.value;
+  localStorage.setItem(LAST_FEATURE_KEY, selectedFeature);
+  teeColorRow.classList.toggle('visible', selectedFeature === 'teebox');
+  updateSharedHint();
+});
+
+document.querySelectorAll('.tee-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedTeeColor = btn.dataset.tee;
+    document.querySelectorAll('.tee-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// ---- Hole grid ----
+const holeGrid = document.getElementById('holeGrid');
+for (let i = 1; i <= 9; i++) {
+  const btn = document.createElement('button');
+  btn.className = 'hole-btn' + (i === 1 ? ' active' : '');
+  btn.textContent = i;
+  btn.dataset.hole = i;
+  btn.addEventListener('click', () => {
+    selectedHole = i;
+    document.querySelectorAll('.hole-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderSharedHoles();
+  });
+  holeGrid.appendChild(btn);
+}
+
+// ---- Shared hole toggle ----
+const sharedToggle = document.getElementById('sharedToggle');
+const sharedHolesDiv = document.getElementById('sharedHoles');
+sharedToggle.addEventListener('change', () => {
+  sharedHolesDiv.classList.toggle('visible', sharedToggle.checked);
+  if (!sharedToggle.checked) {
+    sharedHoles = [];
+    renderSharedHoles();
+  }
+});
+
+function renderSharedHoles() {
+  sharedHolesDiv.innerHTML = '';
+  sharedHoles = sharedHoles.filter(h => h !== selectedHole);
+  for (let i = 1; i <= 9; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'shared-hole-btn' + (sharedHoles.includes(i) ? ' active' : '');
+    btn.textContent = i;
+    btn.dataset.hole = i;
+    if (i === selectedHole) btn.disabled = true;
+    btn.addEventListener('click', () => {
+      if (sharedHoles.includes(i)) {
+        sharedHoles = sharedHoles.filter(h => h !== i);
+      } else {
+        sharedHoles.push(i);
+      }
+      renderSharedHoles();
+    });
+    sharedHolesDiv.appendChild(btn);
+  }
+}
+renderSharedHoles();
+
+function updateSharedHint() {
+  const hint = document.getElementById('sharedHint');
+  const relevant = ['treeline', 'waste', 'water', 'bunker'];
+  hint.style.display = relevant.includes(selectedFeature) ? 'block' : 'none';
+}
+updateSharedHint();
+
+// ---- Status ----
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+// ---- Capture ----
+document.getElementById('captureBtn').addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    setStatus('Geolocation not supported on this device/browser.');
+    return;
+  }
+  setStatus('Getting GPS fix…');
+  document.getElementById('captureBtn').disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const point = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        hole: selectedHole,
+        sharedHoles: sharedToggle.checked ? [...sharedHoles] : [],
+        feature: selectedFeature,
+        teeColor: selectedFeature === 'teebox' ? selectedTeeColor : null,
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: Math.round(pos.coords.accuracy),
+        note: '',
+        timestamp: new Date().toISOString()
+      };
+      points.unshift(point);
+      savePoints();
+      renderPoints();
+      const sharedNote = point.sharedHoles.length ? ` (shared with hole ${point.sharedHoles.join(', ')})` : '';
+      setStatus(`Captured — accuracy ±${point.accuracy}m${sharedNote}`);
+      document.getElementById('captureBtn').disabled = false;
+    },
+    (err) => {
+      setStatus('GPS error: ' + err.message);
+      document.getElementById('captureBtn').disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+});
+
+// ---- Voice recognition ----
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+function setupRecognition() {
+  if (!SpeechRecognition) return null;
+  const r = new SpeechRecognition();
+  r.continuous = false;
+  r.interimResults = false;
+  r.lang = 'en-US';
+  return r;
+}
+
+function toggleMic(pointId, micBtn) {
+  if (!SpeechRecognition) {
+    setStatus('Voice transcription not supported in this browser. Try typing the note instead.');
+    return;
+  }
+  if (recordingPointId === pointId) {
+    if (recognition) recognition.stop();
+    return;
+  }
+  if (recognition) recognition.stop();
+  recognition = setupRecognition();
+  recordingPointId = pointId;
+  micBtn.classList.add('recording');
+  micBtn.textContent = '● Listening…';
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    const p = points.find(pt => pt.id === pointId);
+    if (p) {
+      p.note = p.note ? (p.note + ' ' + transcript) : transcript;
+      savePoints();
+      renderPoints();
+    }
+  };
+  recognition.onerror = (e) => {
+    setStatus('Voice error: ' + e.error);
+  };
+  recognition.onend = () => {
+    recordingPointId = null;
+    recognition = null;
+  };
+  recognition.start();
+}
+
+// ---- Filter ----
+const filterSelect = document.getElementById('filterSelect');
+filterSelect.addEventListener('change', renderPoints);
+
+// ---- Render points list ----
+function renderPoints() {
+  const filter = filterSelect.value;
+  const visiblePoints = filter === 'all' ? points : points.filter(p => p.feature === filter);
+
+  document.getElementById('pointCount').textContent = points.length + ' point' + (points.length === 1 ? '' : 's');
+  document.getElementById('listCount').textContent = visiblePoints.length + (filter !== 'all' ? ' / ' + points.length : '');
+
+  const list = document.getElementById('pointsList');
+  if (visiblePoints.length === 0) {
+    list.innerHTML = '<div class="empty">' + (points.length === 0 ? 'No points captured yet.' : 'No points match this filter.') + '</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  visiblePoints.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'point';
+    const meta = FEATURE_META[p.feature] || { label: p.feature, color: '#555' };
+    const tagColor = p.feature === 'teebox' ? (p.teeColor === 'red' ? '#b3301f' : '#2a5db0') : meta.color;
+    const featureLabel = p.feature === 'teebox' ? (meta.label + ' · ' + p.teeColor) : meta.label;
+    const holeLabel = 'Hole ' + p.hole + (p.sharedHoles && p.sharedHoles.length ? ' + ' + p.sharedHoles.join(', ') : '');
+    const time = new Date(p.timestamp);
+    const timeStr = time.toLocaleDateString() + ' ' + time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    div.innerHTML = `
+      <div class="point-top">
+        <span class="point-tag" style="background:${tagColor}">${holeLabel} · ${featureLabel}</span>
+        <span class="point-meta">${timeStr}</span>
+      </div>
+      <div class="point-coords">${p.lat.toFixed(6)}, ${p.lng.toFixed(6)} · ±${p.accuracy}m</div>
+      <textarea class="point-note" placeholder="Note (type or use mic)…" data-id="${p.id}">${p.note}</textarea>
+      <div class="point-actions">
+        <button class="mic-btn" data-id="${p.id}">🎤 Voice Note</button>
+        <button class="del-btn" data-id="${p.id}">Delete</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  list.querySelectorAll('.point-note').forEach(ta => {
+    ta.addEventListener('change', () => {
+      const p = points.find(pt => pt.id === ta.dataset.id);
+      if (p) { p.note = ta.value; savePoints(); }
+    });
+  });
+
+  list.querySelectorAll('.mic-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleMic(btn.dataset.id, btn));
+  });
+
+  list.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (confirm('Delete this point?')) {
+        points = points.filter(pt => pt.id !== btn.dataset.id);
+        savePoints();
+        renderPoints();
+      }
+    });
+  });
+}
+
+// ---- Export ----
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportJson').addEventListener('click', () => {
+  if (points.length === 0) { setStatus('Nothing to export yet.'); return; }
+  downloadFile('mtpaul-coordinates.json', JSON.stringify(points, null, 2), 'application/json');
+});
+
+document.getElementById('exportCsv').addEventListener('click', () => {
+  if (points.length === 0) { setStatus('Nothing to export yet.'); return; }
+  const header = 'hole,shared_holes,feature,tee_color,lat,lng,accuracy_m,note,timestamp\n';
+  const rows = points.map(p => {
+    const note = '"' + (p.note || '').replace(/"/g, '""') + '"';
+    const shared = (p.sharedHoles || []).join(';');
+    return [p.hole, shared, p.feature, p.teeColor || '', p.lat, p.lng, p.accuracy, note, p.timestamp].join(',');
+  }).join('\n');
+  downloadFile('mtpaul-coordinates.csv', header + rows, 'text/csv');
+});
+
+document.getElementById('clearAll').addEventListener('click', () => {
+  if (points.length === 0) return;
+  if (confirm('This will permanently delete all ' + points.length + ' captured points. Export first if you need a backup. Continue?')) {
+    points = [];
+    savePoints();
+    renderPoints();
+    setStatus('All data cleared.');
+  }
+});
+
+// ---- Init ----
+loadPoints();
+renderPoints();
+</script>
+
+</body>
+</html>
