@@ -917,6 +917,15 @@ function formatDate(iso) {
   const [y,m,d]=iso.split('-');
   return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m)-1]+" "+parseInt(d)+", "+y;
 }
+// Local calendar date as YYYY-MM-DD (NOT toISOString, which returns UTC and
+// rolls over to the next day for evening rounds in Pacific time — see JOURNAL.md 2026-07-14)
+function localISODate(d) {
+  d = d || new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
 // ── PLAYER NAME (single-player app) ──────────────────
 function readPlayerName(){
   const el=document.getElementById('player-name');
@@ -928,7 +937,7 @@ function readPlayerName(){
 function startRound() {
   clearActiveRound();
   state.players = [readPlayerName()];
-  state.date=new Date().toISOString().split('T')[0];
+  state.date=localISODate();
   if (activeCourseData && activeCourseData.holes && activeCourseData.holes.length) {
     state.holeList  = [...activeCourseData.holes];
     state.totalHoles = activeCourseData.holes.length;
@@ -1786,7 +1795,7 @@ async function seedCourseCache() {
 // ── ADD SCORES ───────────────────────────────────────
 function initAddScoresScreen() {
   const di = document.getElementById('as-date-input');
-  if (di && !di.value) di.value = new Date().toISOString().split('T')[0];
+  if (di && !di.value) di.value = localISODate();
 
   const sel = document.getElementById('as-course-select');
   if (!sel) return;
@@ -2044,7 +2053,7 @@ function discardResumeRound() {
 }
 
 // ── INIT ──────────────────────────────────────────────
-const today=new Date().toISOString().split('T')[0];
+const today=localISODate();
 state.date=today; state.players=[(PROFILE.name || "Paul")];
 // Sync player-name display from profile
 (function(){ const el=document.getElementById('player-name'); const pn=PROFILE.name||'Paul'; if(el){ if(el.tagName==='INPUT') el.value=pn; else el.textContent=pn; }})();
