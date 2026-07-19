@@ -2789,3 +2789,13 @@ Paul went to set `GEMINI_API_KEY` in Script Properties and hit Google AI Studio'
 Syntax-checked (`node --check`) and HTML-tag-balance-checked after the edit — clean.
 
 **Still needed from Paul:** get an API key from console.anthropic.com, set it as `ANTHROPIC_API_KEY` in Apps Script Script Properties (the old `GEMINI_API_KEY` property can stay or be deleted, it's just unused now), then redeploy `apps-script.gs` as a New version.
+
+### 2026-07-19 (cont'd 2) — Two bugs found in production testing, fixed
+
+Paul tested the live page: hero tiles showed but nothing else did (comparison bars, all three charts), regardless of which date-range filter was selected. AI query kept failing even after reload, redeploy, and a fresh Anthropic key.
+
+**Bug 1 — Chart.js CDN URL had the wrong case.** `analytics.html` loaded `.../ajax/libs/Chart.js/4.4.4/...` (capital C); cdnjs paths are case-sensitive and the real slug is lowercase `chart.js`. The script likely 404'd, leaving `Chart` undefined. `renderDashboard()` called `drawCharts()` partway through, before the comparison bars — so the `ReferenceError` on `new Chart(...)` killed everything after that point in the function on every render, regardless of filter. Fixed the URL casing, and — more importantly — restructured `renderDashboard()` so every section (tiles, front/back, putts split, penalty impact, charts) runs inside its own `safeRun()` try/catch, with charts deliberately last. A future charting failure (network blip, CDN issue, whatever) can no longer take the rest of the dashboard down with it. Regression-tested in Node with `Chart` left undefined on purpose — confirmed all four non-chart sections still render.
+
+**Bug 2 — "reload to retry" didn't actually work.** The AI query failure flag was stored in `sessionStorage`, which survives a normal page reload (it only clears on a full tab close) — so telling Paul to reload to clear a failed attempt was incorrect advice baked into the UI copy itself. Swapped to a plain in-memory JS variable (`aiUnavailableThisLoad`) that naturally resets every time the page's script re-runs, matching what the message actually says.
+
+Both fixes verified: HTML tag balance, `node --check` syntax, full aggregator/render test suite re-run (unchanged, all pass), plus a new targeted regression test simulating the exact Chart-undefined failure mode.

@@ -31,7 +31,7 @@
 <title>Analytics</title>
 <script src="shared.js"></script>
 <link rel="stylesheet" href="shared.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   /* ── ANALYTICS-SPECIFIC ─────────────────────────────── */
 
@@ -485,42 +485,59 @@ function shortDate(iso) {
 }
 
 // ── Render pipeline ──────────────────────────────────────────────────────────
+function safeRun(label, fn) {
+  try { fn(); }
+  catch (err) {
+    console.error('[analytics] ' + label + ' failed:', err);
+  }
+}
+
 function renderDashboard(data) {
   LAST_DASHBOARD = data;
   var stats = PROFILE.recordStats;
 
-  var tiles = [];
-  tiles.push({ value: data.roundCount, label: 'Rounds' });
-  tiles.push({ value: data.scoringAvg == null ? '—' : fmtVal(data.scoringAvg, ''), label: 'Avg to Par' });
-  if (stats && PROFILE.statPUTTS) tiles.push({ value: data.puttsPerRound == null ? '—' : Math.round(data.puttsPerRound * 10) / 10, label: 'Putts/Round' });
-  if (stats && PROFILE.statFIR)   tiles.push({ value: pctText(data.firStat), label: 'FIR%' });
-  if (stats && PROFILE.statGIR)   tiles.push({ value: pctText(data.girStat), label: 'GIR%' });
-  if (stats && PROFILE.statUD)    tiles.push({ value: pctText(data.scrambleStat), label: 'Scrambling%' });
-  renderTileGrid(document.getElementById('ana-tiles'), tiles);
+  safeRun('tiles', function() {
+    var tiles = [];
+    tiles.push({ value: data.roundCount, label: 'Rounds' });
+    tiles.push({ value: data.scoringAvg == null ? '—' : fmtVal(data.scoringAvg, ''), label: 'Avg to Par' });
+    if (stats && PROFILE.statPUTTS) tiles.push({ value: data.puttsPerRound == null ? '—' : Math.round(data.puttsPerRound * 10) / 10, label: 'Putts/Round' });
+    if (stats && PROFILE.statFIR)   tiles.push({ value: pctText(data.firStat), label: 'FIR%' });
+    if (stats && PROFILE.statGIR)   tiles.push({ value: pctText(data.girStat), label: 'GIR%' });
+    if (stats && PROFILE.statUD)    tiles.push({ value: pctText(data.scrambleStat), label: 'Scrambling%' });
+    renderTileGrid(document.getElementById('ana-tiles'), tiles);
+  });
 
-  drawCharts(data);
+  // Front9 vs Back9 -- always shown, doesn't depend on a stat toggle
+  safeRun('front-back comparison', function() {
+    document.getElementById('card-front-back').style.display = '';
+    renderComparisonBar(document.getElementById('cmp-front-back'),
+      { value: data.frontAvg, label: 'Front 9', suffix: '' },
+      { value: data.backAvg,  label: 'Back 9',  suffix: '' });
+  });
 
-  // Front9 vs Back9 — always shown, doesn't depend on a stat toggle
-  document.getElementById('card-front-back').style.display = '';
-  renderComparisonBar(document.getElementById('cmp-front-back'),
-    { value: data.frontAvg, label: 'Front 9', suffix: '' },
-    { value: data.backAvg,  label: 'Back 9',  suffix: '' });
+  safeRun('putts split comparison', function() {
+    var puttsCard = document.getElementById('card-putts-split');
+    if (stats && PROFILE.statPUTTS && PROFILE.statGIR) {
+      puttsCard.style.display = '';
+      renderComparisonBar(document.getElementById('cmp-putts-split'),
+        { value: data.puttsOnGir,  label: 'On GIR',      suffix: '', emptyText: 'No PUTTS/GIR logged yet.' },
+        { value: data.puttsOffGir, label: 'Missed GIR',  suffix: '' });
+    } else { puttsCard.style.display = 'none'; }
+  });
 
-  var puttsCard = document.getElementById('card-putts-split');
-  if (stats && PROFILE.statPUTTS && PROFILE.statGIR) {
-    puttsCard.style.display = '';
-    renderComparisonBar(document.getElementById('cmp-putts-split'),
-      { value: data.puttsOnGir,  label: 'On GIR',      suffix: '', emptyText: 'No PUTTS/GIR logged yet.' },
-      { value: data.puttsOffGir, label: 'Missed GIR',  suffix: '' });
-  } else { puttsCard.style.display = 'none'; }
+  safeRun('penalty impact comparison', function() {
+    var penCard = document.getElementById('card-pen-impact');
+    if (stats && PROFILE.statPEN) {
+      penCard.style.display = '';
+      renderComparisonBar(document.getElementById('cmp-pen-impact'),
+        { value: data.penHoleAvg,   label: 'Penalty Hole', suffix: '', emptyText: 'No PEN logged yet.' },
+        { value: data.cleanHoleAvg, label: 'Clean Hole',   suffix: '' });
+    } else { penCard.style.display = 'none'; }
+  });
 
-  var penCard = document.getElementById('card-pen-impact');
-  if (stats && PROFILE.statPEN) {
-    penCard.style.display = '';
-    renderComparisonBar(document.getElementById('cmp-pen-impact'),
-      { value: data.penHoleAvg,   label: 'Penalty Hole', suffix: '', emptyText: 'No PEN logged yet.' },
-      { value: data.cleanHoleAvg, label: 'Clean Hole',   suffix: '' });
-  } else { penCard.style.display = 'none'; }
+  // Charts last and defensively -- a Chart.js load/render problem should
+  // never be able to block the tiles/comparison bars above it.
+  safeRun('charts', function() { drawCharts(data); });
 }
 
 function pctText(stat) {
@@ -655,13 +672,15 @@ document.getElementById('btn-send-report').addEventListener('click', function() 
 });
 
 // ── AI Query (Claude Haiku) — dormant until submit, no passive/background calls ──
+var aiUnavailableThisLoad = false; // resets naturally on every reload, unlike sessionStorage
+
 document.getElementById('btn-ask').addEventListener('click', function() {
   var input = document.getElementById('ana-query-input');
   var answerEl = document.getElementById('ana-query-answer');
   var question = input.value.trim();
   if (!question) return;
 
-  if (sessionStorage.getItem('aiUnavailable') === '1') {
+  if (aiUnavailableThisLoad) {
     answerEl.style.display = '';
     answerEl.textContent = 'AI query unavailable this session (last attempt failed). Reload the page to try again.';
     return;
@@ -682,12 +701,12 @@ document.getElementById('btn-ask').addEventListener('click', function() {
       answerEl.textContent = json.answer;
     } else {
       answerEl.textContent = 'AI unavailable — ' + (json.error || 'unknown error');
-      sessionStorage.setItem('aiUnavailable', '1');
+      aiUnavailableThisLoad = true;
     }
   }).catch(function(err) {
     answerEl.style.display = '';
     answerEl.textContent = 'AI unavailable — ' + err.message;
-    sessionStorage.setItem('aiUnavailable', '1');
+    aiUnavailableThisLoad = true;
   }).finally(function() {
     btn.textContent = prevText;
     btn.disabled = false;
