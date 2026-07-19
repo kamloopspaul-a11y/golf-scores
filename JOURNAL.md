@@ -2799,3 +2799,13 @@ Paul tested the live page: hero tiles showed but nothing else did (comparison ba
 **Bug 2 — "reload to retry" didn't actually work.** The AI query failure flag was stored in `sessionStorage`, which survives a normal page reload (it only clears on a full tab close) — so telling Paul to reload to clear a failed attempt was incorrect advice baked into the UI copy itself. Swapped to a plain in-memory JS variable (`aiUnavailableThisLoad`) that naturally resets every time the page's script re-runs, matching what the message actually says.
 
 Both fixes verified: HTML tag balance, `node --check` syntax, full aggregator/render test suite re-run (unchanged, all pass), plus a new targeted regression test simulating the exact Chart-undefined failure mode.
+
+### 2026-07-19 (cont'd 3) — Chart.js CDN fix was wrong; corrected with actual verification this time
+
+Paul's fix confirmed my Bug 1 diagnosis was right (the "hero display works, comparisons work, charts stay empty" pattern), but the URL I "corrected" to was itself ALSO a 404 — I had guessed the fix (case-sensitivity theory) without verifying the resulting URL actually resolved. Caught this by navigating a real browser tab to both candidate URLs directly: the previous `.../Chart.js/4.4.4/chart.umd.min.js` and my "fixed" `.../chart.js/4.4.4/chart.umd.min.js` both 404. Queried the cdnjs API directly (`api.cdnjs.com/libraries?search=chart.js`) and confirmed the real, currently-served path: capital `Chart.js` (my lowercase "fix" was backwards), version `4.5.0` (not `4.4.4`), filename `chart.min.js` (not `chart.umd.min.js`). Verified by fetching it directly — 51KB of real content, not a 404 page — before touching the code again.
+
+**Lesson:** don't ship a URL/version fix without actually resolving it first. Both this and the original bug were guesses about cdnjs path conventions instead of checked facts. From now on, any external CDN reference gets verified by direct fetch before it goes in the file.
+
+Corrected URL: `https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.min.js`. Version bumped to v11.07 / SW v180.
+
+**Still open, not yet resolved:** round count shows 35 (All Time filter) vs. 37 (AI query, which counts every Round_ID in the Rounds sheet unconditionally). Two theories, neither confirmed: (a) `flattenHoleRecords()` drops any hole row with non-finite Score/Par, which could make an entire round vanish if all its holes have blank data; (b) something in the pairing/absorption logic for paired 9-hole rounds. Needs a look at the actual Round_Meta/Rounds sheet row counts to confirm — not something guessable from code alone, deferred rather than guessed at further this session.
