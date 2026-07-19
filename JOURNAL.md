@@ -2809,3 +2809,7 @@ Paul's fix confirmed my Bug 1 diagnosis was right (the "hero display works, comp
 Corrected URL: `https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.min.js`. Version bumped to v11.07 / SW v180.
 
 **Still open, not yet resolved:** round count shows 35 (All Time filter) vs. 37 (AI query, which counts every Round_ID in the Rounds sheet unconditionally). Two theories, neither confirmed: (a) `flattenHoleRecords()` drops any hole row with non-finite Score/Par, which could make an entire round vanish if all its holes have blank data; (b) something in the pairing/absorption logic for paired 9-hole rounds. Needs a look at the actual Round_Meta/Rounds sheet row counts to confirm — not something guessable from code alone, deferred rather than guessed at further this session.
+
+### 2026-07-19 (cont'd 4) — Round-count discrepancy resolved: no bug
+
+Confirmed with Paul: `Round_Meta` has 35 real round rows (36 including header), and the oldest one (a hand-entered round from Sept 25, 2025, transcribed from a physical scorecard he kept because he shot 1-over) is present and correctly linked. So the dashboard's 35 is accurate and complete. The AI query's "37" was the model miscounting while summarizing a 35-line block of round data in its own context -- a known weakness of language models asked to literally count items in text they're simultaneously reading, more pronounced on a fast/small model like Haiku with a longer list. Not a data gap, not a code bug. No action taken.
