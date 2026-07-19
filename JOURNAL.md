@@ -4,6 +4,52 @@
 
 ---
 
+## 2026-07-01 — Session 33 continued — Caddy Notes Concept + BUSINESS.md
+
+**Discussion:** Explored using Anthropic Console (Claude API) for Golf analytics and a mid-round caddie note system.
+
+**Key decisions / concepts locked:**
+- Console proxy via Apps Script (API key in Script Properties — never exposed to GitHub or browser)
+- Natural language + voice input (Web Speech API online; text fallback offline)
+- Caddy Notes: mid-round notes stored in `state.caddieNotes[]`, posted to new CaddieNotes Sheets tab with round
+- Weather cross-reference: wind speed + temp stored with each note and in Round_Meta — enables condition-aware prompts on future rounds
+- Wind direction inferred over time from scoring patterns + note accumulation (no explicit recording needed)
+- Two-tier prompt system: Tier 1 rule-based (no API), Tier 2 Claude reasoning via proxy
+- Persistent per-hole caddie book accumulates across rounds → exportable as PDF booklet
+
+**Files updated:**
+- `PROJECT.md` — new Caddy Notes section (Without Console / With Console feature lists + Sheets columns to add)
+- `BUSINESS.md` — new AI Caddie Book product concept entry
+
+**Immediate next step (no UI required):** Add `Wind_kmh` and `Temp_C` to Round_Meta write in `apps-script.gs` — data starts accumulating on next round.
+
+---
+
+## 2026-07-01 — Session 33 — Mid-Round Data Loss Fix (v11.03 / SW v176)
+
+**Bug fixed:** iOS Safari kills the tab when the iPhone screen sleeps between holes (~10 min). On reload, `state` object was gone — all scores lost.
+
+**Fix:**
+- `saveActiveRound()` — serialises `state` (scores, stats, holeList, currentHole, totalHoles, date, players, pccSelected, midroundSeen, pairingId) + `activeCourseData` to `localStorage.activeRound` after every hole advance.
+- `clearActiveRound()` — removes the key on round complete, new round start, or discard.
+- `checkResumeRound()` — on page load and every time setup screen shows, checks for a saved round and shows a green resume banner ("Resume — Hole X of 18 · Course Name") with Resume / Discard buttons.
+- `resumeRound()` — restores state from localStorage, rebuilds dots, jumps to saved hole.
+- `discardResumeRound()` — clears key, hides banner.
+
+**Hooks wired:**
+- `advanceHole()` — save after forward branch and midround branch; clear before `showSummary()`
+- `prevHole()` — save after going back (not when returning to setup at hole 0)
+- `startRound()` — clear at start (fresh round)
+- `newRound()` — clear at start
+- `showScreen('setup')` — calls `checkResumeRound()`
+- Page init — calls `checkResumeRound()`
+
+**Files changed:** `index.html`, `shared.js`, `sw.js`
+**Commit:** `339c783` — pushed to `main`.
+
+---
+
+
 ## 2026-06-11 — Session 23 — Settings simplification + apps-script cleanup + REPORT_EMAIL cloak
 
 **Version:** settings.html v1.11 — apps-script.gs redeployed (no app version bump)
@@ -2704,3 +2750,32 @@ Session focused on file/folder cleanup across Studio, not Golf development. Golf
 **Fix agreed:** Persist entire `state` object to `localStorage` after every hole save (`activeRound` key). On page load, check for saved in-progress round and offer to resume. Two small changes — no architectural impact.
 
 **Priority:** Top priority next session. App is not marketable if it can't reliably complete an 18-hole round.
+
+### 2026-07-19 — Analytics section built (v11.05 / SW v178)
+
+**Built `analytics.html`** — new standalone page, first version of the Analytics section (previously a "coming soon" stub in the footer nav). No changes to `index.html`/`courses.html`/`settings.html` scoring flow.
+
+**Aggregator pattern ported from "A Bit of Bogey"** (a separate Claude.ai design project — its `CLAUDE.md` documents a reusable "shared per-hole aggregator pattern": flatten hole records once, then `aggregateHoles(records, predicate, reducer)` with `countAndPct()`/`avg()` reducer factories drives every derived stat — never a bespoke loop per stat. Empty filtered sets return `null`/`{count:0,pct:0}`, never `NaN`. Same three display-shape families: single-number tile grid, 2-column comparison bar, N-column category bar.
+
+**Data source:** reused the existing (already built, previously unused by any UI) `doGet(?action=data)` endpoint in `apps-script.gs` — it already joins Rounds + Round_Meta and returns one object per hole, which maps directly onto `flattenHoleRecords()`. No backend schema change needed for the dashboard itself.
+
+**v1 scope shipped:**
+- Headline tiles: rounds played, scoring avg to par, putts/round, FIR%, GIR%, scrambling% — gated by `profile.statFIR/statGIR/statPEN/statUD/statXUD/statPUTTS` toggles
+- Comparison bars: Front 9 vs Back 9, Putts-per-GIR vs Putts-per-missed-GIR (putting vs. approach diagnostic split), Penalty-hole vs. clean-hole score impact
+- Category bar charts (Chart.js, CDN): Score Distribution, Last 10 Rounds, Monthly Scoring Trend — with a Bar/Line toggle that re-renders the same cached data, no re-fetch
+- Date-range filter: This Month / This Season / Last 10 Rounds / All Time — always recomputes fresh from the cached hole data, never a running total
+- Send Report: plain HTML data snapshot of the current filtered view, emailed via a new additive `doPost({action:'sendAnalyticsReport'})` branch in `apps-script.gs`. Explicitly **not** AI-generated — Paul's call, to avoid tying a distributable feature to a per-user AI subscription
+- AI query box: wired to an existing, previously-unused `doPost({action:'query'})` → `handleGeminiQuery_()` branch already in `apps-script.gs` (Gemini `gemini-2.0-flash`, not Anthropic — corrects an assumption in the older analytics-vision notes, which assumed Claude/Anthropic billing). Box is completely dormant until the user submits a real question — no background/passive status check, since Paul flagged that the app sits open 6+ hours/week during on-course score entry and any passive check would run the whole time for no reason. A failed call caches "unavailable" for the session so repeated failures don't keep retrying.
+
+**Files touched:**
+- `analytics.html` — new
+- `shared.js` — `analytics` nav entry routed to the real page (was a stub `alert()`); `APP_VERSION` → v11.05
+- `sw.js` — `analytics.html` added to precache list; `CACHE_NAME` → golf-scores-v178
+- `apps-script.gs` — new additive `sendAnalyticsReport` branch in `doPost` (mail-only, reuses `getReportEmail_()`); no existing branches modified
+
+**Verified:** HTML tag balance, JS syntax (`node --check`) on all four touched/new files, and the aggregator engine itself against synthetic 2-round test data run through Node (empty-set safety, full stat pipeline, filter purity/no-mutation) — all passed.
+
+**Manual steps still needed (Paul, outside this session):**
+- Redeploy `apps-script.gs` via the Script Editor (paste → Deploy → Manage deployments → New version) — the `sendAnalyticsReport` branch and the Gemini `query` branch it now surfaces in the UI aren't live until redeployed
+- Confirm `GEMINI_API_KEY` is actually set in Script Properties — `handleGeminiQuery_()` fails gracefully with a clear error if not, but hasn't been confirmed present
+- `git push` from Paul's own terminal per standing workflow

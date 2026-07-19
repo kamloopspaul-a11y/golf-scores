@@ -320,6 +320,24 @@ function doPost(e) {
       }
     }
 
+    // ── Send Analytics Report branch ─────────────────────────────────────
+    // Additive, 2026-07-19: emails a pre-built HTML snapshot from
+    // analytics.html (plain formatted data, no AI). Distinct from the
+    // 'report' branch above, which sends the periodic GPI/Diagnostics
+    // email via sendReport(). This one just relays whatever HTML the
+    // front end already built.
+    if (p.action === 'sendAnalyticsReport') {
+      try {
+        const subject = String(p.subject || 'Golf Analytics');
+        const html    = String(p.html || '');
+        if (!html) return json_({ ok: false, error: 'No report content provided.' });
+        GmailApp.sendEmail(getReportEmail_(), subject, 'Your golf analytics report (HTML email)', { htmlBody: html });
+        return json_({ ok: true, message: 'Analytics report sent.' });
+      } catch (err) {
+        return json_({ ok: false, error: String(err) });
+      }
+    }
+
     // ── Score submission branch ──────────────────────────────────────────
 
     ensureSheet_(ss, ROUNDS,      roundsHeader_());

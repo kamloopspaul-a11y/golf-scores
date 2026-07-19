@@ -69,7 +69,7 @@ function applyPageMeta(id) {
   if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
 }
 
-const APP_VERSION = 'v11.04';
+const APP_VERSION = 'v11.05';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
@@ -107,6 +107,10 @@ function showPanel(name) {
     if (page !== 'index.html') window.location.href = 'index.html';
     return;
   }
+  if (name === 'analytics') {
+    if (page !== 'analytics.html') window.location.href = 'analytics.html';
+    return;
+  }
   if (name === 'add-scores') {
     if (page !== 'index.html') {
       window.location.href = 'index.html?panel=add-scores';
@@ -122,7 +126,6 @@ function showPanel(name) {
     'penalty-rules': 'Penalty Rules — coming soon',
     'quick-rules':   'Quick Rules — coming soon',
     'game-formats':  'Game Formats — coming soon',
-    'analytics':     'Analytics — coming soon',
   };
   if (stubs[name]) alert(stubs[name]);
 }

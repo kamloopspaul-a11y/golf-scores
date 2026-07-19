@@ -1,12 +1,13 @@
 // My Golf Scores — Service Worker
 // Network-first for HTML, cache-first for assets
 
-const CACHE_NAME = 'golf-scores-v177';
+const CACHE_NAME = 'golf-scores-v178';
 const ASSETS = [
   '/',
   '/index.html',
   '/courses.html',
   '/settings.html',
+  '/analytics.html',
   '/shared.css',
   '/cheering.mp3',
   '/manifest.json',

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  My Golf Scores — Analytics
+  analytics.html
+
+  v1.0 — 2026-07-19
+  - New standalone page. Does not touch index.html/courses.html/settings.html.
+  - Aggregator + display-shape pattern ported from the "A Bit of Bogey" design
+    project (flatten once, reduce many ways — see aggregateHoles() below).
+  - Data source: existing Apps Script doGet(?action=data) endpoint — already
+    returns Rounds joined with Round_Meta, one object per hole. No backend
+    schema change required for the dashboard.
+  - AI query box wired to the existing (already-built, previously unused)
+    doPost({action:'query'}) → handleGeminiQuery_() branch in apps-script.gs.
+    Dormant until the user submits a question — no passive/background calls.
+  - Send Report requires one new additive doPost branch in apps-script.gs:
+    action === 'sendAnalyticsReport'. See apps-script.gs changelog.
+-->
+<meta charset="UTF-8">
+<meta name="theme-color" content="#377f09">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golf Scores">
+<link rel="manifest" href="manifest.json">
+<title>Analytics</title>
+<script src="shared.js"></script>
+<link rel="stylesheet" href="shared.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  /* ── ANALYTICS-SPECIFIC ─────────────────────────────── */
+
+  .ana-filter-bar {
+    display: flex; gap: 8px; padding: 0 20px 14px; align-items: center; flex-wrap: wrap;
+  }
+  .ana-select {
+    flex: 1 1 140px; background: var(--skin-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 10px; font-size: 13px; color: var(--text-primary);
+    font-family: inherit;
+  }
+  .ana-toggle-group {
+    display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    flex: 0 0 auto;
+  }
+  .ana-toggle-btn {
+    padding: 8px 14px; font-size: 12px; font-weight: 600; background: var(--skin-bg);
+    border: none; color: var(--text-secondary); cursor: pointer;
+  }
+  .ana-toggle-btn.active { background: var(--green); color: #fff; }
+
+  .ana-status {
+    margin: 0 20px 14px; font-size: 12px; color: var(--text-muted);
+  }
+  .ana-status.err { color: var(--bogey); }
+
+  .ana-tile-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    margin: 0 20px 18px;
+  }
+  .ana-tile {
+    background: var(--green-pale); border-radius: 12px; padding: 14px 8px; text-align: center;
+  }
+  .ana-tile-val {
+    font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 700; color: var(--green);
+    line-height: 1.1;
+  }
+  .ana-tile-lbl {
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--text-muted); margin-top: 5px;
+  }
+
+  .ana-section-hdr {
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+    color: var(--text-muted); margin: 22px 20px 10px;
+  }
+
+  .ana-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; margin: 0 20px 12px;
+  }
+  .ana-card-title {
+    font-size: 13px; font-weight: 600; color: var(--green); margin-bottom: 12px;
+  }
+  .ana-empty {
+    font-size: 13px; color: var(--text-muted); font-style: italic; padding: 6px 0;
+  }
+
+  .ana-cmp { display: flex; justify-content: space-around; align-items: flex-end; height: 120px; gap: 20px; }
+  .ana-cmp-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; height: 100%; }
+  .ana-cmp-num { font-family: 'DM Mono', monospace; font-weight: 700; font-size: 15px; color: var(--text-primary); margin-bottom: 4px; }
+  .ana-cmp-bar { width: 44px; background: var(--green); border-radius: 6px 6px 0 0; min-height: 3px; transition: height .3s; }
+  .ana-cmp-lbl { font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center; }
+
+  .ana-chart-wrap { position: relative; height: 190px; }
+
+  .ana-query-box textarea {
+    width: 100%; min-height: 52px; border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 10px; font-size: 14px; font-family: inherit; resize: vertical;
+    color: var(--text-primary); background: var(--skin-bg);
+  }
+  .ana-query-row { display: flex; gap: 8px; margin-top: 8px; }
+  .ana-query-row .btn-3d { flex: 0 0 auto; padding: 9px 18px; font-size: 12px; }
+  .ana-query-answer {
+    background: var(--green-pale); border-radius: 8px; padding: 10px 12px;
+    font-size: 13px; margin-top: 10px; color: var(--text-primary); line-height: 1.4;
+  }
+  .ana-query-note {
+    font-size: 11px; color: var(--text-muted); margin-top: 6px;
+  }
+
+  .ana-report-row { margin: 0 20px 24px; }
+  .ana-report-row .btn-3d { width: 100%; }
+</style>
+</head>
+<body data-page-id="analytics">
+
+<div class="screen active" id="screen-analytics">
+
+  <div class="masthead">
+    <div class="header-upper">
+      <div class="hu-breadcrumb">Analytics</div>
+      <div class="hu-temp"></div>
+      <div class="hu-date"></div>
+      <div class="hu-wind"></div>
+    </div>
+  </div>
+
+  <div class="stage-scrolls">
+    <div class="page-title">Analytics</div>
+
+    <div class="ana-filter-bar">
+      <select class="ana-select" id="ana-range">
+        <option value="month">This Month</option>
+        <option value="season" selected>This Season</option>
+        <option value="last10">Last 10 Rounds</option>
+        <option value="all">All Time</option>
+      </select>
+      <div class="ana-toggle-group" id="ana-chart-toggle">
+        <button class="ana-toggle-btn active" data-type="bar">Bar</button>
+        <button class="ana-toggle-btn" data-type="line">Line</button>
+      </div>
+    </div>
+
+    <div class="ana-status" id="ana-status">Loading round data…</div>
+
+    <div id="ana-content" style="display:none;">
+
+      <div class="ana-tile-grid" id="ana-tiles"></div>
+
+      <div class="ana-section-hdr">Comparisons</div>
+      <div class="ana-card" id="card-front-back">
+        <div class="ana-card-title">Front 9 vs Back 9 (avg. to par)</div>
+        <div class="ana-cmp" id="cmp-front-back"></div>
+      </div>
+      <div class="ana-card" id="card-putts-split">
+        <div class="ana-card-title">Putts per Hole — GIR vs Missed GIR</div>
+        <div class="ana-cmp" id="cmp-putts-split"></div>
+      </div>
+      <div class="ana-card" id="card-pen-impact">
+        <div class="ana-card-title">Penalty Impact (avg. to par)</div>
+        <div class="ana-cmp" id="cmp-pen-impact"></div>
+      </div>
+
+      <div class="ana-section-hdr">Trends &amp; Distribution</div>
+      <div class="ana-card" id="card-score-dist">
+        <div class="ana-card-title">Score Distribution</div>
+        <div class="ana-chart-wrap"><canvas id="chart-score-dist"></canvas></div>
+      </div>
+      <div class="ana-card" id="card-last10">
+        <div class="ana-card-title">Last 10 Rounds — Gross Score</div>
+        <div class="ana-chart-wrap"><canvas id="chart-last10"></canvas></div>
+      </div>
+      <div class="ana-card" id="card-monthly">
+        <div class="ana-card-title">Monthly Scoring Trend</div>
+        <div class="ana-chart-wrap"><canvas id="chart-monthly"></canvas></div>
+      </div>
+
+      <div class="ana-report-row">
+        <button class="btn-3d" id="btn-send-report">EMAIL THIS VIEW</button>
+      </div>
+
+      <div class="ana-section-hdr">Ask a Question</div>
+      <div class="ana-card ana-query-box">
+        <textarea id="ana-query-input" placeholder="e.g. What's my putting average on Wednesdays?"></textarea>
+        <div class="ana-query-row">
+          <button class="btn-3d" id="btn-ask">ASK</button>
+        </div>
+        <div class="ana-query-answer" id="ana-query-answer" style="display:none;"></div>
+        <div class="ana-query-note">Uses Gemini — only runs when you ask a question, nothing happens in the background.</div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="footer" data-nav></div>
+
+</div>
+
+<script>
+'use strict';
+
+// ── Profile / webhook config (mirrors index.html) ──────────────────────────
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem('profile')) || {}; }
+  catch (e) { return {}; }
+}
+const PROFILE        = loadProfile();
+const SHEETS_URL      = PROFILE.sheetsUrl || '';
+const WEBHOOK_SECRET  = PROFILE.webhookSecret || '';
+
+// ── Aggregator engine — ported pattern: flatten once, reduce many ways ─────
+// (Shared per-hole aggregator pattern, from "A Bit of Bogey" CLAUDE.md.)
+
+function isTruthy(v) { return v === true || v === 1 || v === '1' || v === 'TRUE'; }
+
+// Flattens raw ?action=data rows (already one object per hole) into a
+// normalised shape. This is the single flatten step — every stat below reads
+// from this same array via aggregateHoles(), never a bespoke parse.
+function flattenHoleRecords(rows) {
+  return (rows || []).map(function(r) {
+    var score = Number(r.Score);
+    var par   = Number(r.Par);
+    return {
+      roundId:   String(r.Round_ID),
+      date:      r.Date || '',
+      course:    r.Course || '',
+      tees:      r.Tees || '',
+      hole:      Number(r.Hole),
+      par:       par,
+      score:     score,
+      toPar:     (isFinite(score) && isFinite(par)) ? (score - par) : null,
+      putts:     (r.Putts === '' || r.Putts == null) ? null : Number(r.Putts),
+      fir:       isTruthy(r.FIR),
+      gir:       isTruthy(r.GIR),
+      ud:        isTruthy(r.UD),
+      xUd:       isTruthy(r.X_UD),
+      pen:       (r.Penalties === '' || r.Penalties == null) ? 0 : Number(r.Penalties),
+      roundType: r.Round_Type || ''
+    };
+  }).filter(function(h) { return h.roundId && isFinite(h.score) && isFinite(h.par); });
+}
+
+// Generic reduce-over-records engine. Works on hole records or round records —
+// both are just arrays of objects. Every derived stat is one call to this
+// with a different predicate/reducer pair; never a new bespoke loop.
+function aggregateHoles(records, predicate, reducer) {
+  var filtered = predicate ? records.filter(predicate) : records.slice();
+  return reducer(filtered);
+}
+
+// Reducer factory: {count, pct}. Never NaN — returns {0,0} on an empty set.
+function countAndPct(matchFn) {
+  return function(records) {
+    if (!records.length) return { count: 0, pct: 0 };
+    var matches = records.filter(matchFn).length;
+    return { count: matches, pct: matches / records.length };
+  };
+}
+
+// Reducer factory: mean of valueFn. Returns null (not 0, not NaN) on an
+// empty set or when every value is non-numeric.
+function avg(valueFn) {
+  return function(records) {
+    var vals = records.map(valueFn).filter(function(v) { return v != null && isFinite(v); });
+    if (!vals.length) return null;
+    var sum = vals.reduce(function(a, b) { return a + b; }, 0);
+    return sum / vals.length;
+  };
+}
+
+// Groups flattened hole records into one summary object per round. Used for
+// scoring-average / trend stats where the unit of analysis is a round, not
+// a hole. Still just an array of records — fed through the same
+// aggregateHoles() engine as everything else.
+function groupRounds(holes) {
+  var byId = {};
+  holes.forEach(function(h) {
+    if (!byId[h.roundId]) {
+      byId[h.roundId] = { roundId: h.roundId, date: h.date, course: h.course, holes: [] };
+    }
+    byId[h.roundId].holes.push(h);
+  });
+  return Object.keys(byId).map(function(id) {
+    var r = byId[id];
+    var totalScore = r.holes.reduce(function(s, h) { return s + (h.score || 0); }, 0);
+    var totalPar   = r.holes.reduce(function(s, h) { return s + (h.par || 0); }, 0);
+    var puttsVals  = r.holes.map(function(h) { return h.putts; }).filter(function(v) { return v != null; });
+    var totalPutts = puttsVals.length ? puttsVals.reduce(function(a, b) { return a + b; }, 0) : null;
+    return {
+      roundId: r.roundId, date: r.date, course: r.course, holes: r.holes,
+      holeCount: r.holes.length, totalScore: totalScore, totalPar: totalPar,
+      toPar: totalScore - totalPar, totalPutts: totalPutts
+    };
+  }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+}
+
+// ── Date-range filter — always recomputes fresh from source, never a running
+//    total, so a missed update can never silently desync a displayed number.
+function filterHolesByRange(holesAll, rangeKey) {
+  if (rangeKey === 'all') return holesAll;
+  if (rangeKey === 'last10') {
+    var rounds = groupRounds(holesAll);
+    var ids = {};
+    rounds.slice(-10).forEach(function(r) { ids[r.roundId] = true; });
+    return holesAll.filter(function(h) { return ids[h.roundId]; });
+  }
+  var now = new Date();
+  if (rangeKey === 'month') {
+    return holesAll.filter(function(h) {
+      var d = new Date(h.date);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+  }
+  if (rangeKey === 'season') {
+    return holesAll.filter(function(h) { return new Date(h.date).getFullYear() === now.getFullYear(); });
+  }
+  return holesAll;
+}
+
+// ── Display shape 1: single-number tile grid ────────────────────────────────
+function renderTileGrid(el, tiles) {
+  el.innerHTML = tiles.map(function(t) {
+    return '<div class="ana-tile"><div class="ana-tile-val">' + t.value +
+           '</div><div class="ana-tile-lbl">' + t.label + '</div></div>';
+  }).join('');
+}
+
+// ── Display shape 2: 2-column comparison bar ────────────────────────────────
+function renderComparisonBar(el, left, right) {
+  var lv = left.value, rv = right.value;
+  if (lv == null && rv == null) {
+    el.innerHTML = '<div class="ana-empty">' + (left.emptyText || 'No data yet.') + '</div>';
+    return;
+  }
+  var max = Math.max(Math.abs(lv || 0), Math.abs(rv || 0), 1);
+  function barHeight(v) { return v == null ? 3 : Math.max(6, Math.round((Math.abs(v) / max) * 100)); }
+  el.innerHTML =
+    '<div class="ana-cmp-col"><div class="ana-cmp-num">' + fmtVal(lv, left.suffix) + '</div>' +
+    '<div class="ana-cmp-bar" style="height:' + barHeight(lv) + '%"></div>' +
+    '<div class="ana-cmp-lbl">' + left.label + '</div></div>' +
+    '<div class="ana-cmp-col"><div class="ana-cmp-num">' + fmtVal(rv, right.suffix) + '</div>' +
+    '<div class="ana-cmp-bar" style="height:' + barHeight(rv) + '%"></div>' +
+    '<div class="ana-cmp-lbl">' + right.label + '</div></div>';
+}
+
+function fmtVal(v, suffix) {
+  if (v == null) return '—';
+  var rounded = Math.round(v * 10) / 10;
+  return (rounded > 0 && suffix !== '%' ? '+' : '') + rounded + (suffix || '');
+}
+
+// ── Display shape 3: N-column category bar (Chart.js bar/line) ─────────────
+var CHARTS = {};
+var CURRENT_CHART_TYPE = 'bar';
+
+function renderCategoryChart(canvasId, labels, values, opts) {
+  opts = opts || {};
+  var ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  if (CHARTS[canvasId]) { CHARTS[canvasId].destroy(); }
+  if (!labels.length) {
+    var wrap = ctx.parentElement;
+    wrap.innerHTML = '<div class="ana-empty">' + (opts.emptyText || 'No data yet.') + '</div>';
+    return;
+  }
+  CHARTS[canvasId] = new Chart(ctx, {
+    type: CURRENT_CHART_TYPE,
+    data: {
+      labels: labels,
+      datasets: [{
+        label: opts.label || '',
+        data: values,
+        backgroundColor: 'rgba(55,127,9,0.55)',
+        borderColor: '#377f09',
+        borderWidth: CURRENT_CHART_TYPE === 'line' ? 2 : 1,
+        tension: 0.3,
+        fill: CURRENT_CHART_TYPE === 'line',
+        borderRadius: CURRENT_CHART_TYPE === 'bar' ? 4 : 0,
+        pointRadius: CURRENT_CHART_TYPE === 'line' ? 3 : 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: opts.beginAtZero !== false, ticks: { font: { size: 10 } } },
+        x: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function rerenderAllCharts() {
+  if (!LAST_DASHBOARD) return;
+  drawCharts(LAST_DASHBOARD);
+}
+
+// ── Dashboard computation ───────────────────────────────────────────────────
+var ALL_HOLES = [];
+var LAST_DASHBOARD = null;
+
+function computeDashboard(holes) {
+  var rounds = groupRounds(holes);
+
+  var scoringAvg   = aggregateHoles(rounds, null, avg(function(r) { return r.toPar; }));
+  var puttsPerRound = aggregateHoles(rounds, function(r) { return r.totalPutts != null; }, avg(function(r) { return r.totalPutts; }));
+
+  var firStat = aggregateHoles(holes, null, countAndPct(function(h) { return h.fir; }));
+  var girStat = aggregateHoles(holes, null, countAndPct(function(h) { return h.gir; }));
+  var scrambleStat = aggregateHoles(holes, function(h) { return h.gir === false; }, countAndPct(function(h) { return h.ud; }));
+
+  var frontAvg = aggregateHoles(holes, function(h) { return h.hole <= 9; }, avg(function(h) { return h.toPar; }));
+  var backAvg  = aggregateHoles(holes, function(h) { return h.hole > 9; }, avg(function(h) { return h.toPar; }));
+
+  var puttsOnGir    = aggregateHoles(holes, function(h) { return h.gir === true && h.putts != null; }, avg(function(h) { return h.putts; }));
+  var puttsOffGir   = aggregateHoles(holes, function(h) { return h.gir === false && h.putts != null; }, avg(function(h) { return h.putts; }));
+
+  var penHoleAvg    = aggregateHoles(holes, function(h) { return h.pen > 0; }, avg(function(h) { return h.toPar; }));
+  var cleanHoleAvg  = aggregateHoles(holes, function(h) { return h.pen === 0; }, avg(function(h) { return h.toPar; }));
+
+  // Score distribution buckets
+  function bucket(h) {
+    var d = h.toPar;
+    if (d <= -2) return 'Eagle+';
+    if (d === -1) return 'Birdie';
+    if (d === 0) return 'Par';
+    if (d === 1) return 'Bogey';
+    return 'Double+';
+  }
+  var bucketOrder = ['Eagle+', 'Birdie', 'Par', 'Bogey', 'Double+'];
+  var distLabels = [], distValues = [];
+  bucketOrder.forEach(function(b) {
+    var stat = aggregateHoles(holes, function(h) { return bucket(h) === b; }, countAndPct(function() { return true; }));
+    distLabels.push(b);
+    distValues.push(stat.count);
+  });
+
+  // Last 10 rounds
+  var last10 = rounds.slice(-10);
+  var last10Labels = last10.map(function(r) { return shortDate(r.date); });
+  var last10Values = last10.map(function(r) { return r.totalScore; });
+
+  // Monthly trend
+  var byMonth = {};
+  rounds.forEach(function(r) {
+    var d = new Date(r.date);
+    if (isNaN(d)) return;
+    var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (!byMonth[key]) byMonth[key] = [];
+    byMonth[key].push(r.totalScore);
+  });
+  var monthKeys = Object.keys(byMonth).sort();
+  var monthLabels = monthKeys.map(function(k) {
+    var parts = k.split('-');
+    return new Date(parts[0], parts[1] - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+  });
+  var monthValues = monthKeys.map(function(k) {
+    var vals = byMonth[k];
+    return Math.round((vals.reduce(function(a, b) { return a + b; }, 0) / vals.length) * 10) / 10;
+  });
+
+  return {
+    roundCount: rounds.length,
+    scoringAvg: scoringAvg, puttsPerRound: puttsPerRound,
+    firStat: firStat, girStat: girStat, scrambleStat: scrambleStat,
+    frontAvg: frontAvg, backAvg: backAvg,
+    puttsOnGir: puttsOnGir, puttsOffGir: puttsOffGir,
+    penHoleAvg: penHoleAvg, cleanHoleAvg: cleanHoleAvg,
+    distLabels: distLabels, distValues: distValues,
+    last10Labels: last10Labels, last10Values: last10Values,
+    monthLabels: monthLabels, monthValues: monthValues
+  };
+}
+
+function shortDate(iso) {
+  var d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ── Render pipeline ──────────────────────────────────────────────────────────
+function renderDashboard(data) {
+  LAST_DASHBOARD = data;
+  var stats = PROFILE.recordStats;
+
+  var tiles = [];
+  tiles.push({ value: data.roundCount, label: 'Rounds' });
+  tiles.push({ value: data.scoringAvg == null ? '—' : fmtVal(data.scoringAvg, ''), label: 'Avg to Par' });
+  if (stats && PROFILE.statPUTTS) tiles.push({ value: data.puttsPerRound == null ? '—' : Math.round(data.puttsPerRound * 10) / 10, label: 'Putts/Round' });
+  if (stats && PROFILE.statFIR)   tiles.push({ value: pctText(data.firStat), label: 'FIR%' });
+  if (stats && PROFILE.statGIR)   tiles.push({ value: pctText(data.girStat), label: 'GIR%' });
+  if (stats && PROFILE.statUD)    tiles.push({ value: pctText(data.scrambleStat), label: 'Scrambling%' });
+  renderTileGrid(document.getElementById('ana-tiles'), tiles);
+
+  drawCharts(data);
+
+  // Front9 vs Back9 — always shown, doesn't depend on a stat toggle
+  document.getElementById('card-front-back').style.display = '';
+  renderComparisonBar(document.getElementById('cmp-front-back'),
+    { value: data.frontAvg, label: 'Front 9', suffix: '' },
+    { value: data.backAvg,  label: 'Back 9',  suffix: '' });
+
+  var puttsCard = document.getElementById('card-putts-split');
+  if (stats && PROFILE.statPUTTS && PROFILE.statGIR) {
+    puttsCard.style.display = '';
+    renderComparisonBar(document.getElementById('cmp-putts-split'),
+      { value: data.puttsOnGir,  label: 'On GIR',      suffix: '', emptyText: 'No PUTTS/GIR logged yet.' },
+      { value: data.puttsOffGir, label: 'Missed GIR',  suffix: '' });
+  } else { puttsCard.style.display = 'none'; }
+
+  var penCard = document.getElementById('card-pen-impact');
+  if (stats && PROFILE.statPEN) {
+    penCard.style.display = '';
+    renderComparisonBar(document.getElementById('cmp-pen-impact'),
+      { value: data.penHoleAvg,   label: 'Penalty Hole', suffix: '', emptyText: 'No PEN logged yet.' },
+      { value: data.cleanHoleAvg, label: 'Clean Hole',   suffix: '' });
+  } else { penCard.style.display = 'none'; }
+}
+
+function pctText(stat) {
+  if (!stat || stat.count === 0) return '—';
+  return Math.round(stat.pct * 100) + '%';
+}
+
+function drawCharts(data) {
+  renderCategoryChart('chart-score-dist', data.distLabels, data.distValues, { label: 'Holes', emptyText: 'No rounds logged yet.' });
+  renderCategoryChart('chart-last10', data.last10Labels, data.last10Values, { label: 'Score', beginAtZero: false, emptyText: 'No rounds logged yet.' });
+  renderCategoryChart('chart-monthly', data.monthLabels, data.monthValues, { label: 'Avg Score', beginAtZero: false, emptyText: 'Not enough rounds for a monthly trend yet.' });
+}
+
+// ── Data fetch (cached, cheap re-reads) ─────────────────────────────────────
+var CACHE_KEY = 'analyticsCache';
+var CACHE_TTL_MS = 10 * 60 * 1000; // 10 min — avoid re-fetching on every filter change
+
+function loadRoundsData(force) {
+  var statusEl = document.getElementById('ana-status');
+  var contentEl = document.getElementById('ana-content');
+
+  if (!SHEETS_URL) {
+    statusEl.textContent = 'No Google Sheets URL configured — set one up in Settings first.';
+    statusEl.className = 'ana-status err';
+    return;
+  }
+
+  if (!force) {
+    try {
+      var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (cached && (Date.now() - cached.ts) < CACHE_TTL_MS) {
+        ALL_HOLES = flattenHoleRecords(cached.rounds);
+        applyFilterAndRender();
+        return;
+      }
+    } catch (e) { /* fall through to network fetch */ }
+  }
+
+  statusEl.textContent = 'Loading round data…';
+  statusEl.className = 'ana-status';
+  contentEl.style.display = 'none';
+
+  var url = SHEETS_URL + (SHEETS_URL.indexOf('?') === -1 ? '?' : '&') + 'action=data' +
+            (WEBHOOK_SECRET ? '&secret=' + encodeURIComponent(WEBHOOK_SECRET) : '');
+
+  fetch(url).then(function(res) { return res.json(); }).then(function(json) {
+    if (!json.ok) throw new Error(json.error || 'Unknown error');
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), rounds: json.rounds }));
+    ALL_HOLES = flattenHoleRecords(json.rounds);
+    applyFilterAndRender();
+  }).catch(function(err) {
+    statusEl.textContent = 'Could not load round data: ' + err.message;
+    statusEl.className = 'ana-status err';
+  });
+}
+
+function applyFilterAndRender() {
+  var statusEl = document.getElementById('ana-status');
+  var contentEl = document.getElementById('ana-content');
+  var rangeKey = document.getElementById('ana-range').value;
+  var filtered = filterHolesByRange(ALL_HOLES, rangeKey);
+
+  if (!ALL_HOLES.length) {
+    statusEl.textContent = 'No rounds recorded yet — analytics will populate once you post a round.';
+    statusEl.className = 'ana-status';
+    contentEl.style.display = 'none';
+    return;
+  }
+
+  statusEl.style.display = 'none';
+  contentEl.style.display = '';
+  renderDashboard(computeDashboard(filtered));
+}
+
+// ── Chart type toggle ────────────────────────────────────────────────────────
+document.getElementById('ana-chart-toggle').addEventListener('click', function(e) {
+  var btn = e.target.closest('.ana-toggle-btn');
+  if (!btn) return;
+  document.querySelectorAll('#ana-chart-toggle .ana-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  CURRENT_CHART_TYPE = btn.dataset.type;
+  rerenderAllCharts();
+});
+
+document.getElementById('ana-range').addEventListener('change', applyFilterAndRender);
+
+// ── Send Report (plain data snapshot — no AI) ───────────────────────────────
+document.getElementById('btn-send-report').addEventListener('click', function() {
+  if (!LAST_DASHBOARD) return;
+  var btn = this;
+  btn.disabled = true;
+  var prevText = btn.textContent;
+  btn.textContent = 'SENDING…';
+
+  var d = LAST_DASHBOARD;
+  var rangeLabel = document.getElementById('ana-range').selectedOptions[0].text;
+  var html =
+    '<div style="font-family:Arial,sans-serif;color:#222;">' +
+    '<h2 style="color:#377f09;margin:0 0 4px;">Analytics Snapshot — ' + rangeLabel + '</h2>' +
+    '<p style="font-size:12px;color:#888;margin:0 0 16px;">' + new Date().toLocaleDateString('en-CA') + '</p>' +
+    '<table style="border-collapse:collapse;width:100%;font-size:13px;">' +
+    row('Rounds', d.roundCount) +
+    row('Avg to Par', d.scoringAvg == null ? '—' : fmtVal(d.scoringAvg, '')) +
+    row('Putts/Round', d.puttsPerRound == null ? '—' : Math.round(d.puttsPerRound * 10) / 10) +
+    row('FIR%', pctText(d.firStat)) +
+    row('GIR%', pctText(d.girStat)) +
+    row('Scrambling%', pctText(d.scrambleStat)) +
+    row('Front 9 (avg to par)', d.frontAvg == null ? '—' : fmtVal(d.frontAvg, '')) +
+    row('Back 9 (avg to par)', d.backAvg == null ? '—' : fmtVal(d.backAvg, '')) +
+    '</table></div>';
+
+  function row(label, val) {
+    return '<tr><td style="padding:5px 8px;border-bottom:1px solid #eee;">' + label +
+           '</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-family:monospace;">' + val + '</td></tr>';
+  }
+
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'sendAnalyticsReport',
+      subject: 'Golf Analytics — ' + rangeLabel,
+      html: html,
+      secret: WEBHOOK_SECRET
+    })
+  }).then(function(res) { return res.json(); }).then(function(json) {
+    btn.textContent = json.ok ? 'SENT ✓' : 'FAILED';
+    setTimeout(function() { btn.textContent = prevText; btn.disabled = false; }, 2200);
+  }).catch(function() {
+    btn.textContent = 'FAILED';
+    setTimeout(function() { btn.textContent = prevText; btn.disabled = false; }, 2200);
+  });
+});
+
+// ── AI Query (Gemini) — dormant until submit, no passive/background calls ──
+document.getElementById('btn-ask').addEventListener('click', function() {
+  var input = document.getElementById('ana-query-input');
+  var answerEl = document.getElementById('ana-query-answer');
+  var question = input.value.trim();
+  if (!question) return;
+
+  if (sessionStorage.getItem('aiUnavailable') === '1') {
+    answerEl.style.display = '';
+    answerEl.textContent = 'AI query unavailable this session (last attempt failed). Reload the page to try again.';
+    return;
+  }
+
+  var btn = this;
+  btn.disabled = true;
+  var prevText = btn.textContent;
+  btn.textContent = 'ASKING…';
+  answerEl.style.display = 'none';
+
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'query', question: question, secret: WEBHOOK_SECRET })
+  }).then(function(res) { return res.json(); }).then(function(json) {
+    answerEl.style.display = '';
+    if (json.ok) {
+      answerEl.textContent = json.answer;
+    } else {
+      answerEl.textContent = 'AI unavailable — ' + (json.error || 'unknown error');
+      sessionStorage.setItem('aiUnavailable', '1');
+    }
+  }).catch(function(err) {
+    answerEl.style.display = '';
+    answerEl.textContent = 'AI unavailable — ' + err.message;
+    sessionStorage.setItem('aiUnavailable', '1');
+  }).finally(function() {
+    btn.textContent = prevText;
+    btn.disabled = false;
+  });
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+loadRoundsData(false);
+</script>
+</body>
+</html>

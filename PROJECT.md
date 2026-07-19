@@ -11,6 +11,7 @@
 **Local folder:** `~/Documents/Studio/Projects/Golf`
 **Service Worker:** v175 (network-first for HTML, cache-first for assets)
 **Stage:** Multi-course integration / pre-release — Settings page considered "set it and forget it"; players expected to spend more time in Analytics/Dashboard
+**Analytics:** v1 built 2026-07-19 (`analytics.html`, v11.05/SW v178) — see JOURNAL.md for full detail. Aggregator/display-shape pattern ported from the "A Bit of Bogey" design project. Awaiting Paul's Apps Script redeploy + GEMINI_API_KEY confirmation before the AI query box is live.
 
 ## Core Spec
 
@@ -956,3 +957,46 @@ Break the four cost groups out as a standalone **Additional Diagnostics** sectio
 
 ### Status
 Design thread — build after 20 rounds of real tracked data are in place and the Cost Breakdown is reviewed for clarity.
+
+---
+
+## Caddy Notes
+
+*Feature concept developed 2026-07-01. Build in phases — Sheets columns first, then note UI, then Console layer.*
+
+### Without Console
+
+- **Text note input on any hole screen** — tap to add a free-text note mid-round
+- **Target hole reminder** — note on hole 7 auto-triggers a banner when hole 15 loads (same hole, back 9)
+- **Offline support** — notes stored in `state.caddieNotes[]` during round; post to Sheets with the round payload via existing offline queue
+- **CaddieNotes tab in Google Sheets** — columns: `Round_ID | Date | Course | Hole | Note | Wind_kmh | Temp_C`
+- **Wind + temp stored with each note** — already live in `state.weatherWind` / `state.weatherTemp`; capture at note creation time
+- **Wind + temp added to Round_Meta** — two new columns (`Wind_kmh`, `Temp_C`) so every round has conditions on record
+- **Tier 1 rule-based weather prompt** — on hole load, compare current wind to stored wind on historical notes; if within ~8 km/h, show banner: *"18 km/h wind — July 1 (21 km/h) you noted: use 7 iron"*
+- **Persistent per-hole caddie book** — notes accumulate per course/hole across rounds; shown every visit to that hole
+- **Text fallback when offline** — mic button degrades to a text input when `navigator.onLine` is false
+- **Structured export** — CaddieNotes tab is clean JSON/CSV; portable to any other app or booklet workflow
+
+### With Console
+
+- **Natural language note entry** — type or speak freely; Claude parses intent and extracts note text + target hole from plain English
+- **Voice input when online** — Web Speech API captures speech, sends transcript to Claude proxy for parsing; no manual form needed
+- **Tier 2 smart weather prompt** — current conditions + all historical notes for that hole sent to Claude; returns a single contextual recommendation: *"21 km/h wind on hole 7 — use your 7 iron, aim centre of green"*
+- **Wind direction inference** — Claude identifies headwind/tailwind holes from accumulated scoring + note patterns across rounds; no explicit direction recording needed
+- **Club gapping insights** — repeated "came up short" or "too much club" notes surface gaps between clubs in specific conditions
+- **Birdie/par opportunity mapping** — cross-reference scores, wind speed, and hole type to identify which holes to attack vs. play safe in given conditions
+- **Seasonal and time-of-day patterns** — score variance by temperature range, wind band, morning vs. afternoon rounds
+- **Course intelligence report** — Claude reads full CaddieNotes + Round history for a course and produces a hole-by-hole strategic summary based on personal play history
+- **AI-generated caddie booklet** — Claude formats accumulated notes into a readable, printable per-hole narrative; exportable as Google Doc or PDF via Apps Script
+- **Natural language queries on demand** — *"How do I score on hole 9 in wind?"* answered directly from Sheets data via analytics proxy
+
+### Sheets columns to add now
+
+| Tab | New Columns |
+|-----|-------------|
+| Round_Meta | `Wind_kmh`, `Temp_C` |
+| CaddieNotes (new tab) | `Round_ID`, `Date`, `Course`, `Hole`, `Note`, `Wind_kmh`, `Temp_C` |
+
+### Status
+
+Concept — not yet started. Start by adding `Wind_kmh` and `Temp_C` to `Round_Meta` in `apps-script.gs`; data begins accumulating immediately with no UI changes required. Note UI and CaddieNotes tab follow as a second phase.
