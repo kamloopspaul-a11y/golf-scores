@@ -2813,3 +2813,15 @@ Corrected URL: `https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.min.
 ### 2026-07-19 (cont'd 4) — Round-count discrepancy resolved: no bug
 
 Confirmed with Paul: `Round_Meta` has 35 real round rows (36 including header), and the oldest one (a hand-entered round from Sept 25, 2025, transcribed from a physical scorecard he kept because he shot 1-over) is present and correctly linked. So the dashboard's 35 is accurate and complete. The AI query's "37" was the model miscounting while summarizing a 35-line block of round data in its own context -- a known weakness of language models asked to literally count items in text they're simultaneously reading, more pronounced on a fast/small model like Haiku with a longer list. Not a data gap, not a code bug. No action taken.
+
+### 2026-07-19 (cont'd 5) — Chart.js root cause finally isolated: ES module vs UMD build
+
+Paul reported charts still not rendering after the "verified" v11.07 fix. Debugged this time by loading the live deployed page in an actual browser (Claude in Chrome tools) and checking `typeof Chart` directly in-page instead of just confirming the URL resolves. It was `undefined` even though the correct URL (confirmed 200, 51KB) was present in the DOM's script tag.
+
+Root cause: cdnjs's `chart.min.js` for 4.5.0 is published as an **ES module** (file literally starts with `import{...}`). Loading an ES module via a plain `<script src="...">` tag (no `type="module"`) fails silently in the browser — invalid top-level `import` outside a module context, so `Chart` never gets defined, no visible crash. My previous fix verified the URL *resolved* (200, real bytes) but never checked whether the script actually executed and produced a working global -- that was the gap.
+
+Fix: switched to `chart.umd.min.js` (also published for 4.5.0, confirmed via `api.cdnjs.com/libraries/Chart.js/4.5.0` file listing) -- the UMD build is specifically built for classic `<script>` tag / global-variable usage. Verified end-to-end this time: injected the exact script tag into a live page in the browser and confirmed `typeof Chart === 'function'` afterward, before editing the file.
+
+Final URL: `https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js`. Version bumped to v11.08 / SW v181.
+
+**Takeaway carried forward:** "the URL resolves" is not sufficient verification for a script dependency -- must confirm the script actually executes and defines what the code expects. Three attempts at this one bug is one too many; the browser-based end-to-end check (inject + verify the global exists) is now the standard for any future CDN dependency in this project.
