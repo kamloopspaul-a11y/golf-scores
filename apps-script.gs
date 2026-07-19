@@ -282,9 +282,9 @@ function doPost(e) {
 
     const ss = SpreadsheetApp.getActive();
 
-    // ── Gemini query branch ──────────────────────────────────────────────
+    // ── Claude query branch ──────────────────────────────────────────────
     if (p.action === 'query') {
-      return handleGeminiQuery_(ss, p.question);
+      return handleClaudeQuery_(ss, p.question);
     }
 
     // ── Update report email branch ────────────────────────────────────────
@@ -1291,7 +1291,7 @@ function removeTriggerByHandler_(handlerName) {
 
 // ── Gemini Query Handler ────────────────────────────────────────────────────
 
-function handleGeminiQuery_(ss, question) {
+function handleClaudeQuery_(ss, question) {
   if (!question) return json_({ ok: false, error: 'No question provided.' });
 
   const sh = ss.getSheetByName(ROUNDS);
@@ -1349,10 +1349,10 @@ function handleGeminiQuery_(ss, question) {
     context = lines.join('\n');
   }
 
-  const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  if (!apiKey) return json_({ ok: false, error: 'Gemini API key not configured in Script Properties.' });
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) return json_({ ok: false, error: 'Anthropic API key not configured in Script Properties.' });
 
-  const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
+  const endpoint = 'https://api.anthropic.com/v1/messages';
   const prompt   = [
     'You are a friendly golf statistics assistant. The player is Paul, a 67-year-old recreational golfer.',
     'Here is his round data:\n' + context,
@@ -1360,13 +1360,19 @@ function handleGeminiQuery_(ss, question) {
   ].join('\n');
 
   const payload = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.4, maxOutputTokens: 256 }
+    model:      'claude-haiku-4-5-20251001',
+    max_tokens: 256,
+    temperature: 0.4,
+    messages:   [{ role: 'user', content: prompt }]
   };
 
   const resp = UrlFetchApp.fetch(endpoint, {
     method:      'post',
     contentType: 'application/json',
+    headers: {
+      'x-api-key':         apiKey,
+      'anthropic-version': '2023-06-01'
+    },
     payload:     JSON.stringify(payload),
     muteHttpExceptions: true
   });
@@ -1375,16 +1381,13 @@ function handleGeminiQuery_(ss, question) {
   const body = JSON.parse(resp.getContentText());
 
   if (code !== 200) {
-    return json_({ ok: false, error: body.error ? body.error.message : 'Gemini error ' + code });
+    return json_({ ok: false, error: body.error ? body.error.message : 'Claude error ' + code });
   }
 
-  const answer = body.candidates &&
-                 body.candidates[0] &&
-                 body.candidates[0].content &&
-                 body.candidates[0].content.parts &&
-                 body.candidates[0].content.parts[0] &&
-                 body.candidates[0].content.parts[0].text
-                   ? body.candidates[0].content.parts[0].text.trim()
+  const answer = body.content &&
+                 body.content[0] &&
+                 body.content[0].text
+                   ? body.content[0].text.trim()
                    : 'No answer returned.';
 
   return json_({ ok: true, answer: answer });

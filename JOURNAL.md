@@ -2779,3 +2779,13 @@ Session focused on file/folder cleanup across Studio, not Golf development. Golf
 - Redeploy `apps-script.gs` via the Script Editor (paste → Deploy → Manage deployments → New version) — the `sendAnalyticsReport` branch and the Gemini `query` branch it now surfaces in the UI aren't live until redeployed
 - Confirm `GEMINI_API_KEY` is actually set in Script Properties — `handleGeminiQuery_()` fails gracefully with a clear error if not, but hasn't been confirmed present
 - `git push` from Paul's own terminal per standing workflow
+
+### 2026-07-19 (cont'd) — AI query backend swapped: Gemini → Claude Haiku 4.5
+
+Paul went to set `GEMINI_API_KEY` in Script Properties and hit Google AI Studio's requirement for a linked billing/payment method just to issue a key (even though usage itself would stay in the free tier) — he'd hit this same wall before and backed off. He already has a console.anthropic.com account, so decided to use that instead. His reasoning for staying on Haiku rather than a stronger model: no dispersion/yardage/launch-monitor data is collected, no coach involved, the stat set is 5–6 basic numbers, and the underlying golf-stats science is well-documented — nothing about this use case calls for deep reasoning.
+
+**Change:** `apps-script.gs` — `handleGeminiQuery_()` replaced with `handleClaudeQuery_()`. Same context-building logic (per-round Gross/Net/Putts/FIR/GIR/Penalties summary) untouched; only the API call swapped from Gemini's `generateContent` endpoint to Anthropic's `https://api.anthropic.com/v1/messages`, model `claude-haiku-4-5-20251001`, reading `ANTHROPIC_API_KEY` from Script Properties instead of `GEMINI_API_KEY`. `doPost`'s `action === 'query'` call site updated to match; no other branches touched. `analytics.html` query-box copy/comments updated to say Claude instead of Gemini — the front-end payload shape (`{action:'query', question, secret}`) didn't need to change at all, since the swap is entirely server-side.
+
+Syntax-checked (`node --check`) and HTML-tag-balance-checked after the edit — clean.
+
+**Still needed from Paul:** get an API key from console.anthropic.com, set it as `ANTHROPIC_API_KEY` in Apps Script Script Properties (the old `GEMINI_API_KEY` property can stay or be deleted, it's just unused now), then redeploy `apps-script.gs` as a New version.

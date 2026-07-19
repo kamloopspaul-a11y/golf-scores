@@ -13,7 +13,10 @@
     returns Rounds joined with Round_Meta, one object per hole. No backend
     schema change required for the dashboard.
   - AI query box wired to the existing (already-built, previously unused)
-    doPost({action:'query'}) → handleGeminiQuery_() branch in apps-script.gs.
+    doPost({action:'query'}) → handleClaudeQuery_() branch in apps-script.gs
+    (Claude Haiku 4.5, Anthropic API — swapped from an earlier Gemini
+    version 2026-07-19 after Google AI Studio required a billing method
+    just to issue a key).
     Dormant until the user submits a question — no passive/background calls.
   - Send Report requires one new additive doPost branch in apps-script.gs:
     action === 'sendAnalyticsReport'. See apps-script.gs changelog.
@@ -188,7 +191,7 @@
           <button class="btn-3d" id="btn-ask">ASK</button>
         </div>
         <div class="ana-query-answer" id="ana-query-answer" style="display:none;"></div>
-        <div class="ana-query-note">Uses Gemini — only runs when you ask a question, nothing happens in the background.</div>
+        <div class="ana-query-note">Uses Claude (Haiku) — only runs when you ask a question, nothing happens in the background.</div>
       </div>
 
     </div>
@@ -651,7 +654,7 @@ document.getElementById('btn-send-report').addEventListener('click', function() 
   });
 });
 
-// ── AI Query (Gemini) — dormant until submit, no passive/background calls ──
+// ── AI Query (Claude Haiku) — dormant until submit, no passive/background calls ──
 document.getElementById('btn-ask').addEventListener('click', function() {
   var input = document.getElementById('ana-query-input');
   var answerEl = document.getElementById('ana-query-answer');
