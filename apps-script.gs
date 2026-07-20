@@ -1333,17 +1333,25 @@ function handleClaudeQuery_(ss, question) {
       });
     });
 
+    const sumScore = holes => holes.reduce((s,h) => s + (Number(h.Score) || 0), 0);
+    const sumNet   = holes => holes.reduce((s,h) => s + (Number(h.Net_Score) || 0), 0);
+
     const lines = [];
     Object.values(byRound).forEach(r => {
-      const total  = r.holes.reduce((s,h) => s + (Number(h.Score) || 0), 0);
-      const net    = r.holes.reduce((s,h) => s + (Number(h.Net_Score) || 0), 0);
+      const front  = r.holes.slice(0, 9);
+      const back   = r.holes.slice(9, 18);
+      const total  = sumScore(r.holes);
+      const net    = sumNet(r.holes);
       const putts  = r.holes.reduce((s,h) => s + (Number(h.Putts) || 0), 0);
       const firs   = r.holes.filter(h => isTruthy_(h.FIR)).length;
       const girs   = r.holes.filter(h => isTruthy_(h.GIR)).length;
       const pens   = r.holes.reduce((s,h) => s + (Number(h.Penalties) || 0), 0);
+      const frontBackNote = back.length
+        ? ` (Front 9: Gross ${sumScore(front)}/Net ${sumNet(front)}, Back 9: Gross ${sumScore(back)}/Net ${sumNet(back)})`
+        : '';
       lines.push(
         `Round ${r.Date} at ${r.Course} (${r.Tees}): ` +
-        `Gross ${total}, Net ${net}, Putts ${putts}, FIR ${firs}/18, GIR ${girs}/18, Penalties ${pens}`
+        `Gross ${total}, Net ${net}, Putts ${putts}, FIR ${firs}/18, GIR ${girs}/18, Penalties ${pens}${frontBackNote}`
       );
     });
     context = lines.join('\n');
