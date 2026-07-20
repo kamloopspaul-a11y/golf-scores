@@ -115,6 +115,48 @@
 
   .ana-report-row { margin: 0 20px 24px; }
   .ana-report-row .btn-3d { width: 100%; }
+
+  /* ── v2.0 additions: hero tiles, stat/cost tables, focus areas, drawer ── */
+
+  .ana-hero-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin: 0 20px 18px;
+  }
+
+  .ana-stat-table, .ana-cost-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  .ana-stat-table th, .ana-cost-table th {
+    text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .4px; color: var(--text-muted); padding: 0 6px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ana-stat-table td, .ana-cost-table td {
+    padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top;
+  }
+  .ana-stat-table tr:last-child td, .ana-cost-table tr:last-child td { border-bottom: none; }
+  .ana-stat-name { font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+  .ana-stat-val  { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--green); white-space: nowrap; }
+  .ana-stat-note { color: var(--text-secondary); font-size: 12px; line-height: 1.35; }
+
+  .ana-focus-item { margin-bottom: 12px; font-size: 13px; line-height: 1.45; color: var(--text-primary); }
+  .ana-focus-item:last-child { margin-bottom: 0; }
+  .ana-focus-item strong { color: var(--green); }
+
+  .ana-loop-note { font-size: 12px; color: var(--text-secondary); margin-top: 10px; line-height: 1.4; }
+
+  .ana-more-toggle {
+    margin: 4px 20px 20px; width: calc(100% - 40px);
+    background: var(--skin-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px; font-size: 13px; font-weight: 600; color: var(--green);
+    cursor: pointer; text-align: center;
+  }
+  .ana-drawer { display: none; }
+  .ana-drawer.open { display: block; }
+
+  .ana-gate-note {
+    font-size: 12px; color: var(--text-muted); font-style: italic; padding: 4px 0;
+  }
 </style>
 </head>
 <body data-page-id="analytics">
@@ -150,34 +192,107 @@
 
     <div id="ana-content" style="display:none;">
 
-      <div class="ana-tile-grid" id="ana-tiles"></div>
+      <!-- ══ SNAPSHOT — always visible, meaningful with even a few rounds ══ -->
 
-      <div class="ana-section-hdr">Comparisons</div>
-      <div class="ana-card" id="card-front-back">
-        <div class="ana-card-title">Front 9 vs Back 9 (avg. to par)</div>
-        <div class="ana-cmp" id="cmp-front-back"></div>
-      </div>
-      <div class="ana-card" id="card-putts-split">
-        <div class="ana-card-title">Putts per Hole — GIR vs Missed GIR</div>
-        <div class="ana-cmp" id="cmp-putts-split"></div>
-      </div>
-      <div class="ana-card" id="card-pen-impact">
-        <div class="ana-card-title">Penalty Impact (avg. to par)</div>
-        <div class="ana-cmp" id="cmp-pen-impact"></div>
-      </div>
+      <div class="ana-section-hdr">Season Stats</div>
+      <div class="ana-hero-grid" id="ana-tiles"></div>
 
-      <div class="ana-section-hdr">Trends &amp; Distribution</div>
       <div class="ana-card" id="card-score-dist">
         <div class="ana-card-title">Score Distribution</div>
         <div class="ana-chart-wrap"><canvas id="chart-score-dist"></canvas></div>
       </div>
-      <div class="ana-card" id="card-last10">
-        <div class="ana-card-title">Last 10 Rounds — Gross Score</div>
-        <div class="ana-chart-wrap"><canvas id="chart-last10"></canvas></div>
+
+      <div class="ana-card" id="card-stat-avg">
+        <div class="ana-card-title">20 Round Average</div>
+        <table class="ana-stat-table">
+          <thead><tr><th>Stat</th><th>Avg</th><th>Reading</th></tr></thead>
+          <tbody id="stat-avg-body"></tbody>
+        </table>
       </div>
-      <div class="ana-card" id="card-monthly">
-        <div class="ana-card-title">Monthly Scoring Trend</div>
-        <div class="ana-chart-wrap"><canvas id="chart-monthly"></canvas></div>
+
+      <div class="ana-card" id="card-front-back">
+        <div class="ana-card-title">Front 9 vs Back 9 (avg. to par)</div>
+        <div class="ana-cmp" id="cmp-front-back"></div>
+      </div>
+
+      <button class="ana-more-toggle" id="btn-more-toggle">Show More Stats ▾</button>
+
+      <!-- ══ DRAWER — gated by sample size, unlocks as history grows ══ -->
+      <div class="ana-drawer" id="ana-drawer">
+
+        <div class="ana-section-hdr">Trends</div>
+        <div class="ana-card" id="card-last10">
+          <div class="ana-card-title">Last 10 Rounds — Gross Score</div>
+          <div class="ana-chart-wrap"><canvas id="chart-last10"></canvas></div>
+        </div>
+        <div class="ana-card" id="card-monthly">
+          <div class="ana-card-title">Monthly Scoring Trend</div>
+          <div class="ana-chart-wrap"><canvas id="chart-monthly"></canvas></div>
+        </div>
+        <div class="ana-card" id="card-best8">
+          <div class="ana-card-title">Best 8 of Last 20 (handicap estimate)</div>
+          <div id="best8-body"></div>
+        </div>
+        <div class="ana-card" id="card-dow">
+          <div class="ana-card-title">Score by Day of Week</div>
+          <div class="ana-chart-wrap"><canvas id="chart-dow"></canvas></div>
+        </div>
+
+        <div class="ana-section-hdr">Scoring Breakdown</div>
+        <div class="ana-card" id="card-hole-ratings">
+          <div class="ana-card-title">Hole Ratings (avg. strokes over par)</div>
+          <div class="ana-chart-wrap"><canvas id="chart-hole-ratings"></canvas></div>
+          <div class="ana-loop-note" id="hole-ratings-note"></div>
+        </div>
+        <div class="ana-card" id="card-birdies">
+          <div class="ana-card-title">Most Birdies</div>
+          <div class="ana-chart-wrap"><canvas id="chart-birdies"></canvas></div>
+        </div>
+        <div class="ana-card" id="card-pars">
+          <div class="ana-card-title">Most Pars</div>
+          <div class="ana-chart-wrap"><canvas id="chart-pars"></canvas></div>
+        </div>
+        <div class="ana-card" id="card-bogeys">
+          <div class="ana-card-title">Most Bogeys</div>
+          <div class="ana-chart-wrap"><canvas id="chart-bogeys"></canvas></div>
+        </div>
+        <div class="ana-card" id="card-bogeyplus">
+          <div class="ana-card-title">Most Bogey+</div>
+          <div class="ana-chart-wrap"><canvas id="chart-bogeyplus"></canvas></div>
+        </div>
+
+        <div class="ana-section-hdr">Short Game &amp; Putting</div>
+        <div class="ana-card" id="card-putts-split">
+          <div class="ana-card-title">Putts per Hole — GIR vs Missed GIR</div>
+          <div class="ana-tile-grid" id="tiles-putting" style="margin:0 0 12px;"></div>
+          <div class="ana-cmp" id="cmp-putts-split"></div>
+        </div>
+        <div class="ana-card" id="card-scramble">
+          <div class="ana-card-title">Scrambling %</div>
+          <div id="scramble-body"></div>
+        </div>
+        <div class="ana-card" id="card-pars-saved">
+          <div class="ana-card-title">Pars Saved (Up-and-Down) — Last 10 Rounds</div>
+          <div class="ana-chart-wrap"><canvas id="chart-pars-saved"></canvas></div>
+        </div>
+
+        <div class="ana-section-hdr">Cost &amp; Diagnostics</div>
+        <div class="ana-card" id="card-pen-impact">
+          <div class="ana-card-title">Penalty Impact (avg. to par)</div>
+          <div class="ana-cmp" id="cmp-pen-impact"></div>
+        </div>
+        <div class="ana-card" id="card-cost-breakdown">
+          <div class="ana-card-title">Cost Breakdown</div>
+          <table class="ana-cost-table">
+            <thead><tr><th>Category</th><th>Avg</th><th>What it means</th></tr></thead>
+            <tbody id="cost-breakdown-body"></tbody>
+          </table>
+        </div>
+        <div class="ana-card" id="card-focus-areas">
+          <div class="ana-card-title">Focus Areas</div>
+          <div id="focus-areas-body"></div>
+        </div>
+
       </div>
 
       <div class="ana-report-row">
@@ -409,6 +524,7 @@ function computeDashboard(holes) {
   var rounds = groupRounds(holes);
 
   var scoringAvg   = aggregateHoles(rounds, null, avg(function(r) { return r.toPar; }));
+  var avgGrossScore = aggregateHoles(rounds, null, avg(function(r) { return r.totalScore; }));
   var puttsPerRound = aggregateHoles(rounds, function(r) { return r.totalPutts != null; }, avg(function(r) { return r.totalPutts; }));
 
   var firStat = aggregateHoles(holes, null, countAndPct(function(h) { return h.fir; }));
@@ -465,16 +581,97 @@ function computeDashboard(holes) {
     return Math.round((vals.reduce(function(a, b) { return a + b; }, 0) / vals.length) * 10) / 10;
   });
 
+  // Best / worst round (gross score)
+  var bestRound  = rounds.length ? Math.min.apply(null, rounds.map(function(r) { return r.totalScore; })) : null;
+  var worstRound = rounds.length ? Math.max.apply(null, rounds.map(function(r) { return r.totalScore; })) : null;
+
+  // Per-round counting averages (raw counts, not %), for the 20-round-average table
+  var avgFIRCount = aggregateHoles(rounds, null, avg(function(r) {
+    return r.holes.filter(function(h) { return h.fir; }).length;
+  }));
+  var avgGIRCount = aggregateHoles(rounds, null, avg(function(r) {
+    return r.holes.filter(function(h) { return h.gir; }).length;
+  }));
+  var avgPenCount = aggregateHoles(rounds, null, avg(function(r) {
+    return r.holes.reduce(function(s, h) { return s + (h.pen || 0); }, 0);
+  }));
+  var avgUDCount = aggregateHoles(rounds, null, avg(function(r) {
+    return r.holes.filter(function(h) { return h.ud; }).length;
+  }));
+
+  // Score by Day of Week — only weekdays actually present in the range
+  var DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var byDow = {};
+  rounds.forEach(function(r) {
+    var d = new Date(r.date);
+    if (isNaN(d)) return;
+    var key = d.getDay();
+    if (!byDow[key]) byDow[key] = [];
+    byDow[key].push(r.totalScore);
+  });
+  var dowKeys = Object.keys(byDow).map(Number).sort(function(a, b) { return a - b; });
+  var dowLabels = dowKeys.map(function(k) { return DOW_NAMES[k]; });
+  var dowValues = dowKeys.map(function(k) {
+    var vals = byDow[k];
+    return Math.round((vals.reduce(function(a, b) { return a + b; }, 0) / vals.length) * 10) / 10;
+  });
+
+  // Best 8 of Last 20 — approximate handicap-basis average (gated to 20+ rounds by caller)
+  var last20 = rounds.slice(-20);
+  var best8Avg = null, best8Values = [];
+  if (last20.length >= 20) {
+    var sorted20 = last20.map(function(r) { return r.totalScore; }).sort(function(a, b) { return a - b; });
+    best8Values = sorted20.slice(0, 8);
+    best8Avg = best8Values.reduce(function(a, b) { return a + b; }, 0) / best8Values.length;
+  }
+
+  // Hole Ratings — 9-hole loop folded (hole 10 behaves like hole 1, etc.)
+  function loopHole(h) { return ((h.hole - 1) % 9) + 1; }
+  var loopLabels = ['H1','H2','H3','H4','H5','H6','H7','H8','H9'];
+  var holeRatingValues = [];
+  var birdieValues = [], parValues = [], bogeyValues = [], bogeyPlusValues = [];
+  for (var lh = 1; lh <= 9; lh++) {
+    (function(lh) {
+      var holesAtLoop = holes.filter(function(h) { return loopHole(h) === lh; });
+      var ratingStat = aggregateHoles(holesAtLoop, null, avg(function(h) { return h.toPar; }));
+      holeRatingValues.push(ratingStat == null ? 0 : Math.round(ratingStat * 100) / 100);
+      birdieValues.push(holesAtLoop.filter(function(h) { return h.toPar <= -1; }).length);
+      parValues.push(holesAtLoop.filter(function(h) { return h.toPar === 0; }).length);
+      bogeyValues.push(holesAtLoop.filter(function(h) { return h.toPar === 1; }).length);
+      bogeyPlusValues.push(holesAtLoop.filter(function(h) { return h.toPar >= 2; }).length);
+    })(lh);
+  }
+  var worstLoopIdx = holeRatingValues.indexOf(Math.max.apply(null, holeRatingValues));
+  var bestLoopIdx  = holeRatingValues.indexOf(Math.min.apply(null, holeRatingValues));
+
+  // Putting extras: 1-putt % and 3-putt count
+  var holesWithPutts = holes.filter(function(h) { return h.putts != null; });
+  var onePuttPct    = holesWithPutts.length ? holesWithPutts.filter(function(h) { return h.putts === 1; }).length / holesWithPutts.length : null;
+  var threePuttCount = holesWithPutts.filter(function(h) { return h.putts >= 3; }).length;
+
+  // Pars saved via up-and-down — last 10 rounds, most recent on the right
+  var parsSavedLabels = last10.map(function(r) { return shortDate(r.date); });
+  var parsSavedValues = last10.map(function(r) { return r.holes.filter(function(h) { return h.ud; }).length; });
+
   return {
     roundCount: rounds.length,
-    scoringAvg: scoringAvg, puttsPerRound: puttsPerRound,
+    scoringAvg: scoringAvg, avgGrossScore: avgGrossScore, puttsPerRound: puttsPerRound,
     firStat: firStat, girStat: girStat, scrambleStat: scrambleStat,
     frontAvg: frontAvg, backAvg: backAvg,
     puttsOnGir: puttsOnGir, puttsOffGir: puttsOffGir,
     penHoleAvg: penHoleAvg, cleanHoleAvg: cleanHoleAvg,
     distLabels: distLabels, distValues: distValues,
     last10Labels: last10Labels, last10Values: last10Values,
-    monthLabels: monthLabels, monthValues: monthValues
+    monthLabels: monthLabels, monthValues: monthValues,
+    bestRound: bestRound, worstRound: worstRound,
+    avgFIRCount: avgFIRCount, avgGIRCount: avgGIRCount, avgPenCount: avgPenCount, avgUDCount: avgUDCount,
+    dowLabels: dowLabels, dowValues: dowValues,
+    best8Avg: best8Avg, best8Values: best8Values, last20Count: last20.length,
+    loopLabels: loopLabels, holeRatingValues: holeRatingValues,
+    birdieValues: birdieValues, parValues: parValues, bogeyValues: bogeyValues, bogeyPlusValues: bogeyPlusValues,
+    worstLoopIdx: worstLoopIdx, bestLoopIdx: bestLoopIdx,
+    onePuttPct: onePuttPct, threePuttCount: threePuttCount,
+    parsSavedLabels: parsSavedLabels, parsSavedValues: parsSavedValues
   };
 }
 
@@ -492,19 +689,63 @@ function safeRun(label, fn) {
   }
 }
 
+// Minimum-sample gates for drawer reports — below these, show a quiet
+// placeholder instead of a misleading chart from too few data points.
+var GATES = {
+  best8: 20,      // needs a full last-20 window
+  dow: 5,
+  holeBreakdown: 10,
+  parsSaved: 3,
+  diagnostics: 5
+};
+
+function gateOrRun(cardId, bodyId, roundCount, minCount, unlockLabel, renderFn) {
+  var body = document.getElementById(bodyId);
+  if (!body) return;
+  if (roundCount < minCount) {
+    body.innerHTML = '<div class="ana-gate-note">Need ' + (minCount - roundCount) +
+      ' more round' + ((minCount - roundCount) === 1 ? '' : 's') + ' to unlock ' + unlockLabel + '.</div>';
+    return;
+  }
+  renderFn();
+}
+
 function renderDashboard(data) {
   LAST_DASHBOARD = data;
   var stats = PROFILE.recordStats;
 
-  safeRun('tiles', function() {
+  safeRun('hero tiles', function() {
     var tiles = [];
-    tiles.push({ value: data.roundCount, label: 'Rounds' });
-    tiles.push({ value: data.scoringAvg == null ? '—' : fmtVal(data.scoringAvg, ''), label: 'Avg to Par' });
-    if (stats && PROFILE.statPUTTS) tiles.push({ value: data.puttsPerRound == null ? '—' : Math.round(data.puttsPerRound * 10) / 10, label: 'Putts/Round' });
+    tiles.push({ value: data.avgGrossScore == null ? '—' : Math.round(data.avgGrossScore * 10) / 10, label: 'Scoring Avg' });
+    tiles.push({ value: data.bestRound  == null ? '—' : data.bestRound,  label: 'Best Round' });
+    tiles.push({ value: data.worstRound == null ? '—' : data.worstRound, label: 'Worst Round' });
+    if (stats && PROFILE.statPUTTS) tiles.push({ value: data.puttsPerRound == null ? '—' : Math.round(data.puttsPerRound * 10) / 10, label: 'Putts/Rnd' });
     if (stats && PROFILE.statFIR)   tiles.push({ value: pctText(data.firStat), label: 'FIR%' });
     if (stats && PROFILE.statGIR)   tiles.push({ value: pctText(data.girStat), label: 'GIR%' });
-    if (stats && PROFILE.statUD)    tiles.push({ value: pctText(data.scrambleStat), label: 'Scrambling%' });
     renderTileGrid(document.getElementById('ana-tiles'), tiles);
+  });
+
+  safeRun('20 round average table', function() {
+    var rows = [];
+    function statRow(label, valTxt, note) {
+      rows.push('<tr><td class="ana-stat-name">' + label + '</td><td class="ana-stat-val">' + valTxt +
+                 '</td><td class="ana-stat-note">' + note + '</td></tr>');
+    }
+    function reading(v, lowGood, hiBad, lowNote, midNote, hiNote) {
+      if (v == null) return '—';
+      return v <= lowGood ? lowNote : (v >= hiBad ? hiNote : midNote);
+    }
+    if (stats && PROFILE.statFIR) statRow('FIR', data.avgFIRCount == null ? '—' : (Math.round(data.avgFIRCount * 10) / 10) + '/18',
+      reading(data.avgFIRCount, 9, 6, 'Solid off the tee', 'Room to improve', 'Focus on tee ball'));
+    if (stats && PROFILE.statGIR) statRow('GIR', data.avgGIRCount == null ? '—' : (Math.round(data.avgGIRCount * 10) / 10) + '/18',
+      reading(data.avgGIRCount, 10, 6, 'Strong ball striking', 'Room to improve', 'Approach shots need work'));
+    if (stats && PROFILE.statPEN) statRow('PEN', data.avgPenCount == null ? '—' : Math.round(data.avgPenCount * 10) / 10,
+      reading(data.avgPenCount, 0.5, 2, 'Mostly clean rounds', 'A few costly holes', 'Penalties adding up fast'));
+    if (stats && PROFILE.statUD)  statRow('UD', data.avgUDCount == null ? '—' : Math.round(data.avgUDCount * 10) / 10,
+      (data.avgGIRCount == null ? '—' : (Math.round((18 - data.avgGIRCount) * 10) / 10) + ' opportunities to get up and down'));
+    if (stats && PROFILE.statPUTTS) statRow('Putts', data.puttsPerRound == null ? '—' : Math.round(data.puttsPerRound * 10) / 10,
+      reading(data.puttsPerRound, 34, 38, 'Excellent on the greens', 'Around benchmark', 'Above benchmark — practice opportunity'));
+    document.getElementById('stat-avg-body').innerHTML = rows.length ? rows.join('') : '<tr><td colspan="3" class="ana-empty">No stats enabled — turn on FIR/GIR/PEN/UD/Putts tracking in Settings.</td></tr>';
   });
 
   // Front9 vs Back9 -- always shown, doesn't depend on a stat toggle
@@ -519,10 +760,29 @@ function renderDashboard(data) {
     var puttsCard = document.getElementById('card-putts-split');
     if (stats && PROFILE.statPUTTS && PROFILE.statGIR) {
       puttsCard.style.display = '';
+      renderTileGrid(document.getElementById('tiles-putting'), [
+        { value: data.onePuttPct == null ? '—' : Math.round(data.onePuttPct * 100) + '%', label: '1-Putt %' },
+        { value: data.threePuttCount, label: '3-Putts' }
+      ]);
       renderComparisonBar(document.getElementById('cmp-putts-split'),
-        { value: data.puttsOnGir,  label: 'On GIR',      suffix: '', emptyText: 'No PUTTS/GIR logged yet.' },
-        { value: data.puttsOffGir, label: 'Missed GIR',  suffix: '' });
+        { value: data.puttsOnGir,  label: 'Putts / GIR Hole',      suffix: '', emptyText: 'No PUTTS/GIR logged yet.' },
+        { value: data.puttsOffGir, label: 'Putts / Non-GIR Hole',  suffix: '' });
     } else { puttsCard.style.display = 'none'; }
+  });
+
+  safeRun('scrambling %', function() {
+    var pct = pctText(data.scrambleStat);
+    document.getElementById('scramble-body').innerHTML =
+      '<div class="ana-tile" style="text-align:left;padding:0;"><div class="ana-tile-val" style="font-size:28px;">' + pct + '</div></div>' +
+      '<div class="ana-stat-note" style="margin-top:6px;">Of holes missed GIR, the share where par-or-better was still scored.</div>';
+  });
+
+  safeRun('pars saved chart', function() {
+    gateOrRun('card-pars-saved', 'chart-pars-saved', data.roundCount, GATES.parsSaved, 'Pars Saved', function() {
+      var wrap = document.getElementById('chart-pars-saved');
+      if (!wrap) return; // already replaced by a gate note in an earlier render
+      renderCategoryChart('chart-pars-saved', data.parsSavedLabels, data.parsSavedValues, { label: 'Up-and-downs', emptyText: 'No rounds logged yet.' });
+    });
   });
 
   safeRun('penalty impact comparison', function() {
@@ -530,14 +790,66 @@ function renderDashboard(data) {
     if (stats && PROFILE.statPEN) {
       penCard.style.display = '';
       renderComparisonBar(document.getElementById('cmp-pen-impact'),
-        { value: data.penHoleAvg,   label: 'Penalty Hole', suffix: '', emptyText: 'No PEN logged yet.' },
-        { value: data.cleanHoleAvg, label: 'Clean Hole',   suffix: '' });
+        { value: data.penHoleAvg,   label: 'Holes w/ PEN', suffix: '', emptyText: 'No PEN logged yet.' },
+        { value: data.cleanHoleAvg, label: 'Holes w/o PEN',   suffix: '' });
     } else { penCard.style.display = 'none'; }
+  });
+
+  safeRun('best 8 of last 20', function() {
+    gateOrRun('card-best8', 'best8-body', data.last20Count, GATES.best8, 'the handicap estimate', function() {
+      var estHandicap = Math.round((data.best8Avg - 72 - 3.5) * 10) / 10; // rough differential approximation, no course rating/slope integration yet
+      document.getElementById('best8-body').innerHTML =
+        '<div class="ana-stat-note">Average ' + (Math.round(data.best8Avg * 10) / 10) +
+        ' — your lowest 8 scores of your last 20 rounds.</div>' +
+        '<div class="ana-stat-val" style="font-size:16px;display:block;margin-top:8px;">Rough Estimate: ' +
+        (estHandicap > 0 ? '+' : '') + estHandicap + '</div>' +
+        '<div class="ana-gate-note" style="margin-top:4px;">Approximate only — not yet adjusted for each course\'s Rating/Slope.</div>';
+    });
+  });
+
+  safeRun('score by day of week', function() {
+    gateOrRun('card-dow', 'chart-dow', data.roundCount, GATES.dow, 'Score by Day of Week', function() {
+      var wrap = document.getElementById('chart-dow');
+      if (!wrap) return;
+      renderCategoryChart('chart-dow', data.dowLabels, data.dowValues, { label: 'Avg Score', beginAtZero: false, emptyText: 'No rounds logged yet.' });
+    });
+  });
+
+  safeRun('hole ratings + birdie/par/bogey charts', function() {
+    var unlockLabel = 'Hole Ratings';
+    gateOrRun('card-hole-ratings', 'chart-hole-ratings', data.roundCount, GATES.holeBreakdown, unlockLabel, function() {
+      var wrap = document.getElementById('chart-hole-ratings');
+      if (wrap) renderCategoryChart('chart-hole-ratings', data.loopLabels, data.holeRatingValues, { label: 'Avg to Par', emptyText: 'No rounds logged yet.' });
+      var noteEl = document.getElementById('hole-ratings-note');
+      if (noteEl) {
+        noteEl.textContent = 'Average strokes over par — the same 9 holes are played twice per round. ' +
+          data.loopLabels[data.worstLoopIdx] + ' plays hardest, ' + data.loopLabels[data.bestLoopIdx] + ' easiest.';
+      }
+    });
+    gateOrRun('card-birdies', 'chart-birdies', data.roundCount, GATES.holeBreakdown, 'Most Birdies', function() {
+      var wrap = document.getElementById('chart-birdies');
+      if (wrap) renderCategoryChart('chart-birdies', data.loopLabels, data.birdieValues, { label: 'Birdies', emptyText: 'No rounds logged yet.' });
+    });
+    gateOrRun('card-pars', 'chart-pars', data.roundCount, GATES.holeBreakdown, 'Most Pars', function() {
+      var wrap = document.getElementById('chart-pars');
+      if (wrap) renderCategoryChart('chart-pars', data.loopLabels, data.parValues, { label: 'Pars', emptyText: 'No rounds logged yet.' });
+    });
+    gateOrRun('card-bogeys', 'chart-bogeys', data.roundCount, GATES.holeBreakdown, 'Most Bogeys', function() {
+      var wrap = document.getElementById('chart-bogeys');
+      if (wrap) renderCategoryChart('chart-bogeys', data.loopLabels, data.bogeyValues, { label: 'Bogeys', emptyText: 'No rounds logged yet.' });
+    });
+    gateOrRun('card-bogeyplus', 'chart-bogeyplus', data.roundCount, GATES.holeBreakdown, 'Most Bogey+', function() {
+      var wrap = document.getElementById('chart-bogeyplus');
+      if (wrap) renderCategoryChart('chart-bogeyplus', data.loopLabels, data.bogeyPlusValues, { label: 'Bogey+', emptyText: 'No rounds logged yet.' });
+    });
   });
 
   // Charts last and defensively -- a Chart.js load/render problem should
   // never be able to block the tiles/comparison bars above it.
   safeRun('charts', function() { drawCharts(data); });
+
+  // Cost Breakdown / Focus Areas -- separate async fetch, non-blocking.
+  safeRun('diagnostics', function() { loadDiagnosticsData(); });
 }
 
 function pctText(stat) {
@@ -623,6 +935,127 @@ document.getElementById('ana-chart-toggle').addEventListener('click', function(e
 });
 
 document.getElementById('ana-range').addEventListener('change', applyFilterAndRender);
+
+// ── "Show More Stats" drawer toggle ─────────────────────────────────────────
+document.getElementById('btn-more-toggle').addEventListener('click', function() {
+  var drawer = document.getElementById('ana-drawer');
+  var open = drawer.classList.toggle('open');
+  this.textContent = open ? 'Show Fewer Stats ▴' : 'Show More Stats ▾';
+});
+
+// ── Cost Breakdown / Focus Areas — separate cached fetch against the
+//    Diagnostics tab (action=diagnostics), reusing the exact HI-scaled
+//    BSCost/SGCost/PuttingCost math already used by the email report
+//    instead of re-deriving it here. Non-blocking: failures here never
+//    affect the rest of the dashboard (see safeRun wrapper at call site). ──
+var DIAG_CACHE_KEY = 'analyticsDiagCache';
+var ALL_DIAG = [];
+
+function filterDiagByRange(rows, rangeKey) {
+  if (rangeKey === 'all') return rows;
+  if (rangeKey === 'last10') return rows.slice(-10);
+  var now = new Date();
+  if (rangeKey === 'month') {
+    return rows.filter(function(r) {
+      var d = new Date(r.Date);
+      return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+  }
+  if (rangeKey === 'season') {
+    return rows.filter(function(r) { var d = new Date(r.Date); return !isNaN(d) && d.getFullYear() === now.getFullYear(); });
+  }
+  return rows;
+}
+
+function renderCostBreakdownAndFocus(rows) {
+  var body = document.getElementById('cost-breakdown-body');
+  var focus = document.getElementById('focus-areas-body');
+  if (!body || !focus) return;
+
+  if (rows.length < GATES.diagnostics) {
+    body.innerHTML = '<tr><td colspan="3" class="ana-gate-note">Need ' + (GATES.diagnostics - rows.length) +
+      ' more round' + ((GATES.diagnostics - rows.length) === 1 ? '' : 's') + ' to unlock Cost Breakdown.</td></tr>';
+    focus.innerHTML = '<div class="ana-gate-note">Need ' + (GATES.diagnostics - rows.length) +
+      ' more round' + ((GATES.diagnostics - rows.length) === 1 ? '' : 's') + ' to unlock Focus Areas.</div>';
+    return;
+  }
+
+  function meanOf(field) {
+    var vals = rows.map(function(r) { return Number(r[field]); }).filter(function(v) { return isFinite(v); });
+    if (!vals.length) return null;
+    return vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
+  }
+
+  var bsCost   = meanOf('BSCost');
+  var sgCost   = meanOf('SGCost');
+  var puttCost = meanOf('PuttingCost');
+  var pen      = meanOf('Penalties');
+  var tsl      = meanOf('TotalStrokesGained');
+
+  function f1(v) { return v == null ? '—' : (Math.round(v * 10) / 10); }
+
+  body.innerHTML =
+    '<tr><td class="ana-stat-name">Ball Striking</td><td class="ana-stat-val">' + f1(bsCost) +
+      '</td><td class="ana-stat-note">Missed greens × rate — each green missed costs roughly half a stroke.</td></tr>' +
+    '<tr><td class="ana-stat-name">Short Game</td><td class="ana-stat-val">' + f1(sgCost) +
+      '</td><td class="ana-stat-note">Missed up-and-down attempts, scaled by your handicap bracket.</td></tr>' +
+    '<tr><td class="ana-stat-name">Putting</td><td class="ana-stat-val">' + f1(puttCost) +
+      '</td><td class="ana-stat-note">Putts above your handicap-scaled putt benchmark.</td></tr>' +
+    '<tr><td class="ana-stat-name">Penalties</td><td class="ana-stat-val">' + f1(pen) +
+      '</td><td class="ana-stat-note">Direct stroke cost — each penalty adds one stroke.</td></tr>' +
+    '<tr><td class="ana-stat-name">Strokes Over Par</td><td class="ana-stat-val">' + f1(tsl) +
+      '</td><td class="ana-stat-note">Estimated total strokes lost per round vs. the diagnostic model.</td></tr>';
+
+  var areas = [
+    { name: 'Ball Striking', cost: bsCost || 0, tip: 'Work on mid-iron approach shots — more GIR cascades into lower scores.' },
+    { name: 'Short Game',    cost: sgCost || 0, tip: 'Chips and pitches from 10–30 yards. Vary the lie.' },
+    { name: 'Putting',       cost: Math.max(0, puttCost || 0), tip: 'Lag speed control from 20–40 ft is the highest-return putting skill.' },
+    { name: 'Penalties',     cost: pen || 0,    tip: 'Play to the fat part of the fairway when trouble is tight.' }
+  ].sort(function(a, b) { return b.cost - a.cost; });
+
+  var focusHtml = '';
+  var d = LAST_DASHBOARD;
+  if (d && d.loopLabels && d.holeRatingValues && d.holeRatingValues.length && d.roundCount >= GATES.holeBreakdown) {
+    focusHtml += '<div class="ana-focus-item"><strong>' + d.loopLabels[d.worstLoopIdx] + '</strong> is your biggest leak — worst Hole Rating (' +
+      (d.holeRatingValues[d.worstLoopIdx] > 0 ? '+' : '') + d.holeRatingValues[d.worstLoopIdx] +
+      ' over par per loop). Play it safe off the tee here.</div>';
+  }
+  areas.slice(0, 2).forEach(function(a) {
+    focusHtml += '<div class="ana-focus-item"><strong>' + a.name + '</strong> — ' + a.tip + '</div>';
+  });
+  focus.innerHTML = focusHtml || '<div class="ana-empty">Not enough data yet.</div>';
+}
+
+function loadDiagnosticsData(force) {
+  if (!SHEETS_URL) return;
+
+  if (!force) {
+    try {
+      var cached = JSON.parse(localStorage.getItem(DIAG_CACHE_KEY) || 'null');
+      if (cached && (Date.now() - cached.ts) < CACHE_TTL_MS) {
+        ALL_DIAG = cached.rows || [];
+        renderCostBreakdownAndFocus(filterDiagByRange(ALL_DIAG, document.getElementById('ana-range').value));
+        return;
+      }
+    } catch (e) { /* fall through to network fetch */ }
+  }
+
+  var url = SHEETS_URL + (SHEETS_URL.indexOf('?') === -1 ? '?' : '&') + 'action=diagnostics' +
+            (WEBHOOK_SECRET ? '&secret=' + encodeURIComponent(WEBHOOK_SECRET) : '');
+
+  fetch(url).then(function(res) { return res.json(); }).then(function(json) {
+    if (!json.ok) throw new Error(json.error || 'Unknown error');
+    ALL_DIAG = json.rounds || [];
+    localStorage.setItem(DIAG_CACHE_KEY, JSON.stringify({ ts: Date.now(), rows: ALL_DIAG }));
+    renderCostBreakdownAndFocus(filterDiagByRange(ALL_DIAG, document.getElementById('ana-range').value));
+  }).catch(function(err) {
+    console.error('[analytics] diagnostics fetch failed:', err);
+    var body = document.getElementById('cost-breakdown-body');
+    var focus = document.getElementById('focus-areas-body');
+    if (body) body.innerHTML = '<tr><td colspan="3" class="ana-empty">Could not load diagnostics data.</td></tr>';
+    if (focus) focus.innerHTML = '<div class="ana-empty">Could not load diagnostics data.</div>';
+  });
+}
 
 // ── Send Report (plain data snapshot — no AI) ───────────────────────────────
 document.getElementById('btn-send-report').addEventListener('click', function() {
