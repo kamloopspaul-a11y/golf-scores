@@ -212,7 +212,7 @@ function doGet(e) {
 
   // ── Secret token check (mirrors doPost) ────────────────────────────────
   const secret = PropertiesService.getScriptProperties().getProperty('WEBHOOK_SECRET');
-  if ((action === 'data' || action === 'report') && secret && e.parameter.secret !== secret) {
+  if ((action === 'data' || action === 'report' || action === 'diagnostics') && secret && e.parameter.secret !== secret) {
     return json_({ ok: false, error: 'Unauthorised.' });
   }
 
@@ -249,6 +249,31 @@ function doGet(e) {
           Net_Score:    row[11],
           Round_Type:   meta.Round_Type || ''
         };
+      });
+      return json_({ ok: true, rounds: rounds });
+    } catch (err) {
+      return json_({ ok: false, error: String(err) });
+    }
+  }
+
+  if (action === 'diagnostics') {
+    // Read-only export of the already-computed Diagnostics tab (one row per
+    // round). Lets the Analytics page reuse the exact same HI-scaled
+    // BSCost/SGCost/PuttingCost/TotalStrokesGained figures as the email
+    // report, instead of re-deriving the formulas client-side and risking
+    // the two going out of sync.
+    try {
+      const ss = SpreadsheetApp.getActive();
+      const sh = ss.getSheetByName(DIAGNOSTICS);
+      if (!sh || sh.getLastRow() < 2) {
+        return json_({ ok: true, rounds: [] });
+      }
+      const headers = diagnosticsHeader_();
+      const raw     = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
+      const rounds  = raw.map(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i]; });
+        return obj;
       });
       return json_({ ok: true, rounds: rounds });
     } catch (err) {
