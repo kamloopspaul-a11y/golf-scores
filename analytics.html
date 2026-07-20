@@ -14,7 +14,7 @@
     schema change required for the dashboard.
   - AI query box wired to the existing (already-built, previously unused)
     doPost({action:'query'}) → handleClaudeQuery_() branch in apps-script.gs
-    (Claude Haiku 4.5, Anthropic API — swapped from an earlier Gemini
+    (Claude Sonnet 5, Anthropic API — swapped from an earlier Gemini
     version 2026-07-19 after Google AI Studio required a billing method
     just to issue a key).
     Dormant until the user submits a question — no passive/background calls.
@@ -191,7 +191,7 @@
           <button class="btn-3d" id="btn-ask">ASK</button>
         </div>
         <div class="ana-query-answer" id="ana-query-answer" style="display:none;"></div>
-        <div class="ana-query-note">Uses Claude (Haiku) — only runs when you ask a question, nothing happens in the background.</div>
+        <div class="ana-query-note">Uses Claude (Sonnet) — only runs when you ask a question, nothing happens in the background.</div>
       </div>
 
     </div>
@@ -671,7 +671,7 @@ document.getElementById('btn-send-report').addEventListener('click', function() 
   });
 });
 
-// ── AI Query (Claude Haiku) — dormant until submit, no passive/background calls ──
+// ── AI Query (Claude Sonnet) — dormant until submit, no passive/background calls ──
 var aiUnavailableThisLoad = false; // resets naturally on every reload, unlike sessionStorage
 
 document.getElementById('btn-ask').addEventListener('click', function() {
