@@ -1383,11 +1383,8 @@ function handleClaudeQuery_(ss, question) {
     return json_({ ok: false, error: body.error ? body.error.message : 'Claude error ' + code });
   }
 
-  const answer = body.content &&
-                 body.content[0] &&
-                 body.content[0].text
-                   ? body.content[0].text.trim()
-                   : 'No answer returned.';
+  const textBlock = (body.content || []).find(function(b) { return b.type === 'text' && b.text; });
+  const answer = textBlock ? textBlock.text.trim() : 'No answer returned.';
 
   return json_({ ok: true, answer: answer });
 }
