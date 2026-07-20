@@ -12,12 +12,10 @@
   - Data source: existing Apps Script doGet(?action=data) endpoint — already
     returns Rounds joined with Round_Meta, one object per hole. No backend
     schema change required for the dashboard.
-  - AI query box wired to the existing (already-built, previously unused)
-    doPost({action:'query'}) → handleClaudeQuery_() branch in apps-script.gs
-    (Claude Sonnet 5, Anthropic API — swapped from an earlier Gemini
-    version 2026-07-19 after Google AI Studio required a billing method
-    just to issue a key).
-    Dormant until the user submits a question — no passive/background calls.
+  - AI query box removed 2026-07-20 — never answered hole-level/streak
+    questions reliably even after model swaps and context fixes (see
+    JOURNAL.md). Dashboard reports below now cover the questions that
+    matter; doPost no longer has a 'query' action.
   - Send Report requires one new additive doPost branch in apps-script.gs:
     action === 'sendAnalyticsReport'. See apps-script.gs changelog.
 -->
@@ -97,21 +95,6 @@
   .ana-cmp-lbl { font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center; }
 
   .ana-chart-wrap { position: relative; height: 190px; }
-
-  .ana-query-box textarea {
-    width: 100%; min-height: 52px; border: 1px solid var(--border); border-radius: 8px;
-    padding: 9px 10px; font-size: 14px; font-family: inherit; resize: vertical;
-    color: var(--text-primary); background: var(--skin-bg);
-  }
-  .ana-query-row { display: flex; gap: 8px; margin-top: 8px; }
-  .ana-query-row .btn-3d { flex: 0 0 auto; padding: 9px 18px; font-size: 12px; }
-  .ana-query-answer {
-    background: var(--green-pale); border-radius: 8px; padding: 10px 12px;
-    font-size: 13px; margin-top: 10px; color: var(--text-primary); line-height: 1.4;
-  }
-  .ana-query-note {
-    font-size: 11px; color: var(--text-muted); margin-top: 6px;
-  }
 
   .ana-report-row { margin: 0 20px 24px; }
   .ana-report-row .btn-3d { width: 100%; }
@@ -297,16 +280,6 @@
 
       <div class="ana-report-row">
         <button class="btn-3d" id="btn-send-report">EMAIL THIS VIEW</button>
-      </div>
-
-      <div class="ana-section-hdr">Ask a Question</div>
-      <div class="ana-card ana-query-box">
-        <textarea id="ana-query-input" placeholder="e.g. What's my putting average on Wednesdays?"></textarea>
-        <div class="ana-query-row">
-          <button class="btn-3d" id="btn-ask">ASK</button>
-        </div>
-        <div class="ana-query-answer" id="ana-query-answer" style="display:none;"></div>
-        <div class="ana-query-note">Uses Claude (Sonnet) — only runs when you ask a question, nothing happens in the background.</div>
       </div>
 
     </div>
@@ -1101,48 +1074,6 @@ document.getElementById('btn-send-report').addEventListener('click', function() 
   }).catch(function() {
     btn.textContent = 'FAILED';
     setTimeout(function() { btn.textContent = prevText; btn.disabled = false; }, 2200);
-  });
-});
-
-// ── AI Query (Claude Sonnet) — dormant until submit, no passive/background calls ──
-var aiUnavailableThisLoad = false; // resets naturally on every reload, unlike sessionStorage
-
-document.getElementById('btn-ask').addEventListener('click', function() {
-  var input = document.getElementById('ana-query-input');
-  var answerEl = document.getElementById('ana-query-answer');
-  var question = input.value.trim();
-  if (!question) return;
-
-  if (aiUnavailableThisLoad) {
-    answerEl.style.display = '';
-    answerEl.textContent = 'AI query unavailable this session (last attempt failed). Reload the page to try again.';
-    return;
-  }
-
-  var btn = this;
-  btn.disabled = true;
-  var prevText = btn.textContent;
-  btn.textContent = 'ASKING…';
-  answerEl.style.display = 'none';
-
-  fetch(SHEETS_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'query', question: question, secret: WEBHOOK_SECRET })
-  }).then(function(res) { return res.json(); }).then(function(json) {
-    answerEl.style.display = '';
-    if (json.ok) {
-      answerEl.textContent = json.answer;
-    } else {
-      answerEl.textContent = 'AI unavailable — ' + (json.error || 'unknown error');
-      aiUnavailableThisLoad = true;
-    }
-  }).catch(function(err) {
-    answerEl.style.display = '';
-    answerEl.textContent = 'AI unavailable — ' + err.message;
-    aiUnavailableThisLoad = true;
-  }).finally(function() {
-    btn.textContent = prevText;
-    btn.disabled = false;
   });
 });
 

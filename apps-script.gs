@@ -307,11 +307,6 @@ function doPost(e) {
 
     const ss = SpreadsheetApp.getActive();
 
-    // ── Claude query branch ──────────────────────────────────────────────
-    if (p.action === 'query') {
-      return handleClaudeQuery_(ss, p.question);
-    }
-
     // ── Update report email branch ────────────────────────────────────────
     // Keeps REPORT_EMAIL (Script Properties) in sync with whatever the user
     // saves in onboarding.html / settings.html. Never written to Sheets, never
@@ -1312,114 +1307,6 @@ function removeTriggerByHandler_(handlerName) {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === handlerName)
     .forEach(t => ScriptApp.deleteTrigger(t));
-}
-
-// ── Gemini Query Handler ────────────────────────────────────────────────────
-
-function handleClaudeQuery_(ss, question) {
-  if (!question) return json_({ ok: false, error: 'No question provided.' });
-
-  const sh = ss.getSheetByName(ROUNDS);
-  let context = 'No rounds have been recorded yet.';
-
-  if (sh && sh.getLastRow() >= 2) {
-    const headers  = roundsHeader_();
-    const raw      = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
-    const metaSh2  = ss.getSheetByName(ROUND_META);
-    const metaMap2 = buildMetaMap_(metaSh2);
-
-    const byRound = {};
-    raw.forEach(row => {
-      const id   = String(row[0]);
-      const meta = metaMap2[id] || {};
-      if (!byRound[id]) {
-        byRound[id] = {
-          Round_ID: id,
-          Date:     meta.Date   || '',
-          Course:   meta.Course || '',
-          Tees:     meta.Tees   || '',
-          holes:    []
-        };
-      }
-      // Fact-table indices: [1]Hole [2]Par [3]SI [4]Score [5]Putts
-      //                     [6]FIR [7]GIR [8]UD [9]X_UD [10]Penalties [11]Net_Score
-      byRound[id].holes.push({
-        Hole:         row[1],
-        Par:          row[2],
-        Stroke_Index: row[3],
-        Score:        row[4],
-        Putts:        row[5],
-        FIR:          row[6],
-        GIR:          row[7],
-        UD:           row[8],
-        X_UD:         row[9],
-        Penalties:    row[10],
-        Net_Score:    row[11]
-      });
-    });
-
-    const sumScore = holes => holes.reduce((s,h) => s + (Number(h.Score) || 0), 0);
-    const sumNet   = holes => holes.reduce((s,h) => s + (Number(h.Net_Score) || 0), 0);
-
-    const lines = [];
-    Object.values(byRound).forEach(r => {
-      const front  = r.holes.slice(0, 9);
-      const back   = r.holes.slice(9, 18);
-      const total  = sumScore(r.holes);
-      const net    = sumNet(r.holes);
-      const putts  = r.holes.reduce((s,h) => s + (Number(h.Putts) || 0), 0);
-      const firs   = r.holes.filter(h => isTruthy_(h.FIR)).length;
-      const girs   = r.holes.filter(h => isTruthy_(h.GIR)).length;
-      const pens   = r.holes.reduce((s,h) => s + (Number(h.Penalties) || 0), 0);
-      const frontBackNote = back.length
-        ? ` (Front 9: Gross ${sumScore(front)}/Net ${sumNet(front)}, Back 9: Gross ${sumScore(back)}/Net ${sumNet(back)})`
-        : '';
-      lines.push(
-        `Round ${r.Date} at ${r.Course} (${r.Tees}): ` +
-        `Gross ${total}, Net ${net}, Putts ${putts}, FIR ${firs}/18, GIR ${girs}/18, Penalties ${pens}${frontBackNote}`
-      );
-    });
-    context = lines.join('\n');
-  }
-
-  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
-  if (!apiKey) return json_({ ok: false, error: 'Anthropic API key not configured in Script Properties.' });
-
-  const endpoint = 'https://api.anthropic.com/v1/messages';
-  const prompt   = [
-    'You are a friendly golf statistics assistant. The player is Paul, a 67-year-old recreational golfer.',
-    'Here is his round data:\n' + context,
-    '\nAnswer this question in plain, conversational English (2–4 sentences max): ' + question
-  ].join('\n');
-
-  const payload = {
-    model:      'claude-sonnet-5',
-    max_tokens: 256,
-    messages:   [{ role: 'user', content: prompt }]
-  };
-
-  const resp = UrlFetchApp.fetch(endpoint, {
-    method:      'post',
-    contentType: 'application/json',
-    headers: {
-      'x-api-key':         apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    payload:     JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-
-  const code = resp.getResponseCode();
-  const body = JSON.parse(resp.getContentText());
-
-  if (code !== 200) {
-    return json_({ ok: false, error: body.error ? body.error.message : 'Claude error ' + code });
-  }
-
-  const textBlock = (body.content || []).find(function(b) { return b.type === 'text' && b.text; });
-  const answer = textBlock ? textBlock.text.trim() : 'No answer returned.';
-
-  return json_({ ok: true, answer: answer });
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
