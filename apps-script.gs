@@ -1362,7 +1362,6 @@ function handleClaudeQuery_(ss, question) {
   const payload = {
     model:      'claude-sonnet-5',
     max_tokens: 256,
-    temperature: 0.4,
     messages:   [{ role: 'user', content: prompt }]
   };
 
