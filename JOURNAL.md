@@ -2877,3 +2877,5 @@ Paul's request: the 9- and 18-hole scorecards marked birdies, eagles and bogeys 
 - **3 or more over par:** double square with background `#c1a875`.
 
 `renderScoreCell()` in index.html; `.double-bogey-cell` (rewritten from plain text colour) and new `.triple-bogey-cell` in shared.css. Rendered a test row (par, birdie, bogey, double, triple, quad) in a headless browser before pushing — marks drew as intended. Not yet seen on Paul's phone.
+
+**Verified 2026-09-29:** Paul confirmed the new marks on the live app.
