@@ -572,7 +572,15 @@ body {
   color: #1a1a1a; font-size: 13px; font-weight: 500;
   vertical-align: middle; line-height: 1;
 }
-.double-bogey-cell { color: var(--text-primary); }
+.double-bogey-cell {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px;
+  border: 1.5px solid #333; border-radius: 0;
+  outline: 1.5px solid #333; outline-offset: 1.5px;
+  color: #1a1a1a; font-size: 12px; font-weight: 500;
+  vertical-align: middle; line-height: 1; margin: 3px;
+}
+.triple-bogey-cell { background: #c1a875; }
 .hio-cell { font-weight: 700; color: var(--text-primary); }
 
 /* ── ZONE 10 — NAV BUTTONS ───────────────────────────────────────────────── */

@@ -1195,7 +1195,8 @@ function renderScoreCell(score,par){
   if(diff<=-2)  return `<td><span class="eagle-cell">${score}</span></td>`;
   if(diff===-1) return `<td><span class="birdie-cell">${score}</span></td>`;
   if(diff===1)  return `<td><span class="bogey-cell">${score}</span></td>`;
-  if(diff>=2)   return `<td class="double-bogey-cell">${score}</td>`;
+  if(diff>=3)   return `<td><span class="double-bogey-cell triple-bogey-cell">${score}</span></td>`;
+  if(diff===2)  return `<td><span class="double-bogey-cell">${score}</span></td>`;
   return `<td>${score}</td>`;
 }
 function goBackToRound(){

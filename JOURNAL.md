@@ -2825,3 +2825,55 @@ Fix: switched to `chart.umd.min.js` (also published for 4.5.0, confirmed via `ap
 Final URL: `https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js`. Version bumped to v11.08 / SW v181.
 
 **Takeaway carried forward:** "the URL resolves" is not sufficient verification for a script dependency -- must confirm the script actually executes and defines what the code expects. Three attempts at this one bug is one too many; the browser-based end-to-end check (inject + verify the global exists) is now the standard for any future CDN dependency in this project.
+
+### 2026-07-20 — AI query model swapped: Haiku 4.5 → Sonnet 5
+
+Paul's initial testing of the Analytics AI query box found Haiku's answers unsatisfactory. Swapped `handleClaudeQuery_()` in `apps-script.gs` from `claude-haiku-4-5-20251001` to `claude-sonnet-5`, and updated the matching UI labels/comments in `analytics.html` (header note, query-box hint, code comment). Committed and pushed to GitHub as `dad2a45`. Paul confirmed he pasted the updated code into the Apps Script editor and deployed a new version — live on the `/exec` endpoint now.
+
+`max_tokens: 256` was left unchanged; flagged to Paul as worth watching since Sonnet may want more room than Haiku for the same 2–4 sentence answer style, but not changed pre-emptively.
+
+### 2026-07-20 (cont'd) — 'temperature' deprecated error, deployed
+
+Live error after the Sonnet 5 swap: "'temperature' is deprecated for this model." Removed the `temperature: 0.4` line from the `handleClaudeQuery_()` payload rather than guessing a replacement value — Sonnet 5 doesn't accept a custom value here, so responses now run at whatever the API's default is (likely 1.0, more varied than the prior 0.4). Committed `0d5821e`, pushed to GitHub, Paul pasted and deployed. Confirmed live.
+
+### 2026-07-20 (cont'd) — Full Analytics report build: 17 reports, snapshot + gated drawer
+
+Paul supplied a full spec (17 reports) plus reference screenshots from another project for layout style, then asked to regroup and reconsider whether the AI query box was worth continued investment given how easily it goes wrong — decided a deterministic dashboard beats prompting for anything that repeats.
+
+Design: two-tier structure. Snapshot (always visible, meaningful with a handful of rounds): Season Stats hero (scoring avg, best/worst round, putts/rnd, FIR%, GIR%), Score Distribution, 20 Round Average table (stat/avg/reading), Front 9 vs Back 9. Drawer (behind a "Show More Stats" toggle, each report individually gated by minimum round count rather than all-or-nothing): Trends (Last 10, Monthly Trend, Best 8 of Last 20 @20-round gate, Score by Day of Week @5-round gate), Scoring Breakdown (Hole Ratings + Most Birdies/Pars/Bogeys/Bogey+, all @10-round gate, folding the 9-hole loop via `((hole-1)%9)+1`), Short Game & Putting (Putts GIR-split + 1-putt%/3-putt tiles, Scrambling %, Pars Saved via up-and-down last 10 rounds), Cost & Diagnostics (Penalty Impact, Cost Breakdown, Focus Areas).
+
+Key finding during scoping: almost everything was computable client-side from the existing `action=data` hole rows using the already-built aggregator pattern (flatten once, reduce many ways) — no backend change needed for 14 of 17 reports. Cost Breakdown and Focus Areas were the exception: the email report already computes HI-scaled BSCost/SGCost/PuttingCost/TotalStrokesGained server-side (handicap-bracket multipliers, not fixed constants), sitting in the Diagnostics tab. Rather than re-deriving that formula in JS and risking drift from the email report, added one new backend endpoint — `doGet(action=diagnostics)` — that exports the Diagnostics tab read-only, mirroring the existing `action=data` pattern exactly.
+
+Verification: rather than trusting the code by inspection, ran the actual extracted `computeDashboard()` in Node against a hand-built synthetic dataset to check front/back split, hole-loop folding, birdie counting, and day-of-week grouping arithmetic by hand — all matched. Then pushed to GitHub and loaded the **live deployed page** in a real browser (Claude in Chrome), hit a stale-cache gotcha (GitHub Pages CDN served the pre-push version until a cache-busting query param forced a fresh fetch — worth remembering for future live-verification steps), then injected a 25-round synthetic dataset directly into the page's own in-memory functions (`ALL_HOLES`, `applyFilterAndRender()`) to render all 17 reports for real, confirmed zero console errors, and separately confirmed the gating math ("Need N more rounds to unlock X") with a 3-round dataset. Cost Breakdown/Focus Areas were confirmed to fail gracefully (no SHEETS_URL in this test browser) and confirmed to render correctly with synthetic diagnostics rows fed directly into `renderCostBreakdownAndFocus()`.
+
+Commits: `6bdfe0c` (backend `action=diagnostics`), `e6051a6` (all 17 reports, snapshot + drawer).
+
+**Still needed from Paul:** redeploy `apps-script.gs` (paste → Deploy → Manage deployments → New version) so `action=diagnostics` goes live — until then, Cost Breakdown and Focus Areas will show "Could not load diagnostics data" on the real app (everything else works immediately since analytics.html is static and already live via GitHub Pages).
+
+**Best 8 of Last 20 caveat, flagged in the UI itself:** the "Rough Estimate" handicap figure uses a generic `(avg - 75.5)` approximation, not Paul's actual per-course Rating/Slope (course/slope data exists per the project's Course/Slope Rating feature but isn't wired into this calculation yet) — labelled as approximate in the card, not a hidden gap.
+
+### 2026-07-20 (cont'd) — Diagnostics endpoint deployed
+
+Paul pasted and deployed the updated apps-script.gs. action=diagnostics is live — Cost Breakdown and Focus Areas should now populate on the real Analytics page instead of showing the "could not load" fallback. Not yet independently re-verified against his live data in this session; worth confirming next time Analytics comes up.
+
+### 2026-07-20 (cont'd) — AI query console removed
+
+Paul's final call after a full day of failures (wrong model params, thinking-block parsing, missing front/back split, and finally a flatly wrong "I don't have hole-by-hole data" when the app plainly does): remove the console rather than keep patching it. Root cause was always architectural — context sent to Claude was a hand-built round-level summary, never the actual hole data, so hole-specific/streak questions were structurally unanswerable no matter the model. The proper fix (raw hole-by-hole context + precomputed streak facts, mirroring how Cost Breakdown/Focus Areas already reuse precomputed Diagnostics values) was scoped but judged not worth building for a feature this unreliable, especially with the new 17-report dashboard already covering nearly everything the console was meant to answer.
+
+Removed entirely: `handleClaudeQuery_()` and the `doPost` `action==='query'` branch in apps-script.gs, and the Ask a Question card/CSS/JS in analytics.html. `action=diagnostics` (Cost Breakdown/Focus Areas) untouched. Commit `95f465c`, pushed. Paul still needs to redeploy apps-script.gs for the backend removal to take effect live (analytics.html front-end removal is already live via GitHub Pages).
+
+### 2026-07-20 (closing) — Session end
+
+Console removal deployed and confirmed live. Session closed.
+
+**Summary of today:** AI query model swapped Haiku→Sonnet 5 (temperature param + thinking-block parsing bugs fixed along the way), full 17-report Analytics dashboard built (Snapshot tier + gated "More Stats" drawer, new action=diagnostics endpoint), then the AI query console removed entirely after repeated reliability failures traced to context-building architecture, not model choice. Net effect: Analytics went from one unreliable chat box to a comprehensive deterministic dashboard.
+
+**Open for next session:** SI data entry (10 courses, carried over from prior sessions), untouched working-tree files (.DS_Store, BUSINESS.md, assets/app_style_performance.png, gemini-code snippet, files/) still no decision made.
+
+### 2026-09-29 — Scorecard marks for double bogey and worse (v11.09 / SW v182)
+
+Paul's request: the 9- and 18-hole scorecards marked birdies, eagles and bogeys but left double bogeys plain. Now:
+- **2 over par:** double square (square border plus an outline ring, same size and spacing as the eagle's double circle).
+- **3 or more over par:** double square with background `#c1a875`.
+
+`renderScoreCell()` in index.html; `.double-bogey-cell` (rewritten from plain text colour) and new `.triple-bogey-cell` in shared.css. Rendered a test row (par, birdie, bogey, double, triple, quad) in a headless browser before pushing — marks drew as intended. Not yet seen on Paul's phone.
