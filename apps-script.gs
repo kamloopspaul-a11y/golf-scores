@@ -228,7 +228,12 @@ function doGet(e) {
       const metaMap  = buildMetaMap_(metaSh);
       const headers  = roundsHeader_();
       const raw      = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
-      const rounds   = raw.map(row => {
+      // Skip unpaired 9-hole rounds (Pending) — same rule as the Diagnostics rebuild
+      const isPending = id => {
+        const p = (metaMap[id] || {}).Pending;
+        return p === true || p === 'TRUE';
+      };
+      const rounds   = raw.filter(row => !isPending(String(row[0]))).map(row => {
         const id   = String(row[0]);
         const meta = metaMap[id] || {};
         return {

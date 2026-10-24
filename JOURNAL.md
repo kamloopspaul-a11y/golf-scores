@@ -2879,3 +2879,11 @@ Paul's request: the 9- and 18-hole scorecards marked birdies, eagles and bogeys 
 `renderScoreCell()` in index.html; `.double-bogey-cell` (rewritten from plain text colour) and new `.triple-bogey-cell` in shared.css. Rendered a test row (par, birdie, bogey, double, triple, quad) in a headless browser before pushing — marks drew as intended. Not yet seen on Paul's phone.
 
 **Verified 2026-09-29:** Paul confirmed the new marks on the live app.
+
+### 2026-10-24 — Analytics: hide unpaired 9-hole rounds
+
+Paul found a 27 Sept 9-hole round (Round_Meta row 53, Pending = TRUE, its second 9 never posted) skewing Analytics. Email reports and the Diagnostics rebuild already skip Pending rounds; the `doGet action=data` feed that Analytics reads did not. Added a Pending filter to that feed in `apps-script.gs`. Nothing deleted from Sheets. Server-side only — needs paste + redeploy; no APP_VERSION/CACHE_NAME bump.
+
+Same session: GitHub token moved out of the remote URL into `.git/credentials` (store helper, local config); Dave references removed from PROJECT.md (separate app).
+
+**Deployed 2026-10-24 by Claude via the browser pane.** Live deployment `AKfycbwTQja…` (the app's URL) is now Version 31 (24 Oct 16:00); editor code matched repo HEAD before the edit and matches the working copy after. Side effect: misreading a half-loaded Manage deployments dialog ("No active deployment"), Claude "reactivated" archived Golf Analytics v7, which created a second active deployment `AKfycbw3KOvc…` on Version 30 (old code). Nothing points to it. Left for Paul to decide whether to archive.
