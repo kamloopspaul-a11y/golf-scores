@@ -5,6 +5,8 @@
 > If `~/Documents/Studio` is not already mounted in this session, call `request_cowork_directory` with that path now. Root contains `CLAUDE.md` (session protocol) and `TODO_LIST.md` (cadence cues including the Golf resume prompt). Credentials now live separately at `~/.studio-claude` (relocated out of iCloud-synced Documents — see `Studio/CLAUDE.md` Step 4); mount that too if the task needs API keys. Without root you are missing cadence checks and cross-project context.
 >
 > Once root is confirmed mounted, read `Projects/Golf/PROJECT.md` to restore Golf session context.
+>
+> **Claude Code cloud sessions are the exception.** A cloud session cannot mount Studio — `request_cowork_directory` does not exist there. Do not try and do not tell Paul it is missing. Read `PROJECT.md` and `JOURNAL.md` from this repo instead (they are the same project files) and carry on. For anything that needs Studio itself (`TODO_LIST.md`, cadence checks, credentials), Paul uses the desktop app or `claude remote-control` on his Mac.
 
 ---
 

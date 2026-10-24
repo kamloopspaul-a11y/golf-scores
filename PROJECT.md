@@ -4,7 +4,7 @@
 
 ## Status
 
-**Version:** v11.09 / SW v182 — pushed Sept 29, 2026 (scorecard marks for double bogey and worse). The live values are `APP_VERSION` in `shared.js` and `CACHE_NAME` in `sw.js`; release history is in JOURNAL.md.
+**Version:** v11.10 / SW v183 — pushed Oct 24, 2026 (docs only: CLAUDE.md note for Claude Code cloud sessions). The live values are `APP_VERSION` in `shared.js` and `CACHE_NAME` in `sw.js`; release history is in JOURNAL.md.
 **Known Issues:** None open. Decided-not-built: per-category stat-tracking toggles (BS/SG/Putts/etc. fine-tuning or full stat-tracking opt-out) — Paul concluded this would be guesswork without distance/dispersion data and players can self-determine which toggles to set; a short in-app write-up explaining toggle guidance was floated as a possible future idea, not committed.
 **Live URL:** https://kamloopspaul-a11y.github.io/golf-scores
 **GitHub repo:** https://github.com/kamloopspaul-a11y/golf-scores
