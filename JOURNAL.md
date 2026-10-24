@@ -2887,3 +2887,5 @@ Paul found a 27 Sept 9-hole round (Round_Meta row 53, Pending = TRUE, its second
 Same session: GitHub token moved out of the remote URL into `.git/credentials` (store helper, local config); Dave references removed from PROJECT.md (separate app).
 
 **Deployed 2026-10-24 by Claude via the browser pane.** Live deployment `AKfycbwTQja…` (the app's URL) is now Version 31 (24 Oct 16:00); editor code matched repo HEAD before the edit and matches the working copy after. Side effect: misreading a half-loaded Manage deployments dialog ("No active deployment"), Claude "reactivated" archived Golf Analytics v7, which created a second active deployment `AKfycbw3KOvc…` on Version 30 (old code). Nothing points to it. Left for Paul to decide whether to archive.
+
+**Same session:** restored `manifest.json` from commit 15d022f (deleted 2026-05-04) so the phone picks up the new icons. v11.11 / SW v184.
