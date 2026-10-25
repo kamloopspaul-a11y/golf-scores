@@ -1230,8 +1230,10 @@ function renderSuccessSummary(){
     if(s.xud===1) xud++;
     if(typeof s.putts === "number") puttsTotal += s.putts;
   });
-  // Read HI + teeKey from profile (set during onboarding)
-  const HI = (PROFILE.hi !== null && PROFILE.hi !== undefined) ? PROFILE.hi : 20;
+  // HI: latest calculated Handicap Index on this device (shared.js), falling
+  // back to the onboarding value until 20 rounds exist.
+  const calcHI = getLatestHandicap();
+  const HI = calcHI != null ? calcHI : ((PROFILE.hi !== null && PROFILE.hi !== undefined) ? PROFILE.hi : 20);
   const teeKey = PROFILE.homeTees || "mensBlue";
   const ch = courseHandicap(HI, teeKey);
   const net = total - ch;
@@ -1243,7 +1245,7 @@ function renderSuccessSummary(){
   set("ss-xud",    xud);
   set("ss-putts",  puttsTotal);
   set("ss-actual", total);
-  set("ss-hi",     "HI: " + HI);
+  set("ss-hi",     "HI: " + (calcHI != null ? HI.toFixed(1) : HI));
   const gpiOn = localStorage.getItem("statGPI") === "true";
   const gpiEl  = document.getElementById("ss-gpi");
   const netEl  = document.getElementById("ss-net");
@@ -1270,6 +1272,28 @@ function clearSuccessSummary(){
     if (gpiEl2) gpiEl2.style.display = "none";
     if (netEl2) { netEl2.textContent = "Net: –"; netEl2.style.display = ""; }
   }
+}
+// After a round posts, recalculate the Handicap Index including it and update
+// the Save Round line. Best-effort: on any failure the line keeps its value.
+function refreshHandicapAfterPost(){
+  if (!SHEETS_URL) return;
+  const url = SHEETS_URL + (SHEETS_URL.indexOf('?') === -1 ? '?' : '&') + 'action=data' +
+              (WEBHOOK_SECRET ? '&secret=' + encodeURIComponent(WEBHOOK_SECRET) : '');
+  fetch(url).then(r => r.json()).then(j => {
+    if (!j || !j.ok) return;
+    const hcp = computeHandicapIndex(hcpRoundsFromDataRows(j.rounds), hcpCourseCache(), hcpGender(PROFILE));
+    if (hcp.value == null) return;
+    saveLatestHandicap(hcp.value);
+    // Update only the HI/Net line, and only while this round's Save Round
+    // screen is still showing (state may already be reset for a new round).
+    const scr = document.getElementById('screen-success');
+    const total = Number((document.getElementById('ss-actual') || {}).textContent);
+    if (!scr || !scr.classList.contains('active') || !isFinite(total)) return;
+    const hiEl = document.getElementById('ss-hi');
+    if (hiEl) hiEl.textContent = 'HI: ' + hcp.value.toFixed(1);
+    const netEl = document.getElementById('ss-net');
+    if (netEl && netEl.style.display !== 'none') netEl.textContent = 'Net: ' + (total - courseHandicap(hcp.value, PROFILE.homeTees || 'mensBlue'));
+  }).catch(() => {});
 }
 // ── SUBMIT ────────────────────────────────────────────
 async function submitRound(){
@@ -1332,6 +1356,7 @@ async function submitRound(){
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'Server rejected post');
     if(title) title.textContent='Posted';
+    refreshHandicapAfterPost();
     const mhTitle = document.getElementById('success-masthead-title');
     if(mhTitle) mhTitle.textContent='Save Round';
   } catch(e){

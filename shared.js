@@ -69,7 +69,7 @@ function applyPageMeta(id) {
   if (crumbEl && !crumbEl.dataset.noMeta) crumbEl.textContent = t;
 }
 
-const APP_VERSION = 'v11.18';
+const APP_VERSION = 'v11.19';
 
 
 // ── SHOW PANEL ─────────────────────────────────────────────────────────────────
@@ -248,6 +248,132 @@ function syncReportEmail_(email, sheetsUrl, webhookSecret) {
     .then(function(res) { return res.json(); })
     .then(function(data) { console.log('[syncReportEmail_] Response:', data); })
     .catch(function(err) { console.log('[syncReportEmail_] Error:', err); });
+}
+
+// ── HANDICAP INDEX (World Handicap System) ────────────────────────────────────
+// Single source of truth — used by analytics.html (hero + counting card) and
+// index.html (Save Round line). Ported from A Bit of Bogey's hand-verified
+// engine, adapted so each round uses its own course's rating/slope/par.
+//   Differential = (Adjusted Gross − Course Rating) × 113 / Slope, 1 decimal
+//   Adjusted Gross: net double bogey per hole (par + 2 + strokes received);
+//     the first 3 rounds ever played cap at par + 5 (no index in effect yet).
+//   Index = mean of the lowest 8 of the most recent 20 differentials,
+//     rounded to 0.1, capped at 54.0. No 0.96 multiplier (pre-2020 system).
+// Locked rule (CLAUDE.md): no index until 20 rounds — returns value null.
+var HCP_ROUNDS_NEEDED = 20;
+var HCP_STORE_KEY = 'handicapIndex';
+
+function hcpNorm(t) { return String(t || '').toLowerCase().replace(/mount/g, 'mt').replace(/[^a-z0-9]/g, ''); }
+
+// Older Rounds rows have the Hole cell date-formatted, so Sheets sends an ISO
+// date instead of 1..18. Convert back to the Sheets day number (1899-12-30 = 0).
+function golfHoleNumber(v) {
+  if (typeof v === 'number') return v;
+  var n = Number(v);
+  if (isFinite(n)) return n;
+  var t = Date.parse(v);
+  return isNaN(t) ? NaN : Math.round((t - Date.UTC(1899, 11, 30)) / 86400000);
+}
+
+// action=data rows (one per hole) → rounds, oldest first.
+function hcpRoundsFromDataRows(rows) {
+  var byId = {};
+  (rows || []).forEach(function(r) {
+    var score = Number(r.Score), par = Number(r.Par);
+    if (!r.Round_ID || !isFinite(score) || !isFinite(par)) return;
+    var id = String(r.Round_ID);
+    if (!byId[id]) byId[id] = { roundId: id, date: r.Date || '', course: r.Course || '', tees: r.Tees || '', holes: [] };
+    var si = Number(r.Stroke_Index);
+    byId[id].holes.push({ hole: golfHoleNumber(r.Hole), par: par, score: score, si: (isFinite(si) && si > 0) ? si : null });
+  });
+  return Object.keys(byId).map(function(k) { return byId[k]; })
+    .sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+}
+
+function hcpTeeRatings(courseName, teeName, cache, gender) {
+  var club = Object.keys(cache || {}).map(function(k) { return cache[k]; }).find(function(c) {
+    return c && c.club_name && hcpNorm(c.club_name) === hcpNorm(courseName);
+  });
+  if (!club || !club.tees) return null;
+  var pick = function(list) {
+    return (list || []).find(function(t) { return hcpNorm(t.tee_name) === hcpNorm(teeName); });
+  };
+  var tee = pick(club.tees[gender]) || pick(club.tees.male);
+  if (!tee || !tee.course_rating || !tee.slope_rating) return null;
+  return { cr: Number(tee.course_rating), sr: Number(tee.slope_rating) };
+}
+
+function hcpStrokesReceived(ch, si) {
+  if (ch === null || si === null) return 0;
+  if (ch >= 0) return Math.floor(ch / 18) + (si <= ch % 18 ? 1 : 0);
+  var give = -ch;
+  return -(Math.floor(give / 18) + (si > 18 - (give % 18) ? 1 : 0));
+}
+
+// rounds: oldest first, each { date, course, tees (or holes[0].tees), holes:[{par, score, si}] }
+// Returns { value, used:[{date, course, gross, adjusted, diff}], have, need }.
+function computeHandicapIndex(rounds, cache, gender) {
+  var full = (rounds || []).filter(function(r) { return r.holes && r.holes.length === 18; });
+  var offset = full.length - Math.min(full.length, HCP_ROUNDS_NEEDED);
+  var win = full.slice(offset).map(function(r, k) {
+    var tees = r.tees || (r.holes[0] && r.holes[0].tees) || '';
+    return {
+      r: r,
+      rating: hcpTeeRatings(r.course, tees, cache, gender),
+      par: r.holes.reduce(function(s, h) { return s + (h.par || 0); }, 0),
+      gross: r.holes.reduce(function(s, h) { return s + (h.score || 0); }, 0),
+      established: (offset + k) >= 3
+    };
+  }).filter(function(w) { return w.rating; });
+
+  if (win.length < HCP_ROUNDS_NEEDED) return { value: null, used: [], have: win.length, need: HCP_ROUNDS_NEEDED };
+
+  function differentials(index) {
+    return win.map(function(w) {
+      var cr = w.rating.cr, sr = w.rating.sr;
+      var ch = index === null ? null : Math.round(index * (sr / 113) + (cr - w.par));
+      var ags = w.r.holes.reduce(function(sum, h) {
+        if (!w.established) return sum + Math.min(h.score, h.par + 5);
+        if (ch === null || h.si == null) return sum + h.score;
+        var strokes = hcpStrokesReceived(ch, h.si);
+        var cap = (ch > 54 && strokes >= 4) ? h.par + 5 : h.par + 2 + strokes;
+        return sum + Math.min(h.score, cap);
+      }, 0);
+      return { date: w.r.date, course: w.r.course, gross: w.gross, adjusted: ags,
+               diff: Math.round(((ags - cr) * 113 / sr) * 10) / 10 };
+    });
+  }
+  function indexFrom(list) {
+    var low = list.slice().sort(function(a, b) { return a.diff - b.diff; }).slice(0, 8);
+    var mean = low.reduce(function(s, d) { return s + d.diff; }, 0) / low.length;
+    return { value: Math.min(54, Math.round(mean * 10) / 10), used: low };
+  }
+  // Differentials need a Course Handicap, which needs the index: seed with
+  // unadjusted scores, then iterate to a fixed point (2-3 passes in practice).
+  var res = indexFrom(differentials(null));
+  for (var i = 0; i < 6; i++) {
+    var next = indexFrom(differentials(res.value));
+    if (next.value === res.value) { res = next; break; }
+    res = next;
+  }
+  res.have = win.length; res.need = HCP_ROUNDS_NEEDED;
+  return res;
+}
+
+function hcpCourseCache() {
+  try { return JSON.parse(localStorage.getItem('courseCache') || '{}') || {}; } catch (e) { return {}; }
+}
+function hcpGender(profile) { return /^ladies/.test((profile && profile.homeTees) || '') ? 'female' : 'male'; }
+
+// Last calculated index, remembered on this device so the Save Round line
+// has a real figure even when posting offline.
+function saveLatestHandicap(value) {
+  if (value == null) return;
+  try { localStorage.setItem(HCP_STORE_KEY, JSON.stringify({ value: value, at: new Date().toISOString() })); } catch (e) {}
+}
+function getLatestHandicap() {
+  try { var v = JSON.parse(localStorage.getItem(HCP_STORE_KEY) || 'null'); return v && typeof v.value === 'number' ? v.value : null; }
+  catch (e) { return null; }
 }
 
 // ── AUTO-INIT ──────────────────────────────────────────────────────────────────
