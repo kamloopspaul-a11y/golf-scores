@@ -310,6 +310,17 @@ function isTruthy(v) { return v === true || v === 1 || v === '1' || v === 'TRUE'
 // Flattens raw ?action=data rows (already one object per hole) into a
 // normalised shape. This is the single flatten step — every stat below reads
 // from this same array via aggregateHoles(), never a bespoke parse.
+// Older Rounds rows have the Hole cell formatted as a date, so Sheets sends
+// e.g. "1899-12-31T08:12:28.000Z" instead of 1. Convert back to the Sheets
+// day number (1899-12-30 = 0); a plain number passes straight through.
+function holeNumber(v) {
+  if (typeof v === 'number') return v;
+  var n = Number(v);
+  if (isFinite(n)) return n;
+  var t = Date.parse(v);
+  return isNaN(t) ? NaN : Math.round((t - Date.UTC(1899, 11, 30)) / 86400000);
+}
+
 function flattenHoleRecords(rows) {
   return (rows || []).map(function(r) {
     var score = Number(r.Score);
@@ -319,7 +330,7 @@ function flattenHoleRecords(rows) {
       date:      r.Date || '',
       course:    r.Course || '',
       tees:      r.Tees || '',
-      hole:      Number(r.Hole),
+      hole:      holeNumber(r.Hole),
       par:       par,
       score:     score,
       toPar:     (isFinite(score) && isFinite(par)) ? (score - par) : null,
@@ -496,13 +507,24 @@ var LAST_DASHBOARD = null;
 function computeDashboard(holes) {
   var rounds = groupRounds(holes);
 
+  // Rounds posted before stat tracking have no putts and no FIR/GIR/UD marks.
+  // Counting them would read as "missed everything", so stat figures use
+  // tracked rounds only. Scoring figures still use every round.
+  var trackedIds = {};
+  rounds.forEach(function(r) {
+    if (r.holes.some(function(h) { return h.putts != null || h.fir || h.gir || h.ud || h.xUd; })) trackedIds[r.roundId] = true;
+  });
+  var statHoles  = holes.filter(function(h) { return trackedIds[h.roundId]; });
+  var statRounds = rounds.filter(function(r) { return trackedIds[r.roundId]; });
+
   var scoringAvg   = aggregateHoles(rounds, null, avg(function(r) { return r.toPar; }));
   var avgGrossScore = aggregateHoles(rounds, null, avg(function(r) { return r.totalScore; }));
   var puttsPerRound = aggregateHoles(rounds, function(r) { return r.totalPutts != null; }, avg(function(r) { return r.totalPutts; }));
 
-  var firStat = aggregateHoles(holes, null, countAndPct(function(h) { return h.fir; }));
-  var girStat = aggregateHoles(holes, null, countAndPct(function(h) { return h.gir; }));
-  var scrambleStat = aggregateHoles(holes, function(h) { return h.gir === false; }, countAndPct(function(h) { return h.ud; }));
+  // FIR: par 4s and 5s only — a par 3 has no fairway to hit
+  var firStat = aggregateHoles(statHoles, function(h) { return h.par >= 4; }, countAndPct(function(h) { return h.fir; }));
+  var girStat = aggregateHoles(statHoles, null, countAndPct(function(h) { return h.gir; }));
+  var scrambleStat = aggregateHoles(statHoles, function(h) { return h.gir === false; }, countAndPct(function(h) { return h.ud; }));
 
   var frontAvg = aggregateHoles(holes, function(h) { return h.hole <= 9; }, avg(function(h) { return h.toPar; }));
   var backAvg  = aggregateHoles(holes, function(h) { return h.hole > 9; }, avg(function(h) { return h.toPar; }));
@@ -510,8 +532,8 @@ function computeDashboard(holes) {
   var puttsOnGir    = aggregateHoles(holes, function(h) { return h.gir === true && h.putts != null; }, avg(function(h) { return h.putts; }));
   var puttsOffGir   = aggregateHoles(holes, function(h) { return h.gir === false && h.putts != null; }, avg(function(h) { return h.putts; }));
 
-  var penHoleAvg    = aggregateHoles(holes, function(h) { return h.pen > 0; }, avg(function(h) { return h.toPar; }));
-  var cleanHoleAvg  = aggregateHoles(holes, function(h) { return h.pen === 0; }, avg(function(h) { return h.toPar; }));
+  var penHoleAvg    = aggregateHoles(statHoles, function(h) { return h.pen > 0; }, avg(function(h) { return h.toPar; }));
+  var cleanHoleAvg  = aggregateHoles(statHoles, function(h) { return h.pen === 0; }, avg(function(h) { return h.toPar; }));
 
   // Score distribution buckets
   function bucket(h) {
@@ -559,16 +581,16 @@ function computeDashboard(holes) {
   var worstRound = rounds.length ? Math.max.apply(null, rounds.map(function(r) { return r.totalScore; })) : null;
 
   // Per-round counting averages (raw counts, not %), for the 20-round-average table
-  var avgFIRCount = aggregateHoles(rounds, null, avg(function(r) {
+  var avgFIRCount = aggregateHoles(statRounds, null, avg(function(r) {
     return r.holes.filter(function(h) { return h.fir; }).length;
-  }));
-  var avgGIRCount = aggregateHoles(rounds, null, avg(function(r) {
+  }));  // count of FIRs per round (par 3s never carry FIR, so no filter needed)
+  var avgGIRCount = aggregateHoles(statRounds, null, avg(function(r) {
     return r.holes.filter(function(h) { return h.gir; }).length;
   }));
-  var avgPenCount = aggregateHoles(rounds, null, avg(function(r) {
+  var avgPenCount = aggregateHoles(statRounds, null, avg(function(r) {
     return r.holes.reduce(function(s, h) { return s + (h.pen || 0); }, 0);
   }));
-  var avgUDCount = aggregateHoles(rounds, null, avg(function(r) {
+  var avgUDCount = aggregateHoles(statRounds, null, avg(function(r) {
     return r.holes.filter(function(h) { return h.ud; }).length;
   }));
 
@@ -941,6 +963,9 @@ function filterDiagByRange(rows, rangeKey) {
 }
 
 function renderCostBreakdownAndFocus(rows) {
+  // Untracked rounds have Putts = 0 in Diagnostics and produce meaningless
+  // costs (PuttingCost -34 etc.) — leave them out.
+  rows = rows.filter(function(r) { return Number(r.Putts) > 0; });
   var body = document.getElementById('cost-breakdown-body');
   var focus = document.getElementById('focus-areas-body');
   if (!body || !focus) return;
