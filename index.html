@@ -1721,9 +1721,12 @@ function renderSetupTeePicker() {
 
   // Pre-select the player's home tee on their home course until they tap a chip
   if (chosenIdx === -1 && !_setupTeeChoice) {
-    var homeName   = (PROFILE.homeCourse || 'mt. paul').toLowerCase();
+    // Loose name match: "Mt Paul", "Mt. Paul", "Mount Paul" all count as the same course
+    var norm       = function(t) { return String(t || '').toLowerCase().replace(/mount/g, 'mt').replace(/[^a-z0-9]/g, ''); };
+    var homeName   = norm(PROFILE.homeCourse || 'mt. paul');
+    var clubName   = norm(course.club_name);
     var homeColour = (PROFILE.homeTees || 'mensBlue').replace(/^(mens|ladies)/, '').toLowerCase();
-    if ((course.club_name || '').toLowerCase().includes(homeName)) {
+    if (homeName && clubName && (clubName.includes(homeName) || homeName.includes(clubName))) {
       allTees.forEach(function(e, i) {
         if (chosenIdx === -1 && (e.teeBox.tee_name || '').toLowerCase() === homeColour) chosenIdx = i;
       });
