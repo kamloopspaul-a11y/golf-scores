@@ -169,10 +169,10 @@
 
     <div class="ana-filter-bar">
       <select class="ana-select" id="ana-range">
-        <option value="month">This Month</option>
-        <option value="season" selected>This Season</option>
         <option value="last10">Last 10 Rounds</option>
-        <option value="all">All Time</option>
+        <option value="last20" selected>Last 20 Rounds</option>
+        <option value="month">This Month</option>
+        <option value="season">This Season</option>
       </select>
       <div class="ana-toggle-group" id="ana-chart-toggle">
         <button class="ana-toggle-btn active" data-type="bar">Bar</button>
@@ -195,7 +195,7 @@
       </div>
 
       <div class="ana-card" id="card-stat-avg">
-        <div class="ana-card-title">20 Round Average</div>
+        <div class="ana-card-title">Average per Round</div>
         <table class="ana-stat-table">
           <thead><tr><th>Stat</th><th>Avg</th><th>Reading</th></tr></thead>
           <tbody id="stat-avg-body"></tbody>
@@ -402,10 +402,10 @@ function groupRounds(holes) {
 //    total, so a missed update can never silently desync a displayed number.
 function filterHolesByRange(holesAll, rangeKey) {
   if (rangeKey === 'all') return holesAll;
-  if (rangeKey === 'last10') {
+  if (rangeKey === 'last10' || rangeKey === 'last20') {
     var rounds = groupRounds(holesAll);
     var ids = {};
-    rounds.slice(-10).forEach(function(r) { ids[r.roundId] = true; });
+    rounds.slice(rangeKey === 'last10' ? -10 : -20).forEach(function(r) { ids[r.roundId] = true; });
     return holesAll.filter(function(h) { return ids[h.roundId]; });
   }
   var now = new Date();
@@ -981,7 +981,15 @@ var DIAG_CACHE_KEY = 'analyticsDiagCache';
 var ALL_DIAG = [];
 
 function filterDiagByRange(rows, rangeKey) {
+  // Use exactly the rounds the rest of the page is showing, matched by Round_ID —
+  // Diagnostics rows aren't guaranteed to be in date order.
+  if (ALL_HOLES.length) {
+    var ids = {};
+    filterHolesByRange(ALL_HOLES, rangeKey).forEach(function(h) { ids[h.roundId] = true; });
+    return rows.filter(function(r) { return ids[String(r.Round_ID)]; });
+  }
   if (rangeKey === 'all') return rows;
+  if (rangeKey === 'last20') return rows.slice(-20);
   if (rangeKey === 'last10') return rows.slice(-10);
   var now = new Date();
   if (rangeKey === 'month') {
