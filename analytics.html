@@ -735,7 +735,7 @@ function renderDashboard(data) {
     var netAvg = nets.length ? nets.reduce(function(a, b) { return a + b; }, 0) / nets.length : null;
     var cell = function(v, lbl) { return '<div class="ss-cell"><span class="ss-val">' + v + '</span><span class="ss-lbl">' + lbl + '</span></div>'; };
     document.getElementById('ana-tiles').innerHTML =
-      cell(data.avgFIRCount == null ? '–' : one(data.avgFIRCount) + '<span class="ss-den">/' + Math.round(data.avgFairwayHoles) + '</span>', 'FIR') + cell(one(data.avgGIRCount), 'GIR') + cell(one(data.avgPenCount), 'PEN') +
+      cell(one(data.avgFIRCount), 'FIR') + cell(one(data.avgGIRCount), 'GIR') + cell(one(data.avgPenCount), 'PEN') +
       '<div class="ss-cell ss-hero"><span class="ss-val">' + (data.avgGrossScore == null ? '–' : data.avgGrossScore.toFixed(1)) + '</span>' +
         '<span class="ss-fine">HI: ' + (hi == null ? '–' : hi.toFixed(1)) + ' | Net: ' + (netAvg == null ? '–' : netAvg.toFixed(1)) + '</span></div>' +
       cell(one(data.avgUDCount), 'UD') + cell(one(data.avgXUDCount), 'X-UD') + cell(one(data.puttsPerRound), 'PUTTS');
