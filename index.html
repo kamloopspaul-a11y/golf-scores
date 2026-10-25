@@ -1221,7 +1221,10 @@ function renderSuccessSummary(){
   const ch = courseHandicap(HI, teeKey);
   const net = total - ch;
   const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
-  set("ss-fir",    fir);
+  // FIR out of the fairway holes played (par 4s and 5s) — par 3s have no fairway
+  const fairways = (state.holeList || []).filter(h => h && h.par >= 4).length;
+  const firEl = document.getElementById("ss-fir");
+  if (firEl) firEl.innerHTML = fir + '<span class="ss-den">/' + fairways + '</span>';
   set("ss-gir",    gir);
   set("ss-pen",    pen);
   set("ss-ud",     ud);

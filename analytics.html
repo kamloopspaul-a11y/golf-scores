@@ -589,6 +589,10 @@ function computeDashboard(holes) {
   var avgPenCount = aggregateHoles(statRounds, null, avg(function(r) {
     return r.holes.reduce(function(s, h) { return s + (h.pen || 0); }, 0);
   }));
+  // Fairway holes per round (par 4s and 5s) — the FIR denominator: 10 at Mt. Paul, ~14 elsewhere
+  var avgFairwayHoles = aggregateHoles(statRounds, null, avg(function(r) {
+    return r.holes.filter(function(h) { return h.par >= 4; }).length;
+  }));
   var avgXUDCount = aggregateHoles(statRounds, null, avg(function(r) {
     return r.holes.filter(function(h) { return h.xUd; }).length;
   }));
@@ -662,7 +666,7 @@ function computeDashboard(holes) {
     last10Labels: last10Labels, last10Values: last10Values,
     monthLabels: monthLabels, monthValues: monthValues,
     bestRound: bestRound, worstRound: worstRound,
-    avgFIRCount: avgFIRCount, avgXUDCount: avgXUDCount, avgGIRCount: avgGIRCount, avgPenCount: avgPenCount, avgUDCount: avgUDCount,
+    avgFIRCount: avgFIRCount, avgFairwayHoles: avgFairwayHoles, avgXUDCount: avgXUDCount, avgGIRCount: avgGIRCount, avgPenCount: avgPenCount, avgUDCount: avgUDCount,
     dowLabels: dowLabels, dowValues: dowValues,
     best8Avg: best8Avg, best8Values: best8Values, last20Count: last20.length,
     loopLabels: loopLabels, holeRatingValues: holeRatingValues,
@@ -731,7 +735,7 @@ function renderDashboard(data) {
     var netAvg = nets.length ? nets.reduce(function(a, b) { return a + b; }, 0) / nets.length : null;
     var cell = function(v, lbl) { return '<div class="ss-cell"><span class="ss-val">' + v + '</span><span class="ss-lbl">' + lbl + '</span></div>'; };
     document.getElementById('ana-tiles').innerHTML =
-      cell(one(data.avgFIRCount), 'FIR') + cell(one(data.avgGIRCount), 'GIR') + cell(one(data.avgPenCount), 'PEN') +
+      cell(data.avgFIRCount == null ? '–' : one(data.avgFIRCount) + '<span class="ss-den">/' + Math.round(data.avgFairwayHoles) + '</span>', 'FIR') + cell(one(data.avgGIRCount), 'GIR') + cell(one(data.avgPenCount), 'PEN') +
       '<div class="ss-cell ss-hero"><span class="ss-val">' + (data.avgGrossScore == null ? '–' : data.avgGrossScore.toFixed(1)) + '</span>' +
         '<span class="ss-fine">HI: ' + (hi == null ? '–' : hi.toFixed(1)) + ' | Net: ' + (netAvg == null ? '–' : netAvg.toFixed(1)) + '</span></div>' +
       cell(one(data.avgUDCount), 'UD') + cell(one(data.avgXUDCount), 'X-UD') + cell(one(data.puttsPerRound), 'PUTTS');
@@ -743,14 +747,22 @@ function renderDashboard(data) {
       rows.push('<tr><td class="ana-stat-name">' + label + '</td><td class="ana-stat-val">' + valTxt +
                  '</td><td class="ana-stat-note">' + note + '</td></tr>');
     }
+    // Lower is better (PEN, putts)
     function reading(v, lowGood, hiBad, lowNote, midNote, hiNote) {
       if (v == null) return '—';
       return v <= lowGood ? lowNote : (v >= hiBad ? hiNote : midNote);
     }
-    if (stats && PROFILE.statFIR) statRow('FIR', data.avgFIRCount == null ? '—' : (Math.round(data.avgFIRCount * 10) / 10) + '/18',
-      reading(data.avgFIRCount, 9, 6, 'Solid off the tee', 'Room to improve', 'Focus on tee ball'));
+    // Higher is better (FIR, GIR). The old version used reading() for these,
+    // which read the scale backwards (fewer fairways = "Solid off the tee").
+    function readingHigh(v, good, bad, goodNote, midNote, badNote) {
+      if (v == null || !isFinite(v)) return '—';
+      return v >= good ? goodNote : (v <= bad ? badNote : midNote);
+    }
+    var firDen = data.avgFairwayHoles ? Math.round(data.avgFairwayHoles) : null;
+    if (stats && PROFILE.statFIR) statRow('FIR', data.avgFIRCount == null ? '—' : (Math.round(data.avgFIRCount * 10) / 10) + '/' + (firDen || '–'),
+      readingHigh(firDen ? data.avgFIRCount / data.avgFairwayHoles : null, 0.6, 0.4, 'Solid off the tee', 'Room to improve', 'Focus on tee ball'));
     if (stats && PROFILE.statGIR) statRow('GIR', data.avgGIRCount == null ? '—' : (Math.round(data.avgGIRCount * 10) / 10) + '/18',
-      reading(data.avgGIRCount, 10, 6, 'Strong ball striking', 'Room to improve', 'Approach shots need work'));
+      readingHigh(data.avgGIRCount, 10, 6, 'Strong ball striking', 'Room to improve', 'Approach shots need work'));
     if (stats && PROFILE.statPEN) statRow('PEN', data.avgPenCount == null ? '—' : Math.round(data.avgPenCount * 10) / 10,
       reading(data.avgPenCount, 0.5, 2, 'Mostly clean rounds', 'A few costly holes', 'Penalties adding up fast'));
     if (stats && PROFILE.statUD)  statRow('UD', data.avgUDCount == null ? '—' : Math.round(data.avgUDCount * 10) / 10,
