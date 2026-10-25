@@ -1,6 +1,13 @@
 <!--
   My Golf Scores — Settings
   settings.html
+  v1.23 — 2026-10-24
+  - Added editable Webhook Secret field under Change Email. Onboarding
+    generates a new random secret, so a re-onboarded device (e.g. the
+    home-screen app, which has its own storage) no longer matched Script
+    Properties and every post/Analytics call was rejected. UPDATE saves it
+    and immediately checks it against Apps Script (action=data).
+
   v1.22 — 2026-06-24
   - Retired "GPI" / "Index" branding in the Tracking Your Performance
     section. Sublabel now reads "Your Golf Performance is the total of
@@ -258,6 +265,18 @@
       <div class="report-status" id="email-status"></div>
     </div>
 
+    <!-- Webhook Secret -->
+    <div class="setting-row" style="flex-direction: column; align-items: flex-start;">
+      <div class="setting-label">Webhook Secret</div>
+      <div class="setting-sublabel">Must match WEBHOOK_SECRET in your Apps Script → Project Settings → Script Properties.</div>
+      <div class="input-row">
+        <input type="text" id="inp-secret" class="setting-input"
+               autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false">
+        <button class="btn-3d btn-sm" onclick="saveSecret(document.getElementById('inp-secret').value)">UPDATE</button>
+      </div>
+      <div class="report-status" id="secret-status"></div>
+    </div>
+
     <div class="section-header">Tracking Your Stats</div>
 
     <!-- Track Your Stats — info card with expandable benchmarks -->
@@ -497,6 +516,7 @@
     const emailEl = document.getElementById('inp-email');
     if (emailEl && p.reportEmail) emailEl.placeholder = p.reportEmail;
 
+    showSecretHint();
   })();
 
   // ── Benchmark expand/collapse ──────────────────────────────────────────────
@@ -545,6 +565,35 @@
     saveProfile({ reportEmail: v });
     syncReportEmail_(v, p.sheetsUrl, p.webhookSecret);
     if (sta) sta.textContent = 'Updated ✓';
+  }
+
+  // ── Update webhook secret ─────────────────────────────────────────────────
+  // Lets a user whose onboarding generated a fresh secret switch back to the
+  // one already in Script Properties. Checks it against Apps Script straight
+  // away so the status line says whether it was accepted.
+  function showSecretHint() {
+    const el = document.getElementById('inp-secret');
+    const s  = getProfile().webhookSecret || '';
+    if (el) el.placeholder = s ? 'Current secret ends in …' + s.slice(-4) : 'Paste your secret';
+  }
+  async function saveSecret(val) {
+    const v   = val.trim();
+    const sta = document.getElementById('secret-status');
+    if (!v) { if (sta) sta.textContent = 'Enter your webhook secret.'; return; }
+    saveProfile({ webhookSecret: v });
+    document.getElementById('inp-secret').value = '';
+    showSecretHint();
+    const url = getProfile().sheetsUrl;
+    if (!url) { if (sta) sta.textContent = 'Saved — no Apps Script URL set to check it against.'; return; }
+    if (sta) sta.textContent = 'Saved — checking…';
+    try {
+      const sep = url.indexOf('?') === -1 ? '?' : '&';
+      const res = await fetch(url + sep + 'action=data&secret=' + encodeURIComponent(v));
+      const j   = await res.json();
+      if (sta) sta.textContent = j.ok ? 'Updated ✓ — Apps Script accepted it.' : 'Saved, but Apps Script rejected it. Check the value.';
+    } catch (e) {
+      if (sta) sta.textContent = 'Saved — could not reach Apps Script to check it.';
+    }
   }
 
   // ── Send Report ────────────────────────────────────────────────────────────
