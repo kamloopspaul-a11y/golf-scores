@@ -2908,3 +2908,12 @@ Paul asked how this app's stats compare with A Bit of Bogey's (hand-verified). R
 
 Verified: ran the edited computeDashboard() in node on an API-shaped export of the live Sheet — every figure matches the independent Python numbers; headless render of analytics.html with the same data, no JS errors.
 Known, not fixed: the email reports read Diagnostics directly and still include untracked rounds; one 2026-06-16 paired round has odd hole numbering (two hole 10s).
+
+### 2026-10-24 (cont'd) — Real Handicap Index on Analytics (v11.18 / SW v191)
+
+Paul asked why Analytics had no Handicap Index. Records show it never had one: the "HI: 20" on the Save Round hero is the onboarding value, and the drawer's "Best 8 of Last 20 (handicap estimate)" used `best8Avg − 72 − 3.5` (assumes a par-72 course) → showed +1.8 for Paul.
+- Ported A Bit of Bogey's WHS engine into analytics.html (`computeHandicap()`), adapted per round: each round's own course rating/slope/par from `courseCache` (Round_Meta course + tees, men's ratings unless profile homeTees is ladies*), stroke index from the Rounds tab. Net double bogey cap (par+5 for the first 3 rounds ever), differential to 0.1, lowest 8 of last 20, round to 0.1, cap 54, fixed-point iteration for the Course Handicap. 18-hole rounds only. Ignores the range filter.
+- Locked rule kept: "—" until 20 rounds.
+- UI: full-width hero card above Season Stats (kept the 3×2 tile grid symmetrical); drawer card now lists the 8 counting differentials (date, gross, adjusted gross, diff).
+- Verified: independent Python WHS implementation on the same export → **23.3**, same 8 differentials; headless render shows 23.3, no JS errors.
+- Not changed: Save Round hero still shows the profile HI (20) and uses it for Net; Sheets Settings Handicap_Index (20) still feeds the server-side diagnostics brackets.

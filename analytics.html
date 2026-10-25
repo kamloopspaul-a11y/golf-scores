@@ -5,6 +5,13 @@
   My Golf Scores — Analytics
   analytics.html
 
+  v1.2 — 2026-10-24
+  - Real WHS Handicap Index (ported from A Bit of Bogey's verified engine, per-
+    round course rating/slope/par): hero card above Season Stats, and the old
+    par-72 "Best 8 of Last 20" estimate replaced by the 8 counting differentials.
+  - v1.1 (same day): stats from tracked rounds only; FIR par 4/5 only;
+    date-formatted hole numbers converted (holeNumber()).
+
   v1.0 — 2026-07-19
   - New standalone page. Does not touch index.html/courses.html/settings.html.
   - Aggregator + display-shape pattern ported from the "A Bit of Bogey" design
@@ -101,6 +108,15 @@
 
   /* ── v2.0 additions: hero tiles, stat/cost tables, focus areas, drawer ── */
 
+  /* Handicap hero — same family/colours as .ana-tile, just larger */
+  .ana-hcp-hero {
+    margin: 0 20px 18px; padding: 16px; border-radius: 12px; text-align: center;
+    background: var(--green-pale);
+  }
+  .ana-hcp-val  { font-family: 'DM Mono', monospace; font-size: 44px; font-weight: 700; color: var(--green); line-height: 1; }
+  .ana-hcp-lbl  { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-top: 6px; }
+  .ana-hcp-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
   .ana-hero-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
     margin: 0 20px 18px;
@@ -177,6 +193,12 @@
 
       <!-- ══ SNAPSHOT — always visible, meaningful with even a few rounds ══ -->
 
+      <div class="ana-hcp-hero" id="ana-hcp-hero">
+        <div class="ana-hcp-val" id="ana-hcp-val">—</div>
+        <div class="ana-hcp-lbl">Handicap Index</div>
+        <div class="ana-hcp-note" id="ana-hcp-note"></div>
+      </div>
+
       <div class="ana-section-hdr">Season Stats</div>
       <div class="ana-hero-grid" id="ana-tiles"></div>
 
@@ -213,7 +235,7 @@
           <div class="ana-chart-wrap"><canvas id="chart-monthly"></canvas></div>
         </div>
         <div class="ana-card" id="card-best8">
-          <div class="ana-card-title">Best 8 of Last 20 (handicap estimate)</div>
+          <div class="ana-card-title">Handicap Index — 8 Lowest of Last 20</div>
           <div id="best8-body"></div>
         </div>
         <div class="ana-card" id="card-dow">
@@ -332,6 +354,7 @@ function flattenHoleRecords(rows) {
       tees:      r.Tees || '',
       hole:      holeNumber(r.Hole),
       par:       par,
+      si:        (r.Stroke_Index === '' || r.Stroke_Index == null || !isFinite(Number(r.Stroke_Index)) || Number(r.Stroke_Index) <= 0) ? null : Number(r.Stroke_Index),
       score:     score,
       toPar:     (isFinite(score) && isFinite(par)) ? (score - par) : null,
       putts:     (r.Putts === '' || r.Putts == null) ? null : Number(r.Putts),
@@ -397,6 +420,91 @@ function groupRounds(holes) {
       toPar: totalScore - totalPar, totalPutts: totalPutts
     };
   }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+}
+
+// ── Handicap Index (World Handicap System) ──────────────────────────────────
+// Ported from A Bit of Bogey's hand-verified js/stats.js, adapted for more
+// than one course: each round uses its own course's rating/slope/par.
+//   Differential = (Adjusted Gross − Course Rating) × 113 / Slope, 1 decimal
+//   Adjusted Gross: net double bogey cap per hole (par + 2 + strokes received);
+//     the first 3 rounds ever played (no index in effect yet) cap at par + 5.
+//   Index = mean of the lowest 8 of the most recent 20 differentials, rounded
+//     to 0.1, capped at 54.0. No 0.96 multiplier (pre-2020 system).
+// Locked rule (CLAUDE.md): show "—" until 20 rounds are available.
+// Always uses ALL rounds, never the range filter — an index is always "last 20".
+var HCP_ROUNDS_NEEDED = 20;
+
+function hcpNorm(t) { return String(t || '').toLowerCase().replace(/mount/g, 'mt').replace(/[^a-z0-9]/g, ''); }
+
+function teeRatingsFor(courseName, teeName, cache, gender) {
+  var club = Object.keys(cache || {}).map(function(k) { return cache[k]; }).find(function(c) {
+    return c && c.club_name && hcpNorm(c.club_name) === hcpNorm(courseName);
+  });
+  if (!club || !club.tees) return null;
+  var pick = function(list) {
+    return (list || []).find(function(t) { return hcpNorm(t.tee_name) === hcpNorm(teeName); });
+  };
+  var tee = pick(club.tees[gender]) || pick(club.tees.male);
+  if (!tee || !tee.course_rating || !tee.slope_rating) return null;
+  return { cr: Number(tee.course_rating), sr: Number(tee.slope_rating) };
+}
+
+function strokesReceived(ch, si) {
+  if (ch === null || si === null) return 0;
+  if (ch >= 0) return Math.floor(ch / 18) + (si <= ch % 18 ? 1 : 0);
+  var give = -ch;
+  return -(Math.floor(give / 18) + (si > 18 - (give % 18) ? 1 : 0));
+}
+
+function computeHandicap(holesAll, cache, gender) {
+  var rounds = groupRounds(holesAll).filter(function(r) { return r.holeCount === 18; });
+  var window20 = rounds.slice(-HCP_ROUNDS_NEEDED).map(function(r, k) {
+    var meta = r.holes[0] || {};
+    return {
+      round: r,
+      rating: teeRatingsFor(r.course, meta.tees, cache, gender),
+      established: (rounds.length - Math.min(rounds.length, HCP_ROUNDS_NEEDED) + k) >= 3
+    };
+  }).filter(function(w) { return w.rating; });
+
+  function differentials(index) {
+    return window20.map(function(w) {
+      var cr = w.rating.cr, sr = w.rating.sr, par = w.round.totalPar;
+      var ch = index === null ? null : Math.round(index * (sr / 113) + (cr - par));
+      var ags = w.round.holes.reduce(function(sum, h) {
+        if (!w.established) return sum + Math.min(h.score, h.par + 5);
+        if (ch === null || h.si === null) return sum + h.score;
+        var strokes = strokesReceived(ch, h.si);
+        var cap = (ch > 54 && strokes >= 4) ? h.par + 5 : h.par + 2 + strokes;
+        return sum + Math.min(h.score, cap);
+      }, 0);
+      return { date: w.round.date, course: w.round.course, gross: w.round.totalScore, adjusted: ags,
+               diff: Math.round(((ags - cr) * 113 / sr) * 10) / 10 };
+    });
+  }
+  function indexFrom(list) {
+    var low = list.slice().sort(function(a, b) { return a.diff - b.diff; }).slice(0, 8);
+    var mean = low.reduce(function(s, d) { return s + d.diff; }, 0) / low.length;
+    return { value: Math.min(54, Math.round(mean * 10) / 10), used: low };
+  }
+
+  if (window20.length < HCP_ROUNDS_NEEDED) {
+    return { value: null, have: window20.length, need: HCP_ROUNDS_NEEDED };
+  }
+  // Differentials need a Course Handicap, which needs the index: seed with
+  // unadjusted scores, then iterate to a fixed point (2-3 passes in practice).
+  var res = indexFrom(differentials(null));
+  for (var i = 0; i < 6; i++) {
+    var next = indexFrom(differentials(res.value));
+    if (next.value === res.value) { res = next; break; }
+    res = next;
+  }
+  res.have = window20.length; res.need = HCP_ROUNDS_NEEDED;
+  return res;
+}
+
+function getCourseCacheForHcp() {
+  try { return JSON.parse(localStorage.getItem('courseCache') || '{}') || {}; } catch (e) { return {}; }
 }
 
 // ── Date-range filter — always recomputes fresh from source, never a running
@@ -790,16 +898,28 @@ function renderDashboard(data) {
     } else { penCard.style.display = 'none'; }
   });
 
-  safeRun('best 8 of last 20', function() {
-    gateOrRun('card-best8', 'best8-body', data.last20Count, GATES.best8, 'the handicap estimate', function() {
-      var estHandicap = Math.round((data.best8Avg - 72 - 3.5) * 10) / 10; // rough differential approximation, no course rating/slope integration yet
-      document.getElementById('best8-body').innerHTML =
-        '<div class="ana-stat-note">Average ' + (Math.round(data.best8Avg * 10) / 10) +
-        ' — your lowest 8 scores of your last 20 rounds.</div>' +
-        '<div class="ana-stat-val" style="font-size:16px;display:block;margin-top:8px;">Rough Estimate: ' +
-        (estHandicap > 0 ? '+' : '') + estHandicap + '</div>' +
-        '<div class="ana-gate-note" style="margin-top:4px;">Approximate only — not yet adjusted for each course\'s Rating/Slope.</div>';
-    });
+  safeRun('handicap index', function() {
+    var hcp = computeHandicap(ALL_HOLES, getCourseCacheForHcp(), /^ladies/.test(PROFILE.homeTees || '') ? 'female' : 'male');
+    var valEl  = document.getElementById('ana-hcp-val');
+    var noteEl = document.getElementById('ana-hcp-note');
+    var body   = document.getElementById('best8-body');
+    if (hcp.value === null) {
+      valEl.textContent  = '—';
+      noteEl.textContent = 'Needs ' + (hcp.need - hcp.have) + ' more round' + ((hcp.need - hcp.have) === 1 ? '' : 's');
+      if (body) body.innerHTML = '<div class="ana-gate-note">' + noteEl.textContent + ' to calculate.</div>';
+      return;
+    }
+    valEl.textContent  = hcp.value.toFixed(1);
+    noteEl.textContent = 'Lowest 8 of your last 20 rounds · all-time, not filtered';
+    if (body) {
+      body.innerHTML = '<table class="ana-stat-table"><thead><tr><th>Date</th><th>Score</th><th>Diff.</th></tr></thead><tbody>' +
+        hcp.used.slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).map(function(d) {
+          return '<tr><td class="ana-stat-name">' + shortDate(d.date) + (d.course && hcpNorm(d.course) !== 'mtpaul' ? ' · ' + d.course : '') +
+                 '</td><td class="ana-stat-val">' + d.gross + (d.adjusted !== d.gross ? ' (' + d.adjusted + ')' : '') +
+                 '</td><td class="ana-stat-val">' + d.diff.toFixed(1) + '</td></tr>';
+        }).join('') + '</tbody></table>' +
+        '<div class="ana-gate-note" style="margin-top:6px;">Score in brackets: adjusted for blow-up holes (net double bogey).</div>';
+    }
   });
 
   safeRun('score by day of week', function() {
