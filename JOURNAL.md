@@ -2889,3 +2889,8 @@ Same session: GitHub token moved out of the remote URL into `.git/credentials` (
 **Deployed 2026-10-24 by Claude via the browser pane.** Live deployment `AKfycbwTQja…` (the app's URL) is now Version 31 (24 Oct 16:00); editor code matched repo HEAD before the edit and matches the working copy after. Side effect: misreading a half-loaded Manage deployments dialog ("No active deployment"), Claude "reactivated" archived Golf Analytics v7, which created a second active deployment `AKfycbw3KOvc…` on Version 30 (old code). Nothing points to it. Left for Paul to decide whether to archive.
 
 **Same session:** restored `manifest.json` from commit 15d022f (deleted 2026-05-04) so the phone picks up the new icons. v11.11 / SW v184.
+
+### 2026-10-24 (cont'd) — Home tee pre-select; iOS 26 home-screen height fix (v11.12 / SW v185)
+
+- **Start page:** on the home course (`PROFILE.homeCourse`), the tee matching `PROFILE.homeTees` (mensBlue → "Blue") is pre-selected until the player taps a chip. Other courses unchanged. Tested headless: Blue active + "Men's Blue: 59 / 86", survives reload, Red tap still switches.
+- **Layout (touches locked 100dvh rule, approved by Paul):** Paul's iPhone 15 home-screen app showed ~100pt blank strip below the footer, hiding X-UD/PUTTS behind HOME/NEXT. Known iOS 26 bug (WebKit 301994): in standalone mode 100dvh is shorter than the screen; lvh spans it. Added `@media (display-mode: standalone)` → html/body/.screen height 100lvh in shared.css. Safari unchanged. Not testable off-device — Paul to confirm on phone.

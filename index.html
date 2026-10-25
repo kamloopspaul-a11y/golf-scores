@@ -1670,7 +1670,7 @@ function teeHasPlayData(teeBox) {
 }
 
 // Renders tee chips on the Setup screen for the active course.
-// Shows all complete tees. No chip is pre-highlighted — player must tap to choose.
+// Shows all complete tees. On the home course the profile's home tee is pre-selected; elsewhere the player taps to choose.
 // Returns total yardage for a tee — prefers stored total, falls back to summing holes.
 function getTeeYardage(teeBox) {
   if (teeBox.total_yards) return teeBox.total_yards;
@@ -1717,6 +1717,21 @@ function renderSetupTeePicker() {
     allTees.forEach(function(e, i) {
       if (e.teeBox.tee_name === _setupTeeChoice.teeBox.tee_name) chosenIdx = i;
     });
+  }
+
+  // Pre-select the player's home tee on their home course until they tap a chip
+  if (chosenIdx === -1 && !_setupTeeChoice) {
+    var homeName   = (PROFILE.homeCourse || 'mt. paul').toLowerCase();
+    var homeColour = (PROFILE.homeTees || 'mensBlue').replace(/^(mens|ladies)/, '').toLowerCase();
+    if ((course.club_name || '').toLowerCase().includes(homeName)) {
+      allTees.forEach(function(e, i) {
+        if (chosenIdx === -1 && (e.teeBox.tee_name || '').toLowerCase() === homeColour) chosenIdx = i;
+      });
+      if (chosenIdx !== -1) {
+        _setupTeeChoice = allTees[chosenIdx];
+        saveActiveCourseData(buildActiveCourseData(course, _setupTeeChoice.teeBox, _setupTeeChoice.gender));
+      }
+    }
   }
 
   picker.style.display = 'block';
