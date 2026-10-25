@@ -108,14 +108,7 @@
 
   /* ── v2.0 additions: hero tiles, stat/cost tables, focus areas, drawer ── */
 
-  /* Handicap hero — same family/colours as .ana-tile, just larger */
-  .ana-hcp-hero {
-    margin: 0 20px 18px; padding: 16px; border-radius: 12px; text-align: center;
-    background: var(--green-pale);
-  }
-  .ana-hcp-val  { font-family: 'DM Mono', monospace; font-size: 44px; font-weight: 700; color: var(--green); line-height: 1; }
-  .ana-hcp-lbl  { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-top: 6px; }
-  .ana-hcp-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .ana-season-grid { width: auto; margin: 0 20px 18px; }
 
   .ana-hero-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
@@ -193,14 +186,8 @@
 
       <!-- ══ SNAPSHOT — always visible, meaningful with even a few rounds ══ -->
 
-      <div class="ana-hcp-hero" id="ana-hcp-hero">
-        <div class="ana-hcp-val" id="ana-hcp-val">—</div>
-        <div class="ana-hcp-lbl">Handicap Index</div>
-        <div class="ana-hcp-note" id="ana-hcp-note"></div>
-      </div>
-
       <div class="ana-section-hdr">Season Stats</div>
-      <div class="ana-hero-grid" id="ana-tiles"></div>
+      <div class="success-summary ana-season-grid" id="ana-tiles"></div>
 
       <div class="ana-card" id="card-score-dist">
         <div class="ana-card-title">Score Distribution</div>
@@ -602,6 +589,9 @@ function computeDashboard(holes) {
   var avgPenCount = aggregateHoles(statRounds, null, avg(function(r) {
     return r.holes.reduce(function(s, h) { return s + (h.pen || 0); }, 0);
   }));
+  var avgXUDCount = aggregateHoles(statRounds, null, avg(function(r) {
+    return r.holes.filter(function(h) { return h.xUd; }).length;
+  }));
   var avgUDCount = aggregateHoles(statRounds, null, avg(function(r) {
     return r.holes.filter(function(h) { return h.ud; }).length;
   }));
@@ -662,6 +652,7 @@ function computeDashboard(holes) {
 
   return {
     roundCount: rounds.length,
+    rounds: rounds,
     scoringAvg: scoringAvg, avgGrossScore: avgGrossScore, puttsPerRound: puttsPerRound,
     firStat: firStat, girStat: girStat, scrambleStat: scrambleStat,
     frontAvg: frontAvg, backAvg: backAvg,
@@ -671,7 +662,7 @@ function computeDashboard(holes) {
     last10Labels: last10Labels, last10Values: last10Values,
     monthLabels: monthLabels, monthValues: monthValues,
     bestRound: bestRound, worstRound: worstRound,
-    avgFIRCount: avgFIRCount, avgGIRCount: avgGIRCount, avgPenCount: avgPenCount, avgUDCount: avgUDCount,
+    avgFIRCount: avgFIRCount, avgXUDCount: avgXUDCount, avgGIRCount: avgGIRCount, avgPenCount: avgPenCount, avgUDCount: avgUDCount,
     dowLabels: dowLabels, dowValues: dowValues,
     best8Avg: best8Avg, best8Values: best8Values, last20Count: last20.length,
     loopLabels: loopLabels, holeRatingValues: holeRatingValues,
@@ -721,15 +712,29 @@ function renderDashboard(data) {
   LAST_DASHBOARD = data;
   var stats = PROFILE.recordStats;
 
-  safeRun('hero tiles', function() {
-    var tiles = [];
-    tiles.push({ value: data.avgGrossScore == null ? '—' : Math.round(data.avgGrossScore * 10) / 10, label: 'Scoring Avg' });
-    tiles.push({ value: data.bestRound  == null ? '—' : data.bestRound,  label: 'Best Round' });
-    tiles.push({ value: data.worstRound == null ? '—' : data.worstRound, label: 'Worst Round' });
-    if (stats && PROFILE.statPUTTS) tiles.push({ value: data.puttsPerRound == null ? '—' : Math.round(data.puttsPerRound * 10) / 10, label: 'Putts/Rnd' });
-    if (stats && PROFILE.statFIR)   tiles.push({ value: pctText(data.firStat), label: 'FIR%' });
-    if (stats && PROFILE.statGIR)   tiles.push({ value: pctText(data.girStat), label: 'GIR%' });
-    renderTileGrid(document.getElementById('ana-tiles'), tiles);
+  // Handicap Index — always last 20 rounds, all-time (never the range filter)
+  var HCP = { value: null };
+  safeRun('handicap calc', function() {
+    HCP = computeHandicapIndex(groupRounds(ALL_HOLES).map(function(r) { r.tees = (r.holes[0] || {}).tees; return r; }), hcpCourseCache(), hcpGender(PROFILE));
+    saveLatestHandicap(HCP.value);
+  });
+
+  safeRun('season stats', function() {
+    function one(v) { return v == null ? '–' : String(Math.round(v * 10) / 10); }
+    var hi = HCP.value != null ? HCP.value : getLatestHandicap();
+    if (hi == null && PROFILE.hi != null) hi = Number(PROFILE.hi);
+    // Net: each round's gross minus its course handicap (that course + tees) at the current index
+    var nets = (hi == null) ? [] : (data.rounds || []).map(function(r) {
+      var rt = hcpTeeRatings(r.course, (r.holes[0] || {}).tees, hcpCourseCache(), hcpGender(PROFILE));
+      return rt ? r.totalScore - Math.round(hi * (rt.sr / 113) + (rt.cr - r.totalPar)) : null;
+    }).filter(function(v) { return v != null; });
+    var netAvg = nets.length ? nets.reduce(function(a, b) { return a + b; }, 0) / nets.length : null;
+    var cell = function(v, lbl) { return '<div class="ss-cell"><span class="ss-val">' + v + '</span><span class="ss-lbl">' + lbl + '</span></div>'; };
+    document.getElementById('ana-tiles').innerHTML =
+      cell(one(data.avgFIRCount), 'FIR') + cell(one(data.avgGIRCount), 'GIR') + cell(one(data.avgPenCount), 'PEN') +
+      '<div class="ss-cell ss-hero"><span class="ss-val">' + (data.avgGrossScore == null ? '–' : data.avgGrossScore.toFixed(1)) + '</span>' +
+        '<span class="ss-fine">HI: ' + (hi == null ? '–' : hi.toFixed(1)) + ' | Net: ' + (netAvg == null ? '–' : netAvg.toFixed(1)) + '</span></div>' +
+      cell(one(data.avgUDCount), 'UD') + cell(one(data.avgXUDCount), 'X-UD') + cell(one(data.puttsPerRound), 'PUTTS');
   });
 
   safeRun('20 round average table', function() {
@@ -803,28 +808,20 @@ function renderDashboard(data) {
   });
 
   safeRun('handicap index', function() {
-    var hcp = computeHandicapIndex(groupRounds(ALL_HOLES).map(function(r) { r.tees = (r.holes[0] || {}).tees; return r; }), hcpCourseCache(), hcpGender(PROFILE));
-    saveLatestHandicap(hcp.value);
-    var valEl  = document.getElementById('ana-hcp-val');
-    var noteEl = document.getElementById('ana-hcp-note');
-    var body   = document.getElementById('best8-body');
-    if (hcp.value === null) {
-      valEl.textContent  = '—';
-      noteEl.textContent = 'Needs ' + (hcp.need - hcp.have) + ' more round' + ((hcp.need - hcp.have) === 1 ? '' : 's');
-      if (body) body.innerHTML = '<div class="ana-gate-note">' + noteEl.textContent + ' to calculate.</div>';
+    var body = document.getElementById('best8-body');
+    if (!body) return;
+    if (HCP.value == null) {
+      body.innerHTML = '<div class="ana-gate-note">Needs ' + (HCP_ROUNDS_NEEDED - (HCP.have || 0)) + ' more rounds to calculate.</div>';
       return;
     }
-    valEl.textContent  = hcp.value.toFixed(1);
-    noteEl.textContent = 'Lowest 8 of your last 20 rounds · all-time, not filtered';
-    if (body) {
-      body.innerHTML = '<table class="ana-stat-table"><thead><tr><th>Date</th><th>Score</th><th>Diff.</th></tr></thead><tbody>' +
-        hcp.used.slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).map(function(d) {
-          return '<tr><td class="ana-stat-name">' + shortDate(d.date) + (d.course && hcpNorm(d.course) !== 'mtpaul' ? ' · ' + d.course : '') +
-                 '</td><td class="ana-stat-val">' + d.gross + (d.adjusted !== d.gross ? ' (' + d.adjusted + ')' : '') +
-                 '</td><td class="ana-stat-val">' + d.diff.toFixed(1) + '</td></tr>';
-        }).join('') + '</tbody></table>' +
-        '<div class="ana-gate-note" style="margin-top:6px;">Score in brackets: adjusted for blow-up holes (net double bogey).</div>';
-    }
+    body.innerHTML = '<div class="ana-stat-note">Handicap Index <strong>' + HCP.value.toFixed(1) + '</strong> — average of these 8, your lowest of the last 20 rounds.</div>' +
+      '<table class="ana-stat-table"><thead><tr><th>Date</th><th>Score</th><th>Diff.</th></tr></thead><tbody>' +
+      HCP.used.slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).map(function(d) {
+        return '<tr><td class="ana-stat-name">' + shortDate(d.date) + (d.course && hcpNorm(d.course) !== 'mtpaul' ? ' · ' + d.course : '') +
+               '</td><td class="ana-stat-val">' + d.gross + (d.adjusted !== d.gross ? ' (' + d.adjusted + ')' : '') +
+               '</td><td class="ana-stat-val">' + d.diff.toFixed(1) + '</td></tr>';
+      }).join('') + '</tbody></table>' +
+      '<div class="ana-gate-note">Score in brackets: adjusted for blow-up holes (net double bogey).</div>';
   });
 
   safeRun('score by day of week', function() {
